@@ -102,7 +102,9 @@ check_prerequisites() {
         missing=true
     fi
 
-    $missing && die "Missing prerequisites. Install them and retry."
+    if $missing; then
+        die "Missing prerequisites. Install them and retry."
+    fi
 }
 
 # =============================================================================
@@ -120,7 +122,7 @@ ask() {
 }
 
 ask_yn() {
-    local prompt="$1" default="$2"
+    local prompt="$1"
     local yn
     read -rp "$(echo -e "${CYAN}?${NC} ${prompt} (o/N): ")" yn
     case "$yn" in
@@ -432,7 +434,10 @@ main() {
     ok "Files generated in ${INSTALL_DIR}"
 
     # Copy install.sh to install dir for future updates
-    if [ "$(realpath "$0")" != "$(realpath "$INSTALL_DIR/install.sh")" ] 2>/dev/null; then
+    local self inst
+    self=$(realpath "$0" 2>/dev/null || echo "$0")
+    inst=$(realpath "$INSTALL_DIR/install.sh" 2>/dev/null || echo "")
+    if [ "$self" != "$inst" ]; then
         cp "$0" "$INSTALL_DIR/install.sh"
         chmod +x "$INSTALL_DIR/install.sh"
     fi
