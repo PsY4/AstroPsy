@@ -1,0 +1,14 @@
+<span class="session-file"
+      data-id="{{ e.id }}"
+      data-type="{{ e.type }}">
+    <small style="font-size: 12px">
+        {{ 'session.unit_export'|trans }}
+    </small><br>
+    <strong>{{ e.type ?? '—' }}</strong><br>
+    <small style="font-size: 12px">
+        &nbsp;
+    </small><br>
+    <small style="font-size: 10px">
+        #{{ loop.index }}
+    </small>
+</span>

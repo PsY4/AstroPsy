@@ -1,0 +1,499 @@
+{% set pageTitle = target.name ~ " - " ~ session.startedAt|date("Y-m-d") %}
+{% set previousCrumb = "<li class='active'><a class='f-s-14 f-w-400' href='"~path('browse_target', {'id': target.id})~"'>"~target.name~"</a></li>" %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+    <div class="input-group input-group-sm fa-pull-right" style="width: auto">
+        <button class="btn btn-primary icon-btn b-r-left" id="btn-toggle-overview" title="Toggle overview">
+            <i class="ti ti-layout-sidebar-left-collapse"></i>
+        </button>
+        <button class="btn btn-primary icon-btn" data-bs-target="#editModal"
+                data-bs-toggle="modal"
+                type="button"><i class="ti ti-edit"></i>
+        </button>
+        <a href="openfolder:{{ local_folder_base }}/{{ session.path|default('') }}"
+           class="btn btn-primary icon-btn">
+            <i class="fa primary fa-folder-open"></i>
+        </a>
+        <button type="button" onclick="openRefreshModal({{ session.id }})"
+                title="{{ 'session.refresh.title'|trans }}"
+                class="btn btn-primary icon-btn">
+            <i class="fa primary fa-refresh"></i>
+        </button>
+        <form method="post" action="{{ path('delete_session', {'id': session.id}) }}" style="display:inline" onsubmit="return confirm('{{ 'session.confirm_delete'|trans }}')"
+            <input type="hidden" name="_token" value="{{ csrf_token('delete_session_' ~ session.id) }}">
+            <button type="submit" class="btn btn-outline-primary icon-btn b-r-right" title="Delete session">
+                <i class="fa primary fa-trash"></i>
+            </button>
+        </form>
+    </div>
+{% endblock %}
+{% block body %}
+    <div id="fs-scan-container"
+         data-scan-url="{{ path('api_scan_files', {sessionId: session.id}) }}"
+         data-scan-apply-url="{{ path('api_scan_files_apply', {sessionId: session.id}) }}"
+         data-scan-level="files"
+         data-scan-trans="{{ {
+             scanning: 'scan.scanning'|trans,
+             changes_detected: 'scan.changes_detected_files'|trans,
+             new_files: 'scan.new_files'|trans,
+             apply_files: 'scan.apply_files'|trans,
+             ignore: 'scan.ignore'|trans,
+             refresh: 'scan.refresh'|trans,
+             applying: 'scan.applying'|trans,
+             applied_error: 'scan.applied_error'|trans,
+         }|json_encode|e('html_attr') }}">
+    </div>
+    {% if consistency is defined and (consistency.missing|length > 0 or consistency.unexpected|length > 0) %}
+    <div class="alert alert-warning py-2 mb-3 small">
+        <i class="fa fa-triangle-exclamation me-1"></i>
+        <strong>{{ 'session.consistency_warning'|trans }}</strong>
+        {% if consistency.missing|length > 0 %}
+            <br>{{ 'session.missing_folder'|trans }}: <code>{{ consistency.missing|join('</code>, <code>') }}</code>
+        {% endif %}
+        {% if consistency.unexpected|length > 0 %}
+            <br>{{ 'session.unexpected_folder'|trans }}: <code>{{ consistency.unexpected|join('</code>, <code>') }}</code>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% set lights = session.exposures|filter(e => e.type == "LIGHT") %}
+    {# ############## MODAL - EDIT ############## #}
+    {% form_theme editForm 'bootstrap_4_layout.html.twig' %}
+    <div aria-hidden="true" aria-labelledby="editModalLabel" class="modal fade"
+         id="editModal"
+         tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" id="staticBackdrop">
+            <div class="modal-content ">
+                {{ form_start(editForm) }}
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="editModalLabel1">{{ 'session.btn_edit'|trans }}</h1>
+                        <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3 app-form" id="newtask">
+                            {{ form_widget(editForm) }}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" id="push"
+                                type="submit">{{ 'session.btn_update'|trans }}
+                        </button>
+                    </div>
+                {{ form_end(editForm) }}
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xxl-3 order-xxl-1" id="session-overview-col">
+            <div class="card">
+                <div class="card-body">
+                    <div class="profile-container">
+
+                        <ul class="avatar-group float-end breadcrumb-start ">
+                            {% for author in session.authors %}
+                                <li class="h-30 w-30 d-flex-center b-r-50 position-relative" data-bs-title="{{ author.name }}" data-bs-toggle="tooltip">
+                                    <img alt="{{ author.name }}" class="img-fluid b-r-50 overflow-hidden" src="{{ author.logo }}">
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <div class="person-details" style="margin-top: 0">
+                            <h5 class="f-w-600">{{ target.name }}</h5>
+                            {% if session.setup %}
+                                <h6 class="text-secondary mb-1"><i class="fa fa-fw fa-binoculars"></i> {{ session.setup.name }}</h6>
+                            {% endif %}
+                            <h5 class="f-w-600 text-light-primary bg-transparent">{{ session.startedAt|date(("F jS Y")) }}</h5>
+                            {% if target.ra != "" %}
+                                <canvas id="altChart"></canvas>
+                                <div id="meta" style="width: 100%; text-align: center">—</div>
+                                <div class="my-2">
+                                    <a href="{{ target.telescopiusUrl }}" target="_blank" class="btn btn-primary b-r-22" id="followButton" type="button">
+                                        <i class="fa fa-fw fa-solid fa-globe"></i>
+                                        <strong>Telescopius™</strong>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="person-details mt-2">
+                            <div class="details mt-0">
+                                {% set lights = session.exposures|filter(e => e.type == "LIGHT") %}
+                                <div>
+                                    <h4 class="text-primary">{{ lights|length }}</h4>
+                                    <p class="text-secondary">{{ 'session.stat_lights'|trans }}</p>
+                                </div>
+                                {% set filters = [] %}
+                                {% set hasFilters = false %}
+                                {% for e in session.exposures|filter(e => e.type == "LIGHT") %}
+                                    {% if e.filterName not in filters %}
+                                        {% set filters = filters|merge([e.filterName]) %}
+                                        {% if e.filterName is not null %}
+                                            {% set hasFilters = true %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if hasFilters %}
+                                    {# Tri LRGBSHO : on reconstruit filters dans l'ordre de référence #}
+                                    {% set filterOrder = ['L','R','G','B','S','H','O'] %}
+                                    {% set filtersSorted = [] %}
+                                    {% for letter in filterOrder %}
+                                        {% for f in filters %}
+                                            {% if f|first|upper == letter %}
+                                                {% set filtersSorted = filtersSorted|merge([f]) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% for f in filters %}
+                                        {% if f|first|upper not in filterOrder %}
+                                            {% set filtersSorted = filtersSorted|merge([f]) %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <div>
+                                        <h4 class="text-primary">{{ filtersSorted|default(["N/A"])|map(f => f|first)|join('')|raw }}</h4>
+                                        <p class="text-secondary">{{ 'session.stat_filters'|trans }}</p>
+                                    </div>
+                                {% endif %}
+                                {% set durations = [] %}
+                                {% for e in session.exposures|filter(e => e.type == "LIGHT") %}
+                                    {% if e.exposureS not in durations %}
+                                        {% set durations = durations|merge([e.exposureS]) %}
+                                    {% endif %}
+                                {% endfor %}
+                                <div>
+                                    <h4 class="text-primary">{{ durations|default(["??"])|join('s,') }}s</h4>
+                                    <p class="text-secondary">{{ 'session.stat_duration'|trans }}</p>
+                                </div>
+                            </div>
+                            <div class="details mt-0">
+                                {% set masters = session.masters %}
+                                <div>
+                                    <h4 class="text-primary">{{ masters|length}}</h4>
+                                    <p class="text-secondary">{{ 'session.stat_masters'|trans }}</p>
+                                </div>
+                                {% set exports = session.exports %}
+                                {%  if exports|length >  0%}
+                                    <div>
+                                        <h4 class="text-primary">{{ exports|length}}</h4>
+                                        <p class="text-secondary">{{ 'session.stat_exports'|trans }}</p>
+                                    </div>
+                                {% endif %}
+
+                            </div>
+                            <div class="details mt-0 mb-2">
+                                {% if session.astrobin != "" %}
+                                    <div>
+                                        <h4 class="text-primary">{{ session.astrobinViews }}</h4>
+                                        <p class="text-secondary">{{ 'session.stat_views'|trans }}</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-primary">{{ session.astrobinLikes }}</h4>
+                                        <p class="text-secondary">{{ 'session.stat_likes'|trans }}</p>
+                                    </div>
+                                    {% if session.astrobinBookmarks > 0  %}
+                                        <div>
+                                            <h4 class="text-primary">{{ session.astrobinBookmarks }}</h4>
+                                            <p class="text-secondary">{{ 'session.stat_bookmarks'|trans }}</p>
+                                        </div>
+                                    {% endif %}
+                                    {% if session.astrobinComments > 0  %}
+                                        <div>
+                                            <h4 class="text-primary">{{ session.astrobinComments }}</h4>
+                                            <p class="text-secondary">{{ 'session.stat_comments'|trans }}</p>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+
+                            </div>
+                            {% if session.astrobin != "" %}
+                            <a href="{{ session.astrobin }}" target="_blank" class="btn btn-primary b-r-22" id="followButton" type="button">
+                                <i class="fa fa-fw fa-solid fa-globe"></i>
+                                <strong>Astrobin™</strong>
+                            </a>
+                            {% endif %}
+                            {% include 'browse/session/filters_repartition.html.twig' %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body session-content">
+                    <ul class="nav nav-tabs tab-light-primary" id="Light" role="tablist">
+                        {% if exposures|filter(e => e.type == "LIGHT")|length %}
+                        <li class="nav-item" role="presentation">
+                            <button aria-controls="description-tab-pane" aria-selected="true" class="nav-link active" data-bs-target="#exposures-tab-pane" data-bs-toggle="tab" id="exposures-tab" role="tab" type="button">
+                                {{ 'session.tab_lights'|trans }}
+                            </button>
+                        </li>
+                        {% endif %}
+                        {% if exposures|filter(e => e.type != "LIGHT")|length %}
+                        <li class="nav-item" role="presentation">
+                            <button aria-controls="description-tab-pane" aria-selected="true" class="nav-link" data-bs-target="#dofs-tab-pane" data-bs-toggle="tab" id="dofs-tab" role="tab" type="button">
+                                {{ 'session.tab_dofs'|trans }}
+                            </button>
+                        </li>
+                        {% endif %}
+                        {% if (session.phd2Calibrations|length>0)  or (session.phd2Guidings|length>0) %}
+                        <li class="nav-item" role="presentation">
+                            <button aria-controls="howowrk-tab-pane" aria-selected="false" class="nav-link" data-bs-target="#logs-tab-pane" data-bs-toggle="tab" id="logs-tab" role="tab" type="button" tabindex="-1">
+                                {{ 'session.tab_logs'|trans }}
+                            </button>
+                        </li>
+                        {% endif %}
+                        {% if masters|length %}
+                        <li class="nav-item" role="presentation">
+                            <button aria-controls="drawbacks-tab-pane" aria-selected="false" class="nav-link" data-bs-target="#master-tab-pane" data-bs-toggle="tab" id="master-tab" role="tab" type="button" tabindex="-1">
+                                {{ 'session.tab_masters'|trans }}
+                            </button>
+                        </li>
+                        {% endif %}
+                        {% if exports|length %}
+                        <li class="nav-item" role="presentation">
+                            <button aria-controls="drawbacks-tab-pane" aria-selected="false" class="nav-link" data-bs-target="#exports-tab-pane" data-bs-toggle="tab" id="exports-tab" role="tab" type="button" tabindex="-1">
+                                {{ 'session.tab_exports'|trans }}
+                            </button>
+                        </li>
+                        {% endif %}
+
+                    </ul>
+                    <div class="tab-content" id="LightContent">
+                        {% if exposures|filter(e => e.type == "LIGHT")|length %}
+                        <div aria-labelledby="exposures-tab" class="tab-pane fade show active exposures" id="exposures-tab-pane" role="tabpanel" tabindex="0">
+                            {% for e in exposures|filter(e => e.type == "LIGHT") %}
+                                {% include "browse/session/unit_exposure.html.twig" with {"e": e} %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if exposures|filter(e => e.type != "LIGHT")|length %}
+                        <div aria-labelledby="exposures-tab" class="tab-pane fade exposures" id="dofs-tab-pane" role="tabpanel" tabindex="0">
+                            {% for e in exposures|filter(e => e.type != "LIGHT") %}
+                                {% include "browse/session/unit_exposure.html.twig" with {"e": e} %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if (session.phd2Calibrations|length) + (session.phd2Guidings|length) %}
+                        <div aria-labelledby="logs-tab" class="tab-pane fade phd2logs" id="logs-tab-pane" role="tabpanel" tabindex="0">
+                            {% for e in session.phd2Calibrations %}
+                                {% include "browse/session/unit_phd2log_calib.html.twig" with {"e": e} %}
+                            {% endfor %}
+                            {% for e in session.phd2Guidings %}
+                                {% include "browse/session/unit_phd2log_guide.html.twig" with {"e": e} %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if masters|length %}
+                        <div aria-labelledby="master-tab" class="tab-pane fade masters" id="master-tab-pane" role="tabpanel" tabindex="0">
+                            {% for m in masters %}
+                                {% include "browse/session/unit_master.html.twig" with {"e": e} %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if exports|length %}
+                        <div aria-labelledby="exports-tab" class="tab-pane fade exports" id="exports-tab-pane" role="tabpanel" tabindex="0">
+                            {% for e in exports %}
+                                {% include "browse/session/unit_export.html.twig" with {"e": e} %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+
+            {# ---- NOTES ---- #}
+            <div class="card mb-2" id="notes-card">
+                <div class="card-header d-flex justify-content-between align-items-center py-2">
+                    <h6 class="mb-0"><i class="fa fa-fw fa-sticky-note me-1"></i>{{ 'session.notes_title'|trans }}</h6>
+                    <button class="btn btn-sm btn-outline-secondary p-1" data-bs-toggle="modal" data-bs-target="#notesModal" title="{{ 'session.notes_title'|trans }}">
+                        <i class="ti ti-edit"></i>
+                    </button>
+                </div>
+                <div class="card-body p-2" id="notes-card-body">
+                    {% if session.notes %}
+                        <div id="notes-viewer"></div>
+                    {% else %}
+                        <p class="text-muted fst-italic small mb-0" id="notes-empty-msg">{{ 'session.notes_placeholder'|trans }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ---- NOTES MODAL ---- #}
+            <div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="notesModalLabel">
+                                <i class="fa fa-fw fa-sticky-note me-1"></i>{{ 'session.notes_title'|trans }}
+                            </h5>
+                            <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                        </div>
+                        <div class="modal-body p-2">
+                            <div id="notes-editor-el"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <span id="notes-save-spinner" class="spinner-border spinner-border-sm d-none me-2"></span>
+                            <button id="notes-save-btn" class="btn btn-primary">{{ 'session.notes_save'|trans }}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-xxl-9 order-xxl-2" id="session-previews-col">
+            <div class="row">
+                {% include 'browse/session/preview_exposure.html.twig' %}
+                {% include 'browse/session/preview_export.html.twig' %}
+                {% include 'browse/session/preview_master.html.twig' %}
+                {% include 'browse/session/preview_phd2log.html.twig' %}
+            </div>
+        </div>
+    </div>
+
+    {# ---- REFRESH MODAL ---- #}
+    <div class="modal fade" id="refreshModal" tabindex="-1" aria-labelledby="refreshModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="refreshModalLabel">
+                        <i class="fa fa-refresh me-1"></i>{{ 'session.refresh.title'|trans }}
+                    </h5>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body" id="refreshModalBody"></div>
+                <div class="modal-footer" id="refreshModalFooter"></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .session-content span { cursor: pointer }
+        .session-content span.active {
+            background-color: rgba(var(--primary), 1);
+            color: #fff;
+        }
+        #LightContent > div {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+
+{% endblock %}
+
+{% block page_scripts %}
+    <link type="text/css" rel="stylesheet" href="{{ asset('js9/js9support.css') }}">
+    <link type="text/css" rel="stylesheet" href="{{ asset('js9/js9.css') }}">
+    <script>var JS9Prefs = {
+        "globalOpts": { "helperType": "none" },
+        "imageOpts":  { "colormap": "grey", "scale": "log" }
+    }</script>
+    <script type="text/javascript" src="{{ asset('js9/js9support.min.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('js9/js9.min.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('js9/js9plugins.min.js') }}"></script>
+
+    <script src="https://unpkg.com/astronomy-engine/astronomy.browser.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script>
+        if (window.ChartZoom) {
+            Chart.register(window.ChartZoom);
+        } else {
+            console.error('chartjs-plugin-zoom failed to load (no window.ChartZoom).');
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+
+    <script src="{{ asset('assets/js/astronomy-helpers.js') }}"></script>
+    <script src="{{ asset('assets/js/altitude-chart.js') }}"></script>
+    <script>
+    initAltitudeChart({
+        canvasId: 'altChart',
+        metaId:   'meta',
+        name:     '{{ target.name|e('js') }}',
+        raH:      {{ target.ra }},
+        decD:     {{ target.dec }},
+        lat:      {{ session.observatory.lat }},
+        lon:      {{ session.observatory.lon }},
+        dateStr:  '{{ session.startedAt|date("Y-m-d") }}'
+    });
+    </script>
+
+    <script>
+        // Toggle overview (left) column
+        $('#btn-toggle-overview').on('click', function () {
+            const $overview = $('#session-overview-col');
+            const $previews = $('#session-previews-col');
+            const isCollapsed = $overview.hasClass('d-none');
+
+            if (isCollapsed) {
+                $overview.removeClass('d-none');
+                $previews.removeClass('col-xxl-12').addClass('col-xxl-9');
+                $(this).find('i').removeClass('ti-layout-sidebar-left-expand').addClass('ti-layout-sidebar-left-collapse');
+            } else {
+                $overview.addClass('d-none');
+                $previews.removeClass('col-xxl-9').addClass('col-xxl-12');
+                $(this).find('i').removeClass('ti-layout-sidebar-left-collapse').addClass('ti-layout-sidebar-left-expand');
+            }
+        });
+
+        // Toggle details column in preview cards
+        $(document).on('click', '.btn-toggle-details', function () {
+            const $btn = $(this);
+            const $detailsCol = $($btn.data('details'));
+            const $previewCol = $btn.closest('[id$="-preview-col"]');
+            const isCollapsed = $detailsCol.hasClass('d-none');
+
+            if (isCollapsed) {
+                $detailsCol.removeClass('d-none');
+                $previewCol.removeClass('col-xxl-12').addClass('col-xxl-9');
+                $btn.find('i').removeClass('ti-layout-sidebar-right-expand').addClass('ti-layout-sidebar-right-collapse');
+            } else {
+                $detailsCol.addClass('d-none');
+                $previewCol.removeClass('col-xxl-9').addClass('col-xxl-12');
+                $btn.find('i').removeClass('ti-layout-sidebar-right-collapse').addClass('ti-layout-sidebar-right-expand');
+            }
+        });
+    </script>
+
+    {# ---- Toast UI Editor (Notes) ---- #}
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.css">
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+    <script>
+    const NOTES_CONFIG = {
+        currentNotes: {{ session.notes|default('')|json_encode|raw }},
+        saveUrl:      '{{ path('session_notes', {id: session.id}) }}',
+        theme:        '{{ appConfig.theme }}',
+        trans: { placeholder: '{{ 'session.notes_placeholder'|trans|e('js') }}' }
+    };
+    </script>
+    <script src="{{ asset('assets/js/notes-editor.js') }}"></script>
+    <script src="{{ asset('assets/js/fs-scan.js') }}"></script>
+
+    <script>
+    window.REFRESH_CONFIG = {
+        sessionId: {{ session.id }},
+        trans: {
+            counting:     '{{ 'session.refresh.counting'|trans|e('js') }}',
+            total_files:  '{{ 'session.refresh.total_files'|trans|e('js') }}',
+            confirm_text: '{{ 'session.refresh.confirm_text'|trans|e('js') }}',
+            no_files:     '{{ 'session.refresh.no_files'|trans|e('js') }}',
+            step_purge:   '{{ 'session.refresh.step.purge'|trans|e('js') }}',
+            step_raws:    '{{ 'session.refresh.step.raws'|trans|e('js') }}',
+            step_phd2:    '{{ 'session.refresh.step.phd2'|trans|e('js') }}',
+            step_masters: '{{ 'session.refresh.step.masters'|trans|e('js') }}',
+            step_exports: '{{ 'session.refresh.step.exports'|trans|e('js') }}',
+            processing:   '{{ 'session.refresh.processing'|trans|e('js') }}',
+            done:         '{{ 'session.refresh.done'|trans|e('js') }}',
+            files:        '{{ 'session.refresh.files'|trans|e('js') }}',
+            complete:     '{{ 'session.refresh.complete'|trans|e('js') }}',
+            btn_start:    '{{ 'session.refresh.btn_start'|trans|e('js') }}',
+            btn_close:    '{{ 'session.refresh.btn_close'|trans|e('js') }}',
+            btn_close_text: '{{ 'btn.close'|trans|e('js') }}',
+            btn_cancel:   '{{ 'btn.cancel'|trans|e('js') }}',
+            error:        '{{ 'session.refresh.error'|trans|e('js') }}'
+        }
+    };
+    </script>
+    <script src="{{ asset('assets/js/session-refresh.js') }}"></script>
+
+{% endblock %}

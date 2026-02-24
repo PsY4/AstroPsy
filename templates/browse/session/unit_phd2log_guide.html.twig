@@ -1,0 +1,15 @@
+<span class="session-file {{ e.hidden ? "bg-light-primary" : "" }}"
+      data-path="{{ e.path }}"
+      data-type="guiding"
+      data-id="{{ e.id }}">
+    <small style="font-size: 10px">
+        {{ 'session.unit_guiding'|trans }}
+    </small><br>
+    <strong><i class="fa fa-fw fa-chart-line"></i></strong><br>
+    <small style="font-size: 12px">
+        {{ e.totalRmsArcsec|number_format(2, '.', ' ') }}"
+    </small><br>
+    <small style="font-size: 10px">
+        #{{ loop.index }} - {{ e.startedAt|date("H:i") }}
+    </small>
+</span>

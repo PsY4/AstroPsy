@@ -1,0 +1,738 @@
+btn:
+  cancel: "Annuler"
+  close: "Fermer"
+  save: "Enregistrer"
+
+target:
+  details:
+    type:
+      agn: "Noyau Actif de Galaxie"
+      bgx: "Galaxie Spirale Barrée"
+      bla: "Blazar"
+      bcgx: "Galaxie Compacte Bleue"
+      bub: "Bulle"
+      cmradsrc: "Source Radio Centimétrique"
+      cgxs: "Amas de Galaxies"
+      cgl: "Globule Cométaire"
+      cgx: "Galaxie Compacte"
+      cggxs: "Groupe Compact de Galaxies"
+      mle: "Cot_MLE"
+      dkneb: "Nébuleuse Sombre"
+      decor: "Cœur Dense"
+      dineb: "Nébuleuse Diffuse"
+      dwgx: "Galaxie Naine"
+      dsgx: "Galaxie Naine Sphéroïdale"
+      egx: "Galaxie Elliptique"
+      elgx: "Galaxie à Raies d'Émission"
+      eneb: "Nébuleuse en Émission"
+      firsrc: "Source Infrarouge Lointain"
+      gxy: "Galaxie"
+      gxp: "Paire de Galaxies"
+      gamsrc: "Source Gamma"
+      glcl: "Amas Globulaire"
+      glb: "Globule"
+      grl: "Lentille Gravitationnelle"
+      gls: "Système Lentille Gravitationnelle"
+      ggxs: "Groupe de Galaxies"
+      hho: "Objet Herbig–Haro"
+      h1r: "Région HI"
+      hvc: "Nuage à Grande Vitesse"
+      h2gx: "Galaxie HII"
+      h2r: "Région HII"
+      irsrc: "Source Infrarouge"
+      igxs: "Galaxies en Interaction"
+      isgx: "Galaxie Spirale Intermédiaire"
+      ism: "Milieu Interstellaire"
+      igx: "Galaxie Irrégulière"
+      lgx: "Galaxie Lenticulaire"
+      liner: "Noyau Actif LINER"
+      lsbgx: "Galaxie à Faible Brillance de Surface"
+      maser: "Maser"
+      mirsrc: "Source Infrarouge Moyen"
+      mmradsrc: "Source Radio Millimétrique"
+      mgx: "Galaxie Mixte"
+      mcl: "Nuage Moléculaire"
+      movgr: "Groupe Mobile"
+      nirsrc: "Source Infrarouge Proche"
+      neb: "Nébuleuse"
+      opcl: "Amas Ouvert"
+      osgx: "Galaxie Spirale Ouverte"
+      optscr: "Source Optique"
+      poc: "Partie de Nuage"
+      pgx: "Galaxie Particulière"
+      pneb: "Nébuleuse Planétaire"
+      prgx: "Galaxie à Anneau Polaire"
+      qua: "Quasar"
+      ragx: "Galaxie Radio"
+      radsrc: "Source Radio"
+      rneb: "Nébuleuse par Réflexion"
+      rigx: "Galaxie Annulaire"
+      sf1gx: "Galaxie de Seyfert 1"
+      sf2gx: "Galaxie de Seyfert 2"
+      sfgx: "Galaxie de Seyfert"
+      sgx: "Galaxie Spirale"
+      scd: "Nuage Stellaire"
+      stcl: "Amas Stellaire"
+      sfr: "Région de Formation Stellaire"
+      sbgx: "Galaxie à Sursaut de Formation d'Étoiles"
+      stass: "Association Stellaire"
+      smmradsrc: "Source Sub-Millimétrique"
+      scgxs: "Superamas de Galaxies"
+      snr: "Rémanent de Supernova"
+      uvscr: "Source UV"
+      varsrc: "Source Variable"
+      xrsrc: "Source X"
+
+      # Variantes brillantes (types Telescopius B_)
+      b_dkneb: "Nébuleuse Sombre Brillante"
+      b_eneb: "Nébuleuse en Émission Brillante"
+      b_gxy: "Galaxie Brillante"
+      b_glcl: "Amas Globulaire Brillant"
+      b_ggxs: "Groupe de Galaxies Brillant"
+      b_opcl: "Amas Ouvert Brillant"
+      b_pneb: "Nébuleuse Planétaire Brillante"
+      b_rneb: "Nébuleuse par Réflexion Brillante"
+      b_snr: "Supernova Brillante"
+
+      # Types génériques
+      deep_sky_object: "Objet Ciel Profond"
+      sky_object: "Objet Céleste"
+
+  btn_edit: "Modifier la cible"
+  btn_update: "Mettre à jour la cible"
+  btn_add_session: "Ajouter une session"
+  btn_update_telescopius: "Mettre à jour depuis Telescopius™"
+  telescopius_search_name: "Nom à rechercher sur Telescopius™"
+  btn_refresh_storage: "Rafraîchir depuis le stockage"
+  btn_download_nina: "Télécharger la séquence N.I.N.A.™"
+  btn_create_session: "Créer une session"
+  btn_view_all: "Voir tout"
+  btn_create_new: "Créer"
+  col_session_date: "Date de session"
+  section_sessions: "Sessions de la cible"
+  section_documents: "Documents"
+  no_sessions: "Aucune session pour l'instant !"
+  no_documents: "Aucun document pour cette cible"
+  progress_tracker:
+    title: "Progress Tracker"
+    no_data: "Aucune exposition enregistrée"
+    edit_goal: "Modifier l'objectif"
+    add_goal: "Ajouter un objectif"
+    filter_placeholder: "Filtre"
+    exclude_session: "Exclure du Progress Tracker"
+    include_session: "Inclure dans le Progress Tracker"
+  shooting_advice:
+    title: "Conseils de shooting"
+    computing: "Calcul en cours…"
+    no_observatory: "Configurez un observatoire favori pour calculer les conseils de shooting"
+    filters: "Filtres recommandés"
+    best_nights: "Meilleures nuits (30j)"
+    best_months: "Meilleure saison (12 mois)"
+    useful_hours: "h utiles"
+    moon_sep: "sep. lune"
+    score_broadband: "Broadband"
+    score_narrowband: "Narrowband"
+
+parts:
+  type:
+    main-scope: '🔭 Télescope d''acquisition'
+    main-cam: '📷 Caméra d''acquisition'
+    mount: '⚙️ Monture'
+    filter: '🟣 Filtre'
+    filters: '🟣 Filtres'
+    accessory: '🧩 Accessoire'
+    accessories: '🧩 Accessoires'
+    software: '💻 Logiciel'
+    softwares: '💻 Logiciels'
+    guiding-scope: '🔹 Lunette de guidage'
+    guiding-cam: '🎯 Caméra de guidage'
+
+# ── Navigation ───────────────────────────────────────────────────────────────
+nav:
+  objects: "Objets"
+  management: "Gestion"
+  targets: "Cibles"
+  sessions: "Sessions"
+  night_planner: "Night Planner"
+  settings: "Paramètres"
+  authors: "Auteurs"
+  observatories: "Observatoires"
+  setups: "Configurations"
+  documents: "Documents"
+  toggle_sidebar: "Réduire/agrandir la barre"
+  toggle_theme: "Basculer mode sombre/clair"
+
+# ── Base layout ───────────────────────────────────────────────────────────────
+breadcrumb:
+  home: "Accueil"
+
+datatable:
+  search: "Rechercher :"
+  search_placeholder: "Rechercher…"
+  length_menu: "Afficher _MENU_ éléments"
+  info: "Affichage _START_–_END_ sur _TOTAL_ éléments"
+  info_empty: "Aucun élément"
+  empty_table: "Aucune donnée disponible"
+  paginate:
+    previous: "Préc."
+    next: "Suiv."
+
+# ── Flash messages ────────────────────────────────────────────────────────────
+flash:
+  targets_refreshed: "Cibles rafraîchies depuis le stockage."
+  sessions_root_not_found: "Dossier racine des sessions introuvable : %path%"
+  author_created: 'Auteur "%name%" créé avec succès.'
+  target_exists: 'La cible "%name%" existe déjà.'
+  target_created: 'Cible "%name%" créée avec succès.'
+
+# ── Forms ─────────────────────────────────────────────────────────────────────
+form:
+  setup_part:
+    type:
+      label: "Type"
+      main_scope: "🔭 Télescope d'acquisition"
+      main_cam: "📷 Caméra d'acquisition"
+      mount: "⚙️ Monture"
+      filter: "🟣 Filtre"
+      accessory: "🧩 Accessoire"
+      software: "💻 Logiciel"
+      guiding_scope: "🔹 Lunette de guidage"
+      guiding_cam: "🎯 Caméra de guidage"
+    make:
+      label: "Marque"
+      placeholder: "Marque du composant"
+    model:
+      label: "Modèle"
+      placeholder: "Modèle du composant"
+    url:
+      label: "URL"
+      placeholder: "URL vers la page produit"
+    notes:
+      label: "Notes"
+    images:
+      label: "Téléverser des images"
+      error: "Veuillez téléverser un fichier image valide."
+  setup:
+    name:
+      label: "Nom"
+      placeholder: "Nom de la configuration"
+    notes:
+      label: "Notes"
+    logo:
+      label: "Logo"
+    parts:
+      label: "Composants"
+    sensor:
+      label: "Optique & Capteur"
+    sensor_w_px:
+      label: "Largeur capteur (px)"
+    sensor_h_px:
+      label: "Hauteur capteur (px)"
+    pixel_size_um:
+      label: "Taille pixel (µm)"
+    focal_mm:
+      label: "Focale (mm)"
+    slew_time_min:
+      label: "Temps de slew (min)"
+    autofocus_time_min:
+      label: "Durée autofocus (min)"
+    autofocus_interval_min:
+      label: "Intervalle autofocus (min)"
+    meridian_flip_time_min:
+      label: "Retournement méridien (min)"
+    min_shoot_time_min:
+      label: "Shoot effectif minimum (min)"
+    imaging_type:
+      label: "Type d'imagerie"
+    camera_cooling_temp:
+      label: "Température refroidissement (°C)"
+    camera_gain:
+      label: "Gain caméra (-1 = auto)"
+    camera_offset:
+      label: "Offset caméra (-1 = auto)"
+    camera_binning:
+      label: "Binning"
+    dither_every:
+      label: "Dithering toutes les N poses"
+  doc:
+    title:
+      label: "Titre"
+      placeholder: "Titre"
+    doc:
+      label: "Document"
+    upload:
+      label: "Téléverser un fichier"
+    type:
+      label: "Type"
+      alert: "Alerte"
+      todo: "À faire"
+  existing_images: "Images existantes :"
+  delete_image: "Supprimer cette image"
+
+# ── Home ──────────────────────────────────────────────────────────────────────
+home:
+  title: "Dernières expositions ingérées"
+  empty: "Aucune donnée pour le moment. Lance <code>app:catalog:scan</code> pour commencer."
+  btn_view_fits: "Voir FITS"
+
+# ── Browse — Targets ──────────────────────────────────────────────────────────
+targets:
+  title: "Cibles"
+  hide_empty: "Masquer les cibles vides"
+  sort_order: "Trier par..."
+  sort_alpha: "Alphabétique"
+  sort_sessions: "Nombre de sessions"
+  sort_last_session: "Dernière session"
+  btn_add: "Ajouter une cible"
+  btn_wishlist: "Ajouter / retirer de la wish list"
+  btn_find_new: "Trouver une nouvelle cible"
+  btn_update: "Mettre à jour depuis le stockage"
+  btn_create: "Créer la cible"
+  name_placeholder: "Nom quelconque"
+  confirm_delete: "Confirmer la suppression ?"
+  col_name: "Nom de la cible"
+  col_sessions: "Sessions"
+  col_lights: "Lights"
+  col_dof: "DOF"
+  col_masters: "Masters"
+  col_exports: "Exports"
+
+sessions:
+  filter_placeholder: "Filtrer par cible..."
+  sort_order: "Trier par..."
+  sort_date_desc: "Date (récent)"
+  sort_date_asc: "Date (ancien)"
+  sort_alpha: "Alphabétique"
+  view_month: "Mois"
+  view_year: "Année"
+  today: "Aujourd'hui"
+
+# ── Browse — Session detail ───────────────────────────────────────────────────
+session:
+  btn_set_as_preview: "Définir comme preview"
+  btn_set_as_preview_done: "Preview définie !"
+  btn_edit: "Modifier la session"
+  btn_open_local: "Ouvrir le fichier localement"
+  btn_update: "Mettre à jour la session"
+  confirm_delete: "Confirmer la suppression ?"
+  tab_lights: "Lights"
+  tab_dofs: "DOFs"
+  tab_logs: "Logs"
+  tab_masters: "Masters"
+  tab_exports: "Exports"
+  stat_lights: "LIGHTS"
+  stat_filters: "FILTRES"
+  stat_duration: "DURÉE"
+  stat_masters: "MASTERS"
+  stat_exports: "EXPORTS"
+  stat_views: "VUES"
+  stat_likes: "LIKES"
+  stat_bookmarks: "FAVORIS"
+  stat_comments: "COMMENTAIRES"
+  weather_title: "Météo de session (depuis les entêtes LIGHT)"
+  weather_ambient: "Ambiance (°C)"
+  weather_dewpoint: "Point de rosée (°C)"
+  weather_humidity: "Humidité (%)"
+  weather_cloud: "Couverture nuageuse (%)"
+  weather_pressure: "Pression (hPa)"
+  weather_wind: "Vent (m/s)"
+  weather_gust: "Rafales (m/s)"
+  weather_airmass: "Masse d'air"
+  weather_light_frames: "Frames light"
+  weather_all_days: "Tous"
+  preview: "Aperçu"
+  exposure_preview: "Aperçu de l'exposition"
+  unit_export: "EXPORT"
+  unit_master: "MASTER"
+  unit_calibration: "CALIBRATION"
+  unit_guiding: "GUIDAGE"
+  unit_dark: "DARK"
+  unit_flat: "FLAT"
+  unit_offset: "OFFSET"
+  notes_title: "Notes"
+  notes_placeholder: "Aucune note. Cliquez sur l'icône stylo pour ajouter."
+  notes_save: "Enregistrer"
+  timeline:
+    light: "light,"
+    dofs: "DOFs,"
+    masters: "masters,"
+    exports: "exports et"
+    logs: "logs"
+  consistency_warning: "Incohérence dans l'arborescence des dossiers"
+  missing_folder: "Dossiers manquants"
+  unexpected_folder: "Dossiers inattendus avec fichiers"
+  refresh:
+    title: "Rafraichir depuis le stockage"
+    counting: "Analyse des fichiers..."
+    total_files: "%count% fichiers detectes"
+    confirm_text: "Toutes les donnees existantes seront purgees et re-extraites du stockage."
+    step:
+      purge: "Purge des donnees existantes"
+      raws: "Lights / Darks / Flats / Bias"
+      phd2: "Logs PHD2"
+      masters: "Masters"
+      exports: "Exports"
+    processing: "en cours..."
+    done: "termine"
+    files: "fichiers"
+    complete: "Rafraichissement termine"
+    btn_start: "Demarrer"
+    btn_close: "Fermer et recharger"
+    error: "Une erreur est survenue"
+    no_files: "Aucun fichier trouve sur le stockage"
+
+# ── Browse — Find new targets ─────────────────────────────────────────────────
+new_targets:
+  title: "Trouver de nouvelles cibles"
+  min_altitude: "Altitude minimale (°)"
+  min_altitude_placeholder: "Altitude minimale"
+  min_duration: "Durée minimale (min)"
+  min_duration_placeholder: "Durée minimale"
+  min_moon_distance: "Distance lunaire minimale (°)"
+  min_moon_distance_placeholder: "Distance lunaire minimale"
+  max_magnitude: "Magnitude visuelle max."
+  max_magnitude_placeholder: "Magnitude max."
+  col_magnitude: "Magnitude"
+  col_altitude: "Altitude"
+  col_azimuth: "Azimut"
+  col_transit: "Transit"
+  btn_add: "Ajouter"
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+dashboard:
+  no_observatory_title: "Aucun observatoire favori"
+  no_observatory_message: "Configurez un observatoire et marquez-le comme favori pour afficher le tableau de bord."
+  configure_observatory: "Configurer un observatoire"
+  btn_view_all: "Voir tout"
+  btn_create_new: "Créer"
+  live_view_title: "Vue en direct"
+  weather_title: "Prévisions météo astro"
+  cloud_cover: "☁️ Couverture nuageuse (%)"
+  cloud_high: "☁️ Nuages hauts (%)"
+  cloud_medium: "☁️ Nuages moyens (%)"
+  cloud_low: "☁️ Nuages bas (%)"
+  seeing: "👁️ Seeing (arc s)"
+  transparency: "🔭 Transparence (0–1)"
+  wind: "💨 Vent (m/s)"
+  precipitation: "🌧️ Précip. (mm)"
+  condition_score: "⭐ Score de condition (%)"
+  temperature: "🌡️ Température (°C)"
+  alerts:
+    title: "Alertes du soir"
+    weather_favorable: "Météo favorable cette nuit"
+    weather_unfavorable: "Météo défavorable"
+    weather_unavailable: "Données météo indisponibles"
+    wishlist_tonight: "Wish list — ce soir"
+    no_targets: "Aucune cible en wish list ou observable ce soir"
+    computing: "Calcul en cours…"
+    more_targets: "+ {count} autres"
+    plan_title: "Planning de nuit"
+  counters:
+    targets: "Cibles"
+    sessions: "Sessions"
+    authors: "Auteurs"
+    observatories: "Observatoires"
+
+# ── Authors ───────────────────────────────────────────────────────────────────
+author:
+  btn_add: "Ajouter un auteur"
+  btn_create: "Créer l'auteur"
+  name_placeholder: "Nom quelconque"
+  col_images: "Images"
+  col_image_index: "Index d'images"
+  col_views: "Vues"
+  col_likes: "Likes"
+  col_followers: "Abonnés"
+  col_following: "Abonnements"
+
+# ── Observatories ─────────────────────────────────────────────────────────────
+observatory:
+  altitude_horizon: "Altitude horizon min (°)"
+  live: "URL live stream"
+  btn_add: "Ajouter un observatoire"
+  btn_create: "Créer l'observatoire"
+  btn_edit: "Modifier l'observatoire"
+  btn_update: "Mettre à jour"
+  label_authors: "👥 Auteurs :"
+  label_setups: "🔭 Configurations :"
+
+# ── Setup ─────────────────────────────────────────────────────────────────────
+setup:
+  btn_add: "Ajouter une configuration"
+  section_general: "Général"
+  section_optics: "Optique"
+  section_planning: "Night Planner — Temps d'overhead"
+  section_parts: "Composants"
+  section_nina_filters: "Filtres NINA (roue à filtres)"
+  btn_add_part: "Ajouter un composant"
+  label_author: "👥 Auteur :"
+  label_observatory: "📍 Observatoire :"
+  btn_remove: "Supprimer"
+
+# ── Documents ─────────────────────────────────────────────────────────────────
+doc:
+  title: "Documents"
+  btn_add: "Ajouter un document"
+  btn_edit: "Modifier le document"
+  col_title: "Titre"
+  col_creation: "Création"
+  col_update: "Mise à jour"
+  col_target: "Cible"
+  col_session: "Session"
+  col_action: "Action"
+  confirm_delete: "Confirmer ?"
+
+# ── Alpaca ────────────────────────────────────────────────────────────────────
+alpaca:
+  device_number: "Appareil #0"
+  btn_configure: "Configurer"
+  inaccessible: "Alpaca inaccessible : %error%"
+  safety:
+    title: "SafetyMonitor"
+    col_name: "Nom"
+    col_location: "Lieu"
+    col_condition: "Condition actuelle"
+    col_is_safe: "IsSafe"
+    col_last_update: "Dernière MAJ"
+    yes: "OUI"
+    no: "NON"
+  switch:
+    title: "Switch"
+    items_configured: "item(s) configuré(s)"
+    on: "ON"
+    off: "OFF"
+  safetymonitor_setup:
+    server_unreachable: "Impossible de contacter le serveur Alpaca :"
+    safe: "Observation possible"
+    not_safe: "Observation IMPOSSIBLE"
+    label_condition: "Condition :"
+    label_last_update: "Dernière MAJ :"
+    label_never: "jamais"
+    section_device: "Appareil"
+    label_device_name: "Nom du device"
+    label_location: "Lieu"
+    section_coords: "Coordonnées de l'observatoire"
+    label_latitude: "Latitude"
+    label_longitude: "Longitude"
+    label_altitude: "Altitude (m)"
+    label_timezone: "Fuseau horaire (IANA)"
+    placeholder_timezone: "Europe/Paris"
+    label_forecast_url: "URL du forecast"
+    section_unsafe: "Conditions non sûres"
+    unsafe_hint: "N.I.N.A. recevra <code>IsSafe=false</code> si la condition actuelle est cochée ici."
+    btn_save: "Enregistrer & rafraîchir"
+    btn_back: "Retour"
+  switch_setup:
+    title: "Items configurés"
+    hint: "persisté dans <code>switch_config.json</code>"
+    col_id: "Id"
+    col_type: "Type"
+    col_name: "Nom"
+    col_description: "Description"
+    col_value: "Valeur"
+    col_min: "Min"
+    col_max: "Max"
+    col_step: "Pas"
+    type_switch: "SWITCH"
+    type_gauge: "JAUGE"
+    no_items: "Aucun item configuré."
+    btn_save: "Enregistrer les modifications"
+    btn_add: "Ajouter un item"
+    add_form:
+      label_type: "Type"
+      option_switch: "Switch (booléen)"
+      option_gauge: "Jauge (analogique)"
+      label_name: "Nom"
+      placeholder_name: "Mon switch"
+      label_description: "Description"
+      label_min: "Min"
+      label_max: "Max"
+      label_step: "Pas"
+      btn_submit: "Ajouter"
+
+# ── FITS / Exposures ──────────────────────────────────────────────────────────
+fits:
+  title: "Exposition FITS #%id%"
+  btn_load: "Charger"
+
+exposure:
+  title: "Détails de l'exposition"
+  btn_open_local: "Ouvrir le fichier localement"
+  nef_viewer:
+    bp: "Noir"
+    wp: "Blanc"
+    apply: "Appliquer"
+
+master:
+  title: "Détails du master"
+  btn_open_local: "Ouvrir le fichier localement"
+
+image:
+  title: "Détails de l'export"
+  btn_open_local: "Ouvrir le fichier localement"
+  label_true: "VRAI"
+  label_false: "FAUX"
+
+# ── PHD2 ─────────────────────────────────────────────────────────────────────
+phd2:
+  calibration:
+    title: "Calibration PHD2"
+    btn_open_local: "Ouvrir le fichier localement"
+    btn_hide: "Masquer"
+    col_time: "TEMPS"
+    col_orthogonality: "ORTHOGONALITÉ"
+    col_angle: "ANGLE"
+    col_rate: "TAUX"
+    graph_title: "Graphe de calibration PHD2"
+    btn_flip_ns: "Inverser N/S"
+    btn_flip_ew: "Inverser E/O"
+    btn_show_return: "Afficher les lignes de retour"
+  guiding:
+    title: "Détails du guidage PHD2"
+    btn_open_local: "Ouvrir le fichier localement"
+    btn_hide: "Masquer"
+    col_time: "TEMPS"
+    col_expo: "EXPO"
+    col_frames: "FRAMES"
+    col_rms: "RMS"
+    graph_title: "Graphe de guidage PHD2"
+    filter_full: "Complet"
+    filter_5min: "5 dernières min"
+    filter_15min: "15 dernières min"
+    filter_30min: "30 dernières min"
+    exclude_dither: "Exclure dither/stabilisation"
+    show_dither: "Afficher les bandes de dither"
+    axis_ra_error: "Erreur AR (″)"
+    axis_dec_error: "Erreur Déc (″)"
+    axis_ra_correction: "Correction AR (ms)"
+    axis_dec_correction: "Correction Déc (ms)"
+    label_error: "Erreur (arcsec)"
+    label_correction: "Correction (ms)"
+    label_period: "Période (s)"
+    label_amplitude: "Amplitude (arcsec)"
+
+night_planner:
+  title: "Night Planner"
+  night_of: "Nuit du"
+  wishlist_only: "Wish list uniquement"
+  compute: "Calculer"
+  computing: "Calcul en cours…"
+  no_results: "Aucune cible observable cette nuit-là."
+  col_target: "Cible"
+  col_window: "Fenêtre"
+  col_useful_h: "Heures utiles"
+  col_effective_h: "Shoot effectif"
+  col_moon: "Lune"
+  col_deficit: "Déficit"
+  col_score: "Score"
+  col_framing: "Cadrage"
+  plan_title: "Planning de nuit"
+  no_framing_section: "Wish list — cadrage non configuré pour ce setup"
+  no_framing_badge: "Sans cadrage"
+  export_nina: "Exporter la séquence NINA"
+
+framing:
+  title: "Cadrage"
+  setup:
+    label: "Setup"
+    no_optics: "Setup sans données optiques"
+  fov:
+    label: "Champ de vue"
+  ra:
+    label: "A.D. (heures)"
+  dec:
+    label: "Déc. (degrés)"
+  rotation:
+    label: "Rotation (°)"
+  preview:
+    loading: "Chargement…"
+  save: "Enregistrer"
+  saved: "Cadrage sauvegardé"
+  no_optics_warning: "Configurez les données optiques du setup pour activer l'aperçu."
+  filters:
+    label: "Filtres à utiliser (export NINA)"
+    all: "Tous"
+    no_setup: "Sélectionnez un setup pour choisir les filtres"
+
+
+settings:
+  title: "Paramètres"
+  save: "Enregistrer"
+  saved: "Paramètres sauvegardés."
+  more_sections: "Autres paramètres"
+  more_sections_help: "D'autres sections seront ajoutées ici (scan, affichage, intégrations…)"
+  filters:
+    title: "Filtres"
+    color: "Couleur"
+    label: "Label"
+    band: "Bande"
+    aliases: "Alternatives"
+    aliases_help: "Noms alternatifs séparés par virgule (insensible à la casse). BB = large bande, NB = bande étroite."
+    add: "Ajouter un filtre"
+  template:
+    title: "Arborescence des sessions"
+    help: "Personnalisez l'arborescence de dossiers créée pour chaque nouvelle session. Chacun des 9 rôles (LIGHT, DARK, BIAS, FLAT, MASTER, EXPORT, LOG_NINA, LOG_PHD2, DOC) doit être assigné à exactement un dossier."
+    add_root: "Ajouter un dossier racine"
+    reset: "Réinitialiser par défaut"
+    roles_valid: "Les 9 rôles sont assignés."
+    roles_missing: "Rôles manquants"
+    roles_duplicate: "Rôles en doublon"
+    allow_extra: "Autoriser les sous-dossiers libres"
+    invalid_json: "Données de template invalides."
+    migrate_zone: "Appliquer aux sessions existantes"
+    migrate_btn: "Migrer les sessions existantes"
+    migrate_confirm: "Ceci va déplacer les fichiers des sessions existantes pour correspondre au nouveau template. Continuer ?"
+    migrate_dispatched: "Migration lancée. Vous recevrez une notification à la fin."
+    dry_run_btn: "Prévisualiser les changements"
+  sessions_root:
+    title: "Dossier racine des sessions"
+    help: "Dossier contenant toutes les cibles et sessions d'astrophotographie."
+    current_path: "Chemin actuel"
+    browse: "Parcourir"
+    select: "Sélectionner ce dossier"
+    go_up: "Dossier parent"
+    reset_env: "Réinitialiser (variable d'env)"
+    using_env: "Variable d'environnement"
+    using_custom: "Personnalisé"
+    not_found: "Ce dossier n'existe pas sur le serveur."
+    empty_dir: "Aucun sous-dossier."
+  notifications:
+    title: "Notifications & Alertes"
+    emails: "Adresses email destinataires"
+    emails_help: "Une adresse par ligne. Seules les adresses valides sont conservées."
+    weather_thresholds: "Seuils météo"
+    cloud_max: "Couverture nuageuse max"
+    wind_max: "Vent max"
+    precip_max: "Précipitations max"
+    astro_thresholds: "Seuils astronomiques"
+    min_useful_hours: "Heures utiles minimum"
+    min_moon_sep: "Séparation lunaire minimum"
+
+# ── Notifications ─────────────────────────────────────────────────────────────
+notif:
+  title: "Notifications"
+  bell_title: "Notifications"
+  empty: "Aucune notification"
+  mark_all_read: "Tout marquer comme lu"
+  see_all: "Voir tout"
+  unread: "non lue(s)"
+  evening_alert_title: "Bonne nuit ce soir"
+
+# ── FS Scan ───────────────────────────────────────────────────────────────────
+scan:
+  scanning: "Analyse du stockage en cours..."
+  changes_detected: "Changements détectés sur le stockage"
+  changes_detected_files: "Changements détectés dans cette session"
+  new_target_item: "{name} (nouvelle cible)"
+  missing_target_item: "{name} (cible manquante)"
+  new_session_item: "{name} (nouvelle session)"
+  missing_session_item: "{name} (session manquante)"
+  new_files: "{count} nouveau(x) fichier(s) {role}"
+  missing_files: "{count} fichier(s) {role} manquant(s)"
+  apply: "Appliquer les changements"
+  apply_files: "Synchroniser les fichiers"
+  ignore: "Ignorer"
+  refresh: "Re-scanner"
+  applying: "Application en cours..."
+  applied_error: "Erreur lors de l'application"
+  confirm_remove: "Les éléments manquants seront supprimés de la base de données. Continuer ?"

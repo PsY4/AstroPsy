@@ -1,0 +1,39 @@
+# Git & CI
+.git
+.github
+.gitignore
+
+# Local dev tooling
+.claude
+.mcp.json
+.playwright-mcp
+
+# Tests & dev
+tests/
+memory/
+phpunit.xml.dist
+var/
+
+# Vendor (installed in multi-stage build)
+vendor/
+
+# Other services (built separately)
+alpaca_server/
+python/
+
+# Dev compose override
+compose.override.yaml
+docker-compose.override.yml
+
+# Screenshots & misc images
+*.png
+*.jpg
+*.jpeg
+
+# Misc dev files
+*.json.bak
+symfony-qmd-mask.md
+
+# OS files
+.DS_Store
+Thumbs.db

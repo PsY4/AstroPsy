@@ -1,0 +1,262 @@
+{% set pageTitle = 'targets.title'|trans %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+    <div class="d-flex gap-2 flex-nowrap justify-content-end">
+        {# Groupe 1 : options d'affichage #}
+        <div class="input-group flex-nowrap mb-3" style="width:auto">
+            <div class="input-group-text b-r-left bg-light-primary b-1-primary b-r-4 btn-sm">
+                <input aria-label="Checkbox for following text input" class="form-check-input mt-0" type="checkbox" value="" id="cb_filter_empty">
+                <label for="cb_filter_empty">&nbsp;{{ 'targets.hide_empty'|trans }}</label>
+            </div>
+            <select class="form-select btn-outline-primary btn-sm" id="sort-select">
+                <option value="">{{ 'targets.sort_order'|trans }}</option>
+                <option value="name">{{ 'targets.sort_alpha'|trans }}</option>
+                <option value="sessions">{{ 'targets.sort_sessions'|trans }}</option>
+                <option value="last-session">{{ 'targets.sort_last_session'|trans }}</option>
+            </select>
+            <button class="btn btn-outline-primary btn-sm b-r-right" id="sort-dir" title="ASC/DESC">
+                <i class="ti ti-sort-ascending"></i>
+            </button>
+        </div>
+        {# Groupe 2 : actions sur les données #}
+        <div class="input-group flex-nowrap mb-3" style="width:auto">
+            <button class="btn btn-primary btn-sm b-r-left" data-bs-target="#createModal"
+                    data-bs-toggle="modal"
+                    type="button"><i class="ti ti-plus"></i> {{ 'targets.btn_add'|trans }}
+            </button>
+            <a href="{{ path('targets_find_new') }}"
+               title="{{ 'targets.btn_find_new'|trans }}"
+               class="btn btn-outline-primary btn-sm">
+                <i class="fa fa-fw primary fa-search"></i> {{ 'targets.btn_find_new'|trans }}
+            </a>
+            <a href="{{ path('targets_refresh') }}"
+               title="{{ 'targets.btn_update'|trans }}"
+               class="btn btn-outline-primary btn-sm b-r-right">
+                <i class="fa fa-fw primary fa-refresh"></i> {{ 'targets.btn_update'|trans }}
+            </a>
+        </div>
+    </div>
+{% endblock %}
+{% block body %}
+
+<div id="fs-scan-container"
+     data-scan-url="{{ path('api_scan_targets') }}"
+     data-scan-apply-url="{{ path('api_scan_targets_apply') }}"
+     data-scan-level="targets"
+     data-scan-trans="{{ {
+         scanning: 'scan.scanning'|trans,
+         changes_detected: 'scan.changes_detected'|trans,
+         new_target_item: 'scan.new_target_item'|trans,
+         missing_target_item: 'scan.missing_target_item'|trans,
+         apply: 'scan.apply'|trans,
+         ignore: 'scan.ignore'|trans,
+         refresh: 'scan.refresh'|trans,
+         applying: 'scan.applying'|trans,
+         applied_error: 'scan.applied_error'|trans,
+         confirm_remove: 'scan.confirm_remove'|trans,
+     }|json_encode|e('html_attr') }}">
+</div>
+
+<div aria-hidden="true" aria-labelledby="createModalLabel" class="modal fade"
+         id="createModal"
+         tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" id="staticBackdrop">
+            <div class="modal-content">
+                <form action="{{ path("new_target") }}">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="createModalLabel1">{{ 'targets.btn_create'|trans }}</h1>
+                        <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3" id="newtask">
+                            <label class="form-label">{{ 'targets.col_name'|trans }}</label>
+                            <input class="form-control todo-inputs" id="targetName" name="targetName"
+                                   placeholder="{{ 'targets.name_placeholder'|trans }}" required="required"
+                                   type="text">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" id="push"
+                                type="submit">{{ 'targets.btn_create'|trans }}
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+<div class="row">
+    {% for target in targets|filter(v => '--' not in v.name) %}
+    <div class="col-md-3 one-session"
+         data-sessions="{{ stats[target.id].sessions ?? 0 }}"
+         data-name="{{ target.name|lower }}"
+         data-last-session="{{ stats[target.id].last_session_ts ?? 0 }}"
+         {% if (stats[target.id].sessions ?? 0) < 1 %}style="opacity: 0.6; filter: gray; -webkit-filter: grayscale(1); filter: grayscale(1);"{% endif %}
+         data-isempty="{{ ((stats[target.id].sessions ?? 0) == 0) ? 'true' : 'false' }}"
+    >
+        <div class="card team-box-card hover-effect overflow-hidden">
+            <ul class="avatar-group float-end breadcrumb-start position-absolute z-3"
+                style="top:5px; right:5px">
+                {% for author in authorsPerTarget[target.id] ?? [] %}
+                    <li class="h-30 w-30 d-flex-center b-r-50 position-relative" data-bs-title="{{ author.name }}" data-bs-toggle="tooltip">
+                        <img alt="{{ author.name }}" class="img-fluid b-r-50 overflow-hidden" src="{{ author.logo }}">
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="team-box">
+                <img alt="{{ target.name }}" class="card-img-top"
+                     src="{{ path('target_preview', {id: target.id}) }}">
+                <a href="{{ path('browse_target', {id: target.id}) }}"
+                style="width: 100%;height: 100%;top: 0;left: 0;display: block;bottom: 0;right: 0;position: absolute;z-index: 9;">
+                </a>
+            </div>
+            <div class="taem-content">
+                <div class="mb-3 mt-3">
+                    <h3 style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0;padding:0 10px"><a href="{{ path('browse_target', {id: target.id}) }}">{{ target.name }}</a></h3>
+                    <p>{% if target.type %}{{ ("target.details.type."~(target.type|split(",")[0]))|trans }}{% else %}&nbsp;{% endif %}</p>
+                </div>
+                <div class="team-details">
+                    <div class="taem-contentbox">
+                        <p class="f-w-500">{{ 'targets.col_sessions'|trans }}</p>
+                        <p class="text-center">{{ stats[target.id].sessions }}</p>
+                    </div>
+                    <div class="taem-contentbox">
+                        <p class="f-w-500">{{ 'targets.col_lights'|trans }}</p>
+                        <p class="text-center">{{ stats[target.id].lights }}</p>
+                    </div>
+                    <div class="taem-contentbox">
+                        <p class="f-w-500">{{ 'targets.col_dof'|trans }}</p>
+                        <p class="text-center">{{ stats[target.id].dofs }}</p>
+                    </div>
+                    <div class="taem-contentbox">
+                        <p class="f-w-500">{{ 'targets.col_masters'|trans }}</p>
+                        <p class="text-center">{{ stats[target.id].masters }}</p>
+                    </div>
+                    <div class="taem-contentbox">
+                        <p class="f-w-500">{{ 'targets.col_exports'|trans }}</p>
+                        <p class="text-center">{{ stats[target.id].exports }}</p>
+                    </div>
+                </div>
+                <div class="p-2 mb-3">
+                    <a href="{{ path('browse_target', {id: target.id}) }}"
+                       class="btn btn-light-success icon-btn b-r-22 me-2">
+                        <i class="ti ti-eye text-success"></i>
+                    </a>
+                    <button type="button"
+                            class="btn icon-btn b-r-22 me-2 btn-wishlist"
+                            data-id="{{ target.id }}"
+                            data-wishlist="{{ target.isWishlist ? '1' : '0' }}"
+                            title="{{ 'targets.btn_wishlist'|trans }}">
+                        <i class="fa fa-star {% if target.isWishlist %}text-warning{% else %}text-muted{% endif %}"></i>
+                    </button>
+                    <form method="post" action="{{ path('delete_target', {id: target.id}) }}" style="display:inline" onsubmit="return confirm('{{ 'targets.confirm_delete'|trans }}')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete_target_' ~ target.id) }}">
+                        <button type="submit" class="btn btn-light-warning icon-btn b-r-22 me-2">
+                            <i class="ti ti-trash text-danger"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<!-- Default Datatable end -->
+{% endblock %}
+{% block page_scripts %}
+    <script>
+    const WISHLIST_URL = '{{ path('target_wishlist_toggle', {id: 0}) }}'.replace('/0/', '/XXXX/');
+
+    document.querySelectorAll('.btn-wishlist').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const id  = this.dataset.id;
+            const url = WISHLIST_URL.replace('XXXX', id);
+            fetch(url, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    const icon = this.querySelector('i');
+                    if (data.wishlist) {
+                        icon.className = 'fa fa-star text-warning';
+                    } else {
+                        icon.className = 'fa fa-star text-muted';
+                    }
+                    this.dataset.wishlist = data.wishlist ? '1' : '0';
+                });
+        });
+    });
+
+    const FILTER_EMPTY_KEY = 'targets_filter_empty';
+
+    // Restore filter state
+    if (localStorage.getItem(FILTER_EMPTY_KEY) === 'true') {
+        $('#cb_filter_empty').prop('checked', true);
+        $('.one-session[data-isempty="true"]').hide();
+    }
+
+    $("#cb_filter_empty").change(function () {
+        const checked = $(this).is(':checked');
+        localStorage.setItem(FILTER_EMPTY_KEY, checked ? 'true' : 'false');
+        if (checked) {
+            $('.one-session[data-isempty="true"]').hide(250)
+        } else {
+            $('.one-session[data-isempty="true"]').show(250)
+        }
+    });
+
+    const SORT_KEY = 'targets_sort_key';
+    const SORT_DIR = 'targets_sort_dir';
+
+    let sortDir = localStorage.getItem(SORT_DIR) || 'desc';
+    const savedKey = localStorage.getItem(SORT_KEY) || 'last-session';
+
+    // Restore UI state
+    $('#sort-select').val(savedKey);
+    if (sortDir === 'desc') {
+        $('#sort-dir i').removeClass('ti-sort-ascending').addClass('ti-sort-descending');
+    }
+
+    function applySort() {
+        const key = $('#sort-select').val();
+        if (!key) return;
+
+        localStorage.setItem(SORT_KEY, key);
+        localStorage.setItem(SORT_DIR, sortDir);
+
+        const $grid = $('.one-session').parent();
+        const $items = $grid.children('.one-session').toArray();
+
+        $items.sort(function (a, b) {
+            let va, vb;
+            if (key === 'name') {
+                va = $(a).data('name');
+                vb = $(b).data('name');
+            } else if (key === 'sessions') {
+                va = parseInt($(a).data('sessions'));
+                vb = parseInt($(b).data('sessions'));
+            } else if (key === 'last-session') {
+                va = parseInt($(a).data('last-session'));
+                vb = parseInt($(b).data('last-session'));
+            }
+            if (va < vb) return sortDir === 'asc' ? -1 : 1;
+            if (va > vb) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        $items.forEach(el => $grid.append(el));
+    }
+
+    // Apply on load
+    applySort();
+
+    $('#sort-select').change(applySort);
+
+    $('#sort-dir').click(function () {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        $(this).find('i').toggleClass('ti-sort-ascending ti-sort-descending');
+        applySort();
+    });
+    </script>
+    <script src="{{ asset('assets/js/fs-scan.js') }}"></script>
+{% endblock %}

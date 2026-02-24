@@ -1,0 +1,14 @@
+<span class="session-file"
+      data-id="{{ m.id }}"
+      data-type="{{ m.type }}">
+    <small style="font-size: 12px">
+        {{ 'session.unit_master'|trans }}
+    </small><br>
+    <strong>{{ m.header.metadata.FITS.IMAGETYP|replace({"Master":""})|upper }}</strong><br>
+    <small style="font-size: 12px">
+        {{ m.type }}
+    </small><br>
+    <small style="font-size: 10px">
+        #{{ loop.index }} - {{ m.type }}
+    </small>
+</span>

@@ -1,0 +1,96 @@
+{% extends 'base.html.twig' %}
+{% set pageTitle = 'Alpaca' %}
+
+{% block body %}
+<div class="row g-4">
+
+    {# ── SafetyMonitor card ── #}
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="fa fa-fw fa-shield-halved text-success"></i>
+                <strong>{{ 'alpaca.safety.title'|trans }}</strong>
+                <span class="badge bg-secondary ms-auto">{{ 'alpaca.device_number'|trans }}</span>
+            </div>
+            <div class="card-body">
+                {% if sm.error is defined %}
+                    <div class="alert alert-warning py-2 mb-2">
+                        <i class="fa fa-triangle-exclamation"></i>
+                        {{ 'alpaca.inaccessible'|trans({'%error%': sm.error}) }}
+                    </div>
+                {% else %}
+                    <table class="table table-sm mb-3">
+                        <tr>
+                            <th>{{ 'alpaca.safety.col_name'|trans }}</th>
+                            <td>{{ sm.config.device_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'alpaca.safety.col_location'|trans }}</th>
+                            <td>{{ sm.config.location }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'alpaca.safety.col_condition'|trans }}</th>
+                            <td>{{ sm.weather.condition }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'alpaca.safety.col_is_safe'|trans }}</th>
+                            <td>
+                                {% if sm.weather.is_safe %}
+                                    <span class="badge bg-success">{{ 'alpaca.safety.yes'|trans }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ 'alpaca.safety.no'|trans }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'alpaca.safety.col_last_update'|trans }}</th>
+                            <td>{{ sm.weather.last_updated ?? '—' }}</td>
+                        </tr>
+                    </table>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{{ path('alpaca_setup_safetymonitor', {deviceNumber: 0}) }}" class="btn btn-sm btn-primary">
+                    <i class="fa fa-fw fa-gear"></i> {{ 'alpaca.btn_configure'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# ── Switch card ── #}
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="fa fa-fw fa-toggle-on text-info"></i>
+                <strong>{{ 'alpaca.switch.title'|trans }}</strong>
+                <span class="badge bg-secondary ms-auto">{{ 'alpaca.device_number'|trans }}</span>
+            </div>
+            <div class="card-body">
+                {% if switch.error is defined %}
+                    <div class="alert alert-warning py-2 mb-2">
+                        <i class="fa fa-triangle-exclamation"></i>
+                        {{ 'alpaca.inaccessible'|trans({'%error%': switch.error}) }}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-2">
+                        {{ switch.items|length }} {{ 'alpaca.switch.items_configured'|trans }}
+                    </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for item in switch.items %}
+                            <span class="badge {{ item.is_boolean ? 'bg-primary' : 'bg-warning text-dark' }}">
+                                {{ item.name }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{{ path('alpaca_setup_switch', {deviceNumber: 0}) }}" class="btn btn-sm btn-primary">
+                    <i class="fa fa-fw fa-gear"></i> {{ 'alpaca.btn_configure'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

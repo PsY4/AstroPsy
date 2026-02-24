@@ -1,0 +1,106 @@
+{% set pageTitle = 'new_targets.title'|trans %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+{% endblock %}
+{% block body %}
+
+    <div class="row">
+        <div class="col-12 mb-3">
+            <form method="GET" action="{{ path('targets_find_new') }}">
+            <div class="tab-wrapper app-form card">
+                <div class="row card-body">
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">{{ 'new_targets.min_altitude'|trans }}</label>
+                        <div class="icon-form">
+                            <i class="ti ti-angle"></i>
+                            <input class="form-control pa-s-34" name="min_alt" placeholder="{{ 'new_targets.min_altitude_placeholder'|trans }}" type="number" value="{{ params.min_alt }}">
+                            <i class="ti ti-angle"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">{{ 'new_targets.min_duration'|trans }}</label>
+                        <div class="icon-form">
+                            <i class="ti ti-clock"></i>
+                            <input class="form-control pa-s-34" name="min_duration" placeholder="{{ 'new_targets.min_duration_placeholder'|trans }}" type="number" value="{{ params.min_duration }}">
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">{{ 'new_targets.min_moon_distance'|trans }}</label>
+                        <div class="icon-form">
+                            <i class="ti ti-moon"></i>
+                            <input class="form-control pa-s-34" name="moon_dist" placeholder="{{ 'new_targets.min_moon_distance_placeholder'|trans }}" type="number" value="{{ params.moon_dist }}">
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">{{ 'new_targets.max_magnitude'|trans }}</label>
+                        <div class="icon-form">
+                            <i class="ti ti-eye"></i>
+                            <input class="form-control pa-s-34" name="mag_max" placeholder="{{ 'new_targets.max_magnitude_placeholder'|trans }}" type="number" value="{{ params.mag_max }}">
+                        </div>
+                    </div>
+                    <div class="col-md-1 mb-3" style="padding-top:34px">
+                        <button class="btn btn-primary" type="submit" style="display: block"><i class="fa fa-fw fa-search"></i></button>
+                    </div>
+                </div>
+            </div>
+            </form>
+        </div>
+        {% for target in targets %}
+            <div class="col-md-3">
+                <div class="card team-box-card hover-effect overflow-hidden">
+                    <div class="team-box">
+                        <img alt="{{ target.object.main_name }}" class="card-img-top"
+                             src="{{ target.object.thumbnail_url }}">
+                    </div>
+                    <div class="taem-content">
+                        <div class="mb-3 mt-3">
+                            <h3>{{ target.object.main_name }}</h3>
+                            <p>
+                                {{ target.object.ids|slice(0, 3)|join(", ") }}
+                            </p>
+                            <p>
+                                {{ ("target.details.type."~(target.object.types[0]))|trans }}
+                            </p>
+                        </div>
+                        <div class="team-details">
+                            {% if target.object.photo_mag>0 %}
+                            <div class="taem-contentbox">
+                                <p class="f-w-500">{{ 'new_targets.col_magnitude'|trans }}</p>
+                                <p class="text-center">{{ target.object.photo_mag }}</p>
+                            </div>
+                            {% elseif target.transit_observation.mag>0 %}
+                            <div class="taem-contentbox">
+                                <p class="f-w-500">{{ 'new_targets.col_magnitude'|trans }}</p>
+                                <p class="text-center">{{ target.transit_observation.mag }}</p>
+                            </div>
+                            {% endif %}
+                            <div class="taem-contentbox">
+                                <p class="f-w-500">{{ 'new_targets.col_altitude'|trans }}</p>
+                                <p class="text-center">{{ target.transit_observation.alt }}°</p>
+                            </div>
+                            <div class="taem-contentbox">
+                                <p class="f-w-500">{{ 'new_targets.col_azimuth'|trans }}</p>
+                                <p class="text-center">{{ target.transit_observation.az|az_to_cardinal }}</p>
+                            </div>
+                            <div class="taem-contentbox">
+                                <p class="f-w-500">{{ 'new_targets.col_transit'|trans }}</p>
+                                <p class="text-center">{{ target.tonight_times.transit }}</p>
+                            </div>
+                        </div>
+                        <div class="p-2 mb-3">
+                            <a href="{{ path('new_target', {'targetName': target.object.ids[0] }) }}"
+                               class="btn btn-primary b-r-22">
+                                <i class="fa fa-fw fa-solid fa-add"></i> {{ 'new_targets.btn_add'|trans }}
+                            </a>
+                            <a href="{{ target.object.url }}" target="_blank"
+                               class="btn btn-primary b-r-22" id="followButton" type="button">
+                                <i class="fa fa-fw fa-solid fa-globe"></i>
+                                Telescopius™
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Enum;
+
+enum SessionFolder: string
+{
+    case LIGHT    = 'LIGHT';
+    case DARK     = 'DARK';
+    case BIAS     = 'BIAS';
+    case FLAT     = 'FLAT';
+    case MASTER   = 'MASTER';
+    case EXPORT   = 'EXPORT';
+    case LOG_NINA = 'LOG_NINA';
+    case LOG_PHD2 = 'LOG_PHD2';
+    case DOC      = 'DOC';
+
+    public function defaultRelativePath(): string
+    {
+        return match ($this) {
+            self::LIGHT    => '02 - Acquisition/raw/light',
+            self::DARK     => '02 - Acquisition/raw/dark',
+            self::BIAS     => '02 - Acquisition/raw/bias',
+            self::FLAT     => '02 - Acquisition/raw/flat',
+            self::MASTER   => '03 - Processing/master',
+            self::EXPORT   => '03 - Processing/exports',
+            self::LOG_NINA => '02 - Acquisition/logs/nina',
+            self::LOG_PHD2 => '02 - Acquisition/logs/phd2',
+            self::DOC      => '99 - Docs',
+        };
+    }
+}

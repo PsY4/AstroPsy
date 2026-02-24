@@ -1,0 +1,227 @@
+{% set W = calibration.pointsWest  ?? [] %}
+{% set E = calibration.pointsEast  ?? [] %}
+{% set N = calibration.pointsNorth ?? [] %}
+{% set S = calibration.pointsSouth ?? [] %}
+{% set lock = calibration.lockPosition ?? {'x': 0, 'y': 0} %}
+
+<div class="card profile-container">
+    <div class="card-header">
+        <div class="fa-pull-left">
+            <h5>{{ 'phd2.calibration.graph_title'|trans }}</h5>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <canvas id="calibChart" height="250"></canvas>
+
+        <div class="mt-3 flex gap-4 items-center" style="display:flex;gap:1rem;align-items:center;">
+            <label><input id="flipNS" type="checkbox" checked> {{ 'phd2.calibration.btn_flip_ns'|trans }}</label>
+            <label><input id="flipEW" type="checkbox" checked> {{ 'phd2.calibration.btn_flip_ew'|trans }}</label>
+            <label><input id="showReturn" type="checkbox" checked> {{ 'phd2.calibration.btn_show_return'|trans }}</label>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---- Raw data from PHP ----
+        const RAW = {
+            lock: {{ lock|json_encode|raw }},
+            W: {{ W|json_encode|raw }},
+            E: {{ E|json_encode|raw }},
+            N: {{ N|json_encode|raw }},
+            S: {{ S|json_encode|raw }},
+        };
+
+        // ---- State (defaults) ----
+        const state = {
+            flipX: true,     // put West on the left by default
+            flipY: true,    // change with "Flip N/S"
+            showReturn: true // show East/South return lines
+        };
+
+        const $flipNS    = document.getElementById('flipNS');
+        const $flipEW    = document.getElementById('flipEW');
+        const $showRet   = document.getElementById('showReturn');
+
+        $flipNS.checked = state.flipY;
+        $flipEW.checked = state.flipX;
+        $showRet.checked = state.showReturn;
+
+        // ---- Helpers ----
+        function mapPoint(p, lbl, sx, sy) {
+            const x = ((p.x ?? 0) - (RAW.lock.x ?? 0)) * (sx ? -1 : 1);
+            const y = ((p.y ?? 0) - (RAW.lock.y ?? 0)) * (sy ? -1 : 1);
+            return { x, y, _label: lbl + (p.step ?? '') };
+        }
+        function rel(points, lbl, sx, sy){ return (points||[]).map(p => mapPoint(p,lbl,sx,sy)); }
+        function toLine(points){ return points.map(p => ({x:p.x, y:p.y, _label:p._label})); }
+        function pickFirstPoint(sets){
+            // sets is an array of arrays (e.g. [west, east, north, south])
+            let best = null;
+            for (const arr of sets) {
+                if (!arr || !arr.length) continue;
+                // prefer the row with the smallest 'step' if defined, else index 0
+                let candidate = arr[0];
+                if (arr.some(p => Number.isFinite(p._step ?? p.step))) {
+                    let min = Infinity, found = null;
+                    for (const p of arr) {
+                        const s = Number.isFinite(p.step) ? p.step : (Number.isFinite(p._step) ? p._step : null);
+                        if (s !== null && s < min) { min = s; found = p; }
+                    }
+                    if (found) candidate = found;
+                }
+                if (!best) best = candidate;
+            }
+            return best;
+        }
+        function computeLimits(sets){
+            const all = sets.flat();
+            let R = 5;
+            for (const p of all) R = Math.max(R, Math.hypot(p.x, p.y));
+            const pow = 10 ** Math.floor(Math.log10(R/4));
+            const step = (R/4)/pow <= 2 ? 2*pow : (R/4)/pow <= 5 ? 5*pow : 5*pow;
+            const lim = Math.ceil((R)/step)*step;
+            return { ringStep: step, lim };
+        }
+        function buildDatasetsAndLimits(){
+            // map with current flips (from your state)
+            const west  = rel(RAW.W,'W', state.flipX, state.flipY).map(p => ({...p, step: p.step}));
+            const east  = rel(RAW.E,'E', state.flipX, state.flipY).map(p => ({...p, step: p.step}));
+            const north = rel(RAW.N,'N', state.flipX, state.flipY).map(p => ({...p, step: p.step}));
+            const south = rel(RAW.S,'S', state.flipX, state.flipY).map(p => ({...p, step: p.step}));
+
+            // --- shift so the very first sample sits on the crosshair ---
+            const first = pickFirstPoint([west, east, north, south]);
+            const sx = first ? first.x : 0;
+            const sy = first ? first.y : 0;
+            const shift = p => ({ x: p.x - sx, y: p.y - sy, _label: p._label, step: p.step });
+
+            const Ws = west.map(shift), Es = east.map(shift), Ns = north.map(shift), Ss = south.map(shift);
+
+            // recompute limits/rings after shift
+            const { ringStep, lim } = computeLimits([Ws, Es, Ns, Ss]);
+
+            // build datasets (unchanged styling)
+            const ds = [
+                {label:'West',  data: Ws.map(p=>({x:p.x,y:p.y,_label:p._label})),  showLine:true, pointRadius:3, pointHoverRadius:5, borderWidth:2, borderColor:'#6aa2ff', pointBorderColor:'#6aa2ff', pointBackgroundColor:'rgba(0,0,0,0)'},
+                {label:'East',  data: Es.map(p=>({x:p.x,y:p.y,_label:p._label})),  showLine:true, pointRadius:3, pointHoverRadius:5, borderWidth:2, borderDash:[6,4], borderColor:'#6aa2ff', pointBorderColor:'#6aa2ff', pointBackgroundColor:'rgba(0,0,0,0)', hidden: !state.showReturn},
+                {label:'North', data: Ns.map(p=>({x:p.x,y:p.y,_label:p._label})),  showLine:true, pointRadius:3, pointHoverRadius:5, borderWidth:2, borderColor:'#ff6a6a', pointBorderColor:'#ff6a6a', pointBackgroundColor:'rgba(0,0,0,0)'},
+                {label:'South', data: Ss.map(p=>({x:p.x,y:p.y,_label:p._label})),  showLine:true, pointRadius:3, pointHoverRadius:5, borderWidth:2, borderDash:[6,4], borderColor:'#ff6a6a', pointBorderColor:'#ff6a6a', pointBackgroundColor:'rgba(0,0,0,0)', hidden: !state.showReturn},
+            ];
+
+            return { ds, ringStep, lim };
+        }
+
+        // Build once for limits (flip does not change radii anyway)
+        const west0  = rel(RAW.W,'W',false,false);
+        const east0  = rel(RAW.E,'E',false,false);
+        const north0 = rel(RAW.N,'N',false,false);
+        const south0 = rel(RAW.S,'S',false,false);
+
+        let { ds, ringStep, lim } = buildDatasetsAndLimits();
+
+        // ---- Overlay plugin (rings, crosshair, cardinal points) ----
+        const overlayPlugin = {
+            id:'calibOverlay',
+            afterDraw(chart){
+                const {ctx, chartArea, scales:{x,y}} = chart;
+                ctx.save();
+
+                // crosshairs
+                const x0 = x.getPixelForValue(0), y0 = y.getPixelForValue(0);
+                ctx.strokeStyle = 'rgb(118,118,118)';
+                ctx.lineWidth = 1; ctx.setLineDash([2,4]);
+                ctx.beginPath(); ctx.moveTo(chartArea.left, y0); ctx.lineTo(chartArea.right, y0); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x0, chartArea.top);  ctx.lineTo(x0, chartArea.bottom); ctx.stroke();
+
+                // rings
+                ctx.setLineDash([4,6]);
+                for (let r = ringStep; r <= lim; r += ringStep) {
+                    const pxR = Math.abs(x.getPixelForValue(r) - x0);
+                    ctx.beginPath(); ctx.arc(x0, y0, pxR, 0, Math.PI*2); ctx.stroke();
+                }
+
+                // step labels
+                ctx.setLineDash([]); ctx.fillStyle='rgb(48,48,48)';
+                ctx.font='10px system-ui, -apple-system, Segoe UI, Roboto';
+                for (const meta of chart._metasets) {
+                    const data = meta._dataset.data || []; const elms = meta.data || [];
+                    for (let i=0;i<elms.length;i++){
+                        const el=elms[i], raw=data[i];
+                        if (!raw || !raw._label) continue;
+                        const p = el.tooltipPosition();
+                        ctx.fillText(raw._label, p.x + 4, p.y - 4);
+                    }
+                }
+
+                // cardinal points following current flips
+                ctx.fillStyle='rgb(48,48,48)'; ctx.font='12px system-ui, -apple-system, Segoe UI, Roboto';
+                const pad = 8;
+                // right side = East, left = West, top = North, bottom = South (always)
+                ctx.fillText('E', x.getPixelForValue(lim) - 10, y0 - 6);
+                ctx.fillText('W', x.getPixelForValue(-lim) + 4,  y0 - 6);
+                ctx.fillText('N', x0 + 6, y.getPixelForValue(lim)  + pad);
+                ctx.fillText('S', x0 + 6, y.getPixelForValue(-lim) + pad);
+
+
+                ctx.restore();
+            }
+        };
+
+        // ---- Build datasets from current state ----
+        function buildDatasets(){
+            const west  = rel(RAW.W,'W', state.flipX, state.flipY);
+            const east  = rel(RAW.E,'E', state.flipX, state.flipY);
+            const north = rel(RAW.N,'N', state.flipX, state.flipY);
+            const south = rel(RAW.S,'S', state.flipX, state.flipY);
+
+            return [
+                {label:'West', data:toLine(west),  showLine:true, pointRadius:3, pointHoverRadius:5, borderWidth:2, borderColor:'#005dff', pointBorderColor:'#0061ff', pointBackgroundColor:'rgba(0,0,0,0)'},
+                {label:'East', data:toLine(east),  showLine:true, pointRadius:3, pointHoverRadius:5, borderWidth:2, borderDash:[6,4], borderColor:'#005dff', pointBorderColor:'#0061ff', pointBackgroundColor:'rgba(0,0,0,0)', hidden: !state.showReturn},
+                {label:'North',data:toLine(north), showLine:true, pointRadius:3, pointHoverRadius:5, borderWidth:2, borderColor:'#ff0000', pointBorderColor:'#ff0000', pointBackgroundColor:'rgba(0,0,0,0)'},
+                {label:'South',data:toLine(south), showLine:true, pointRadius:3, pointHoverRadius:5, borderWidth:2, borderDash:[6,4], borderColor:'#ff0000', pointBorderColor:'#ff0000', pointBackgroundColor:'rgba(0,0,0,0)', hidden: !state.showReturn},
+            ];
+        }
+
+        // ---- Init chart ----
+        const ctx = document.getElementById('calibChart').getContext('2d');
+        const calibChart = new Chart(ctx, {
+            type:'scatter',
+            data:{ datasets: buildDatasets() },
+            options:{
+                responsive:true, maintainAspectRatio:true, animation:false,
+                plugins:{ legend:{display:false}, tooltip:{ callbacks:{
+                            label(c){ const p=c.raw; const r=Math.hypot(p.x,p.y).toFixed(2); const a=(Math.atan2(p.y,p.x)*180/Math.PI).toFixed(1);
+                                return `${p._label??''}  x:${p.x.toFixed(2)}  y:${p.y.toFixed(2)}  r:${r}  θ:${a}°`; }
+                        }}},
+                scales:{
+                    x:{
+                        type:'linear', min:-lim, max:lim, grid:{color:'rgb(118,118,118)'},
+                        ticks:{color:'#ffffff'}, border:{color:'rgb(118,118,118)'} },
+                    y:{
+                        type:'linear', min:-lim, max:lim, grid:{color:'rgb(118,118,118)'},
+                        ticks:{color:'#ffffff'}, border:{color:'rgb(118,118,118)'} },
+                }
+            },
+            plugins:[overlayPlugin]
+        });
+
+        // ---- Controls wiring ----
+        $flipNS.addEventListener('change', () => {
+            state.flipY = $flipNS.checked;
+            calibChart.data.datasets = buildDatasets();
+            calibChart.update();
+        });
+        $flipEW.addEventListener('change', () => {
+            state.flipX = $flipEW.checked;
+            calibChart.data.datasets = buildDatasets();
+            calibChart.update();
+        });
+        $showRet.addEventListener('change', () => {
+            state.showReturn = $showRet.checked;
+            calibChart.data.datasets = buildDatasets();
+            calibChart.update();
+        });
+    })();
+</script>

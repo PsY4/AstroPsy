@@ -1,0 +1,110 @@
+{% if e.type == "Master Dark" %}
+    <span class="session-file"
+          data-type="LIGHT"
+          data-path="{{ e.path }}"
+          data-id="{{ e.id }}"
+          data-format="{{ e.format }}"
+          data-filter="{{ e.filterName }}">
+    <small style="font-size: 12px">
+        {{ 'session.unit_master'|trans }}
+    </small><br>
+    <strong>{{ 'session.unit_dark'|trans }}</strong><br>
+    <small style="font-size: 12px">
+        {% dump(e) %}
+        {{ e.rawHeader['EXPTIME']}}s
+    </small><br>
+    <small style="font-size: 10px">
+        #{{ loop.index }} - {{ e.dateTaken|date("H:i") }}
+    </small>
+</span>
+{% elseif e.type == "Master Flat" %}
+    <span class="session-file"
+          data-type="LIGHT"
+          data-path="{{ e.path }}"
+          data-id="{{ e.id }}"
+          data-format="{{ e.format }}"
+          data-filter="{{ e.filterName }}">
+    <small style="font-size: 12px">
+        {{ 'session.unit_master'|trans }}
+    </small><br>
+    <strong>{{ 'session.unit_flat'|trans }}</strong><br>
+    <small style="font-size: 16px">
+        {{ e.filterName ?? '?' }}
+    </small><br>
+    <small style="font-size: 10px">
+        #{{ loop.index }} - {{ e.dateTaken|date("H:i") }}
+    </small>
+</span>
+{% elseif e.type == "DARK" %}
+    <span class="session-file"
+          data-type="LIGHT"
+          data-path="{{ e.path }}"
+          data-id="{{ e.id }}"
+          data-format="{{ e.format }}"
+          data-filter="{{ e.filterName }}">
+    <small style="font-size: 12px">
+        {{ 'session.unit_dark'|trans }}
+    </small><br>
+    <strong><i class="fa fa-fw fa-circle-half-stroke"></i> </strong><br>
+    <small style="font-size: 12px">
+        {{ e.exposureS ?? '?' }}s
+    </small><br>
+    <small style="font-size: 10px">
+        #{{ loop.index }} - {{ e.dateTaken|date("H:i") }}
+    </small>
+</span>
+{% elseif e.type == "BIAS" %}
+    <span class="session-file"
+          data-type="LIGHT"
+          data-path="{{ e.path }}"
+          data-id="{{ e.id }}"
+          data-format="{{ e.format }}"
+          data-filter="{{ e.filterName }}">
+    <small style="font-size: 12px">
+        {{ 'session.unit_offset'|trans }}
+    </small><br>
+    <strong><i class="fa fa-fw fa-wave-square"></i> </strong><br>
+    <small style="font-size: 12px">
+        &nbsp;
+    </small><br>
+    <small style="font-size: 10px">
+        #{{ loop.index }} - {{ e.dateTaken|date("H:i") }}
+    </small>
+</span>
+{% elseif e.type == "FLAT" %}
+    <span class="session-file"
+          data-type="LIGHT"
+          data-path="{{ e.path }}"
+          data-id="{{ e.id }}"
+          data-format="{{ e.format }}"
+          data-filter="{{ e.filterName }}">
+    <small style="font-size: 12px">
+        {{ 'session.unit_flat'|trans }}
+    </small><br>
+    <strong>{{ e.filterName ?? '?' }}</strong><br>
+    <small style="font-size: 12px">
+        &nbsp;
+    </small><br>
+    <small style="font-size: 10px">
+        #{{ loop.index }} - {{ e.dateTaken|date("H:i") }}
+    </small>
+</span>
+{% else %}
+    <span class="session-file"
+          data-type="LIGHT"
+          data-path="{{ e.path }}"
+          data-id="{{ e.id }}"
+          data-format="{{ e.format }}"
+          data-filter="{{ e.filterName }}">
+    <small style="font-size: 12px">
+        {{ e.type ?? '?' }}
+    </small><br>
+    <strong>{{ e.filterName ?? 'N/A' }}</strong><br>
+    <small style="font-size: 12px">
+        {{ e.exposureS ?? '?' }}s
+    </small><br>
+    <small style="font-size: 10px">
+        #{{ loop.index }} - {{ e.dateTaken|date("H:i") }}
+    </small>
+</span>
+{% endif %}

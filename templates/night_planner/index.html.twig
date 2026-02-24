@@ -1,0 +1,227 @@
+{% set pageTitle = 'night_planner.title'|trans %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex flex-wrap align-items-center gap-3">
+                <h5 class="mb-0 flex-grow-1"><i class="fa fa-fw fa-moon"></i> {{ 'night_planner.title'|trans }}</h5>
+
+                {# Date picker #}
+                <div class="d-flex align-items-center gap-2">
+                    <label class="mb-0 small text-muted">{{ 'night_planner.night_of'|trans }}</label>
+                    <input type="date" id="np-date" class="form-control form-control-sm" style="width:160px">
+                </div>
+
+                {# Setup selector (only setups with framing entries) #}
+                {% if setupsForPlanner|length > 0 %}
+                <select id="np-setup" class="form-select form-select-sm" style="width:auto">
+                    {% for s in setupsForPlanner %}
+                    <option value="{{ s.id }}"
+                            data-lat="{{ s.obsLat }}"
+                            data-lon="{{ s.obsLon }}"
+                            data-horizon="{{ s.obsHorizon }}"
+                            data-slew="{{ s.slewTimeMin }}"
+                            data-af-time="{{ s.autofocusTimeMin }}"
+                            data-af-interval="{{ s.autofocusIntervalMin }}"
+                            data-flip="{{ s.meridianFlipTimeMin }}"
+                            data-min-shoot="{{ s.minShootTimeMin }}">
+                        {{ s.name }} ({{ s.obsName }})
+                    </option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+
+                {# Wishlist filter #}
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" id="np-wishlist-only">
+                    <label class="form-check-label small" for="np-wishlist-only">
+                        {{ 'night_planner.wishlist_only'|trans }}
+                    </label>
+                </div>
+
+                <button id="np-compute" class="btn btn-primary btn-sm">
+                    <i class="fa fa-fw fa-calculator"></i> {{ 'night_planner.compute'|trans }}
+                </button>
+
+                {% if setupsForPlanner|length > 0 %}
+                <a id="np-export-nina"
+                   href="{{ path('night_planner_export_nina') }}?date={{ 'now'|date('Y-m-d') }}&setup_id={{ setupsForPlanner[0].id }}"
+                   class="btn btn-outline-success btn-sm"
+                   title="{{ 'night_planner.export_nina'|trans }}">
+                    <i class="fa fa-fw fa-satellite-dish"></i> Export NINA
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Night plan #}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card" id="np-plan-card" style="display:none">
+            <div class="card-header py-2 d-flex align-items-center gap-2">
+                <i class="fa fa-fw fa-calendar-check text-success"></i>
+                <strong class="flex-grow-1">{{ 'night_planner.plan_title'|trans }}</strong>
+                <small class="text-muted" id="np-plan-date"></small>
+            </div>
+            <div class="card-body py-2 px-3">
+                <div id="np-gantt"></div>
+                <div id="np-plan-list" class="d-flex flex-wrap align-items-center mt-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Results #}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div id="np-loading" class="text-center py-4 d-none">
+                    <div class="spinner-border spinner-border-sm me-2"></div>
+                    {{ 'night_planner.computing'|trans }}
+                </div>
+                <div id="np-empty" class="text-center py-4 text-muted d-none">
+                    {{ 'night_planner.no_results'|trans }}
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="np-table">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width:2rem"></th>
+                                <th>{{ 'night_planner.col_target'|trans }}</th>
+                                <th>{{ 'night_planner.col_window'|trans }}</th>
+                                <th>{{ 'night_planner.col_effective_h'|trans }}</th>
+                                <th>{{ 'night_planner.col_moon'|trans }}</th>
+                                <th>{{ 'night_planner.col_deficit'|trans }}</th>
+                                <th>{{ 'night_planner.col_score'|trans }}</th>
+                                <th style="width:2.5rem" title="{{ 'night_planner.col_framing'|trans }}"><i class="fa fa-crop"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="np-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ===== Framing Modal ===== #}
+<div class="modal fade" id="framingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fa fa-crop me-2"></i>{{ 'framing.title'|trans }} — <span id="fm-target-name"></span>
+                </h5>
+                <select id="fm-survey" class="form-select form-select-sm me-2" style="width:auto">
+                    <option value="hips-dss2">DSS2 Color (HiPS)</option>
+                    <option value="skyview-dss2r">DSS2 Red (SkyView)</option>
+                    <option value="skyview-sdss">SDSS (SkyView)</option>
+                </select>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    {# Controls #}
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">{{ 'framing.setup.label'|trans }}</label>
+                            <select id="fm-setup" class="form-select form-select-sm"></select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small text-muted">{{ 'framing.fov.label'|trans }}</label>
+                            <div id="fm-fov" class="form-control-plaintext text-info fw-medium">—</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">{{ 'framing.ra.label'|trans }}</label>
+                            <input type="number" id="fm-ra" class="form-control form-control-sm" step="0.0001" min="0" max="24">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">{{ 'framing.dec.label'|trans }}</label>
+                            <input type="number" id="fm-dec" class="form-control form-control-sm" step="0.001" min="-90" max="90">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">
+                                {{ 'framing.rotation.label'|trans }} : <span id="fm-rot-val">0°</span>
+                            </label>
+                            <input type="range" id="fm-rot" class="form-range" min="-180" max="180" step="1" value="0">
+                        </div>
+                        <div id="fm-no-optics-warn" class="alert alert-warning small py-2 d-none">
+                            <i class="fa fa-exclamation-triangle me-1"></i>{{ 'framing.no_optics_warning'|trans }}
+                        </div>
+                        <div class="mb-3" id="fm-filters-section">
+                            <label class="form-label small fw-semibold">{{ 'framing.filters.label'|trans }}</label>
+                            <div id="fm-filters" class="d-flex flex-wrap gap-2">
+                                <span class="text-muted small">{{ 'framing.filters.no_setup'|trans }}</span>
+                            </div>
+                        </div>
+                        <button id="fm-reload" class="btn btn-outline-secondary btn-sm w-100">
+                            <i class="fa fa-refresh me-1"></i>{{ 'framing.preview.loading'|trans }}
+                        </button>
+                    </div>
+                    {# Preview #}
+                    <div class="col-md-8">
+                        <div id="fm-preview-wrap" class="position-relative border rounded overflow-hidden"
+                             style="cursor:grab; min-height:200px; background:#111">
+                            <img id="fm-preview" class="img-fluid d-block w-100" alt="preview" style="display:none!important">
+                            <div id="fm-loading" class="position-absolute top-50 start-50 translate-middle text-muted d-none">
+                                <div class="spinner-border spinner-border-sm me-1"></div>
+                                {{ 'framing.preview.loading'|trans }}
+                            </div>
+                            <div id="fm-placeholder" class="d-flex align-items-center justify-content-center text-muted" style="min-height:300px">
+                                <i class="fa fa-image fa-3x opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'btn.cancel'|trans }}</button>
+                <button type="button" id="fm-save" class="btn btn-primary">
+                    <i class="fa fa-save me-1"></i>{{ 'framing.save'|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="https://unpkg.com/astronomy-engine/astronomy.browser.js"></script>
+<script>
+const ALL_TARGETS  = {{ targetsJson|raw }};
+const ALL_SETUPS   = {{ setupsJson|raw }};
+const WISHLIST_URL = '{{ path('target_wishlist_toggle', {id: 0}) }}'.replace('/0', '/XXXX');
+const TARGET_URL   = '{{ path('browse_target', {id: 0}) }}'.replace('/0', '/XXXX');
+const FRAMING_URL  = '{{ path('target_framing_get', {id: 0}) }}'.replace('/0', '/XXXX');
+const HIPS_BASE        = 'https://alasky.u-strasbg.fr/hips-image-services/hips2fits';
+const NINA_EXPORT_URL  = '{{ path('night_planner_export_nina') }}';
+const NP_CONFIG    = {
+    obsLat:     {{ obs ? obs.lat : 48 }},
+    obsLon:     {{ obs ? obs.lon : 2 }},
+    obsHorizon: {{ obs ? (obs.altitudeHorizon ?? 20) : 20 }},
+};
+const NP_TRANS = {
+    colFraming:       '{{ 'night_planner.col_framing'|trans|e('js') }}',
+    noFramingSection: '{{ 'night_planner.no_framing_section'|trans|e('js') }}',
+    noFramingBadge:   '{{ 'night_planner.no_framing_badge'|trans|e('js') }}',
+};
+const FM_TRANS = {
+    setupNoOptics:     '{{ 'framing.setup.no_optics'|trans|e('js') }}',
+    filtersLabel:      '{{ 'framing.filters.label'|trans|e('js') }}',
+    filtersAll:        '{{ 'framing.filters.all'|trans|e('js') }}',
+    filtersNoSetup:    '{{ 'framing.filters.no_setup'|trans|e('js') }}',
+};
+</script>
+<script src="{{ asset('assets/js/astronomy-helpers.js') }}"></script>
+<script src="{{ asset('assets/js/visibility-calc.js') }}"></script>
+<script src="{{ asset('assets/js/meridian-flip.js') }}"></script>
+<script src="{{ asset('assets/js/scheduler.js') }}"></script>
+<script src="{{ asset('assets/js/night-planner-gantt.js') }}"></script>
+<script src="{{ asset('assets/js/framing-modal.js') }}"></script>
+<script src="{{ asset('assets/js/night-planner-main.js') }}"></script>
+{% endblock %}

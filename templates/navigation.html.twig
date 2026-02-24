@@ -1,0 +1,127 @@
+<nav>
+    <div class="app-logo">
+        <a class="logo d-inline-block" href="/">
+            <img alt="#" src="{{ asset('logo.png') }}" style="width:45px">
+            <h1 style="line-height:19px; padding-left: 60px; padding-top: 3px;">
+                AstroPsy
+                <br>
+                <small style="font-size: 17px">Your Astrophoto DAM</small>
+            </h1>
+        </a>
+        <span class="bg-light-primary toggle-semi-nav d-flex-center">
+            <i class="ti ti-chevron-right"></i>
+        </span>
+    </div>
+    <div class="app-nav" id="app-simple-bar">
+        <ul class="main-nav p-0 mt-2">
+            <li class="menu-title"><span>{{ 'nav.objects'|trans }}</span></li>
+            <li class="no-sub">
+                <a href="{{ path('browse_targets') }}">
+                    <i class="fa fa-fw fa-bullseye"></i> &nbsp;
+                    {{ 'nav.targets'|trans }}
+                </a>
+            </li>
+            <li class="no-sub">
+                <a href="{{ path('sessions') }}">
+                    <i class="fa fa-fw fa-calendar-day"></i> &nbsp;
+                    {{ 'nav.sessions'|trans }}
+                </a>
+            </li>
+
+            <li class="no-sub">
+                <a href="{{ path('night_planner') }}">
+                    <i class="fa fa-fw fa-moon"></i> &nbsp;
+                    {{ 'nav.night_planner'|trans }}
+                </a>
+            </li>
+
+            <li class="menu-title"><span>{{ 'nav.management'|trans }}</span></li>
+            <li class="no-sub">
+                <a href="{{ path('authors') }}">
+                    <i class="fa fa-fw fa-users"></i> &nbsp;
+                    {{ 'nav.authors'|trans }}
+                </a>
+            </li>
+            <li class="no-sub">
+                <a href="{{ path('observatories') }}">
+                    <i class="fa fa-fw fa-house"></i> &nbsp;
+                    {{ 'nav.observatories'|trans }}
+                </a>
+            </li>
+            <li class="no-sub">
+                <a href="{{ path('setup_list') }}">
+                    <i class="fa fa-fw fa-binoculars"></i> &nbsp;
+                    {{ 'nav.setups'|trans }}
+                </a>
+            </li>
+            <li class="no-sub">
+                <a href="{{ path('doc_list') }}">
+                    <i class="fa fa-fw fa-file-text"></i> &nbsp;
+                    {{ 'nav.documents'|trans }}
+                </a>
+            </li>
+            <li class="no-sub">
+                <a href="{{ path('alpaca_setup_index') }}">
+                    <i class="fa fa-fw fa-satellite-dish"></i> &nbsp;
+                    Alpaca
+                </a>
+            </li>
+            <li class="no-sub">
+                <a href="{{ path('settings') }}">
+                    <i class="fa fa-fw fa-gear"></i> &nbsp;
+                    {{ 'nav.settings'|trans }}
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="menu-navs">
+        <span class="menu-previous"><i class="ti ti-chevron-left"></i></span>
+        <span class="menu-next"><i class="ti ti-chevron-right"></i></span>
+    </div>
+
+    <div id="notif-dropdown" class="notif-dropdown d-none"></div>
+
+    <div class="sidebar-footer">
+        <a href="{{ path('notifications_index') }}" id="notif-bell"
+           class="position-relative text-decoration-none me-1"
+           title="{{ 'notif.bell_title'|trans }}"
+           style="line-height:1">
+            <i class="ti ti-bell fs-5"></i>
+            <span id="notif-badge" class="badge bg-danger d-none"
+                  style="position:absolute;top:-4px;right:-6px;font-size:.6rem;padding:2px 4px;min-width:16px;">0</span>
+        </a>
+        <span class="header-toggle" title="{{ 'nav.toggle_sidebar'|trans }}">
+            <i class="ph ph-squares-four"></i>
+        </span>
+        <div class="header-dark" title="{{ 'nav.toggle_theme'|trans }}"
+             data-url-dark="{{ path('settings_theme', {theme: 'dark'}) }}"
+             data-url-light="{{ path('settings_theme', {theme: 'light'}) }}">
+            <div class="sun-logo"><i class="ph ph-moon-stars"></i></div>
+            <div class="moon-logo"><i class="ph ph-sun-dim"></i></div>
+        </div>
+        <script>
+        document.querySelector('.header-dark')?.addEventListener('click', function () {
+            // Fires BEFORE script.js toggle → lire l'état actuel et inverser pour obtenir le futur thème.
+            const newTheme = document.body.classList.contains('dark') ? 'light' : 'dark';
+            // Synchroniser layout-option pour que loadConfiguration() pose la bonne classe au reload.
+            localStorage.setItem('ki-admin-layout-option', 'ltr ' + newTheme);
+            fetch(newTheme === 'dark' ? this.dataset.urlDark : this.dataset.urlLight, { method: 'POST' });
+        });
+        </script>
+        <div class="locale-switcher d-flex gap-1">
+            {% set locale = app.request.locale %}
+            <form method="post" action="{{ path('settings_locale', {locale: 'fr'}) }}">
+                <button type="submit" class="btn p-1 border-0 rounded-circle{% if locale == 'fr' %} opacity-100{% else %} opacity-50{% endif %}" title="Français">
+                    <span class="flag-icon flag-icon-fr" style="font-size:1.1rem;"></span>
+                </button>
+            </form>
+            <form method="post" action="{{ path('settings_locale', {locale: 'en'}) }}">
+                <button type="submit" class="btn p-1 border-0 rounded-circle{% if locale == 'en' %} opacity-100{% else %} opacity-50{% endif %}" title="English">
+                    <span class="flag-icon flag-icon-gb" style="font-size:1.1rem;"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+</nav>

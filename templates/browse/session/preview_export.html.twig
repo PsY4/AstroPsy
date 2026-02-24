@@ -1,0 +1,79 @@
+{###########################}
+{#         EXPORT          #}
+{###########################}
+<div class="col-xxl-9 order-xxl-2 exports-viewer d-none" id="exports-preview-col">
+    <div class="card">
+        <div class="card-header d-flex align-items-center">
+            <h5 class="mb-0">{{ 'session.preview'|trans }}</h5>
+            <button id="btn-set-as-preview" class="btn btn-sm btn-outline-primary ms-auto d-none me-2"
+                    data-url-template="{{ path('export_set_as_preview', {id: 'XXXXXX'}) }}">
+                <i class="fa fa-fw fa-image"></i> {{ 'session.btn_set_as_preview'|trans }}
+            </button>
+            <button class="btn btn-primary icon-btn btn-toggle-details"
+                    data-details="#exports-details-col" title="Toggle details">
+                <i class="ti ti-layout-sidebar-right-collapse"></i>
+            </button>
+        </div>
+        <div class="card-body">
+            <img id="export-preview" src="" alt="" width="100%">
+        </div>
+    </div>
+</div>
+<div class="col-xxl-3 order-xxl-3 exports-viewer d-none" id="exports-details-col">
+    <div id="export-details"></div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(event) {
+        $('.exports span').click(function () {
+            $('.session-content span').removeClass('active')
+            $(this).addClass('active')
+            $('.masters-viewer').addClass('d-none');
+            $('.exports-viewer').removeClass('d-none');
+            $('.lights-viewer').addClass('d-none');
+            $('.phd2log-viewer').addClass('d-none');
+
+            const exportId   = $(this).data('id');
+            const exportType = $(this).data('type');
+
+            if (exportType === "TIF") {
+                $('#export-preview').attr("src", "{{ path('tif-thumbnail', { 'export': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", exportId));
+            } else {
+                $('#export-preview').attr("src", "{{ path('image-thumbnail', { 'export': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", exportId));
+            }
+
+            // Bouton "Définir comme preview" : visible seulement pour JPEG
+            const $btn = $('#btn-set-as-preview');
+            if (exportType === 'JPG' || exportType === 'JPEG' || exportType === 'PNG') {
+                $btn.removeClass('d-none').data('export-id', exportId).off('click').on('click', function () {
+                    const url = $(this).data('url-template').replace('XXXXXX', exportId);
+                    $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+                    fetch(url, { method: 'POST' })
+                        .then(r => r.json())
+                        .then(() => {
+                            $(this).removeClass('btn-outline-primary').addClass('btn-success')
+                                   .html('<i class="fa fa-check"></i> {{ "session.btn_set_as_preview_done"|trans }}');
+                        })
+                        .catch(() => {
+                            $(this).prop('disabled', false)
+                                   .html('<i class="fa fa-fw fa-image"></i> {{ "session.btn_set_as_preview"|trans }}');
+                        });
+                });
+            } else {
+                $btn.addClass('d-none');
+            }
+
+            currentRequest = $.ajax({
+                url: '{{ path('export_detail', {'export': "XXXXXX"}) }}'.replace('XXXXXX', exportId),
+                method: 'GET',
+                dataType: 'html',
+                cache: true
+            });
+
+            currentRequest
+                .done(function (html) {
+                    $('#export-details').html(html);
+                })
+        });
+    });
+</script>

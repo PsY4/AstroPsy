@@ -1,0 +1,90 @@
+<li class="timeline-section">
+    <div class="timeline-icon">
+         <span class="text-light-primary h-35 w-35 d-flex-center b-r-50">
+            <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-calendar-day fa-stack-1x fa-inverse"></i>
+            </span>
+         </span>
+    </div>
+    <div class="timeline-content pt-0">
+        <ul class="avatar-group float-end breadcrumb-start ">
+            {% for author in s.authors %}
+                <li class="h-30 w-30 d-flex-center b-r-50 position-relative" data-bs-title="{{ author.name }}" data-bs-toggle="tooltip">
+                    <img alt="{{ author.name }}" class="img-fluid b-r-50 overflow-hidden" src="{{ author.logo }}">
+                </li>
+            {% endfor %}
+        </ul>
+        <p class=" f-s-16 text-info mb-0">
+            <a href="{{ path('browse_session', {id: s.id}) }}">
+                <h4>Session {{ s.startedAt ? s.startedAt|date('d/m/Y') : '—' }} -
+                    {{ s.exposures|filter(e => e.type=="LIGHT")|reduce((carry, value, key) => carry + value.exposureS)|default(0)|format_duration }} -
+                    {{ s.observatory.name }}
+                    {% if s.notes is not null and s.notes != "" %}
+                        <span class="notes-popover text-primary ms-2" style="cursor:pointer"
+                              data-bs-toggle="popover"
+                              data-bs-trigger="hover focus"
+                              data-bs-html="true"
+                              data-bs-content="{{ s.notes|e('html_attr') }}">
+                            <i class="fa fa-fw fa-note-sticky"></i>
+                        </span>
+                    {% endif %}
+                </h4>
+            </a>
+            <button class="btn btn-link btn-sm p-0 ms-1 text-muted btn-toggle-progress-exclude"
+                    data-session-id="{{ s.id }}"
+                    data-excluded="{{ s.excludeFromProgress ? 'true' : 'false' }}"
+                    data-url="{{ path('session_toggle_progress_exclude', {id: s.id}) }}"
+                    data-title-exclude="{{ 'target.progress_tracker.exclude_session'|trans }}"
+                    data-title-include="{{ 'target.progress_tracker.include_session'|trans }}"
+                    title="{{ s.excludeFromProgress ? 'target.progress_tracker.include_session'|trans : 'target.progress_tracker.exclude_session'|trans }}"
+                    style="vertical-align:middle">
+                <i class="fa fa-fw fa-chart-bar{% if s.excludeFromProgress %} text-warning{% else %} opacity-25{% endif %}"></i>
+            </button>
+            {% if s.notes is not null and s.notes != "" %}
+                <cite>
+                    {{ s.notes }}
+                </cite>
+            {% endif %}
+        </p>
+        {% if s.astrobin != "" %}
+            <ul class="avatar-group float-end breadcrumb-start ">
+                <li class="position-relative" >
+                    <i class="fa fa-fw fa-eye"></i>&nbsp;{{ s.astrobinViews }} &nbsp; &nbsp;
+                    <i class="fa fa-fw fa-thumbs-up"></i>&nbsp;{{ s.astrobinLikes }}
+                    {% if s.astrobinBookmarks %}
+                        &nbsp; &nbsp;<i class="fa fa-fw fa-bookmark"></i>&nbsp;{{ s.astrobinBookmarks }}
+                    {% endif %}
+                    {% if s.astrobinComments %}
+                        &nbsp; &nbsp;<i class="fa fa-fw fa-comment"></i>&nbsp;{{ s.astrobinComments }}
+                    {% endif %}
+                </li>
+            </ul>
+        {% endif %}
+        <p class="text-secondary">
+            {{ s.exposures|filter(e => e.type=="LIGHT")|length }} {{ 'session.timeline.light'|trans }}
+            {{ s.exposures|filter(e => e.type!="LIGHT")|length }} {{ 'session.timeline.dofs'|trans }}
+            {{ s.masters|length }} {{ 'session.timeline.masters'|trans }}
+            {{ s.exports|length }} {{ 'session.timeline.exports'|trans }}
+            {{ s.logs|length }} {{ 'session.timeline.logs'|trans }}
+        </p>
+        {% if s.exports|length > 0 %}
+            <div class="app-timeline-info-text timeline-border-box me-2 ms-0 mt-3 p-3">
+{#                <h6>Exports</h6>#}
+                <div class="lazy app-arrow">
+                    {% for export in s.exports|slice(0,3) %}
+                        <div class="lazy-item">
+                            <img alt="" class="img-fluid  rounded"
+                                 {% if export.type == "TIF" %}
+                                     data-lazy="{{ path('tif-thumbnail', { 'export': export.id, 'w': 512 }) }}"
+                                 {% else %}
+                                     data-lazy="{{ path('image-thumbnail', { 'export': export.id, 'w': 512 }) }}"
+                                 {% endif %}
+                                 src="#">
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</li>

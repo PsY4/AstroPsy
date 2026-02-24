@@ -1,0 +1,166 @@
+{% trans_default_domain 'messages' %}
+<!DOCTYPE html>
+<html lang="{{ app.request.locale }}">
+
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+  <meta content="IE=edge" http-equiv="X-UA-Compatible">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta content="Multipurpose, super flexible, powerful, clean modern responsive bootstrap 5 admin template" name="description">
+  <meta content="admin template, ki-admin admin template, dashboard template, flat admin template, responsive admin template, web app" name="keywords">
+  <meta content="la-themes" name="author">
+  <link href="/assets/images/logo/favicon.png" rel="icon" type="image/x-icon">
+  <link href="/assets/images/logo/favicon.png" rel="shortcut icon" type="image/x-icon">
+
+  <title>{% block title %}{{ pageTitle|default|raw }} - Astro DAM{% endblock %}</title>
+
+  <link href="/assets/vendor/fontawesome/css/all.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <link href="/assets/vendor/datatable/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
+  <link href="/assets/vendor/notifications/toastify.min.css" rel="stylesheet" type="text/css">
+  <link href="/assets/vendor/tabler-icons/tabler-icons.css" rel="stylesheet" type="text/css">
+  <link href="/assets/vendor/flag-icons-master/flag-icon.css" rel="stylesheet" type="text/css">
+  <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet" type="text/css">
+  <link href="/assets/vendor/simplebar/simplebar.css" rel="stylesheet" type="text/css">
+  <link href="/assets/vendor/notifications/toastify.min.css" rel="stylesheet" type="text/css">
+  <link href="/assets/css/style.css" rel="stylesheet" type="text/css">
+  <link href="/assets/css/responsive.css" rel="stylesheet" type="text/css">
+  <link href="/assets/css/custom.css?v=4" rel="stylesheet" type="text/css">
+  <link href="/assets/vendor/apexcharts/apexcharts.css" rel="stylesheet" type="text/css">
+  <link href="{{ asset('assets/vendor/slick/slick.css') }}" rel="stylesheet" type="text/css">
+  <link href="{{ asset('assets/vendor/slick/slick-theme.css') }}" rel="stylesheet" type="text/css">
+  {% block stylesheets %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+  {% endblock %}
+</head>
+
+<body class="{{ appConfig.theme }}">
+<div class="app-wrapper">
+
+  {% include 'navigation.html.twig' %}
+
+  <div class="app-content">
+    <div class="">
+
+      <!-- Body main section starts -->
+      <main>
+        <div class="container-fluid">
+          {% if (hideBreadcrumb|default(false)!=true) %}
+          <!-- Breadcrumb start -->
+          <div class="row m-1">
+            <div class="col-3">
+              <h4 class="main-title">{{ pageTitle|default|raw }}</h4>
+              <ul class="app-line-breadcrumbs mb-3">
+                <li class="">
+                  <a class="f-s-14 f-w-500" href="#">
+                    <span>
+                        <i class="ph-duotone  ph-shapes f-s-16"></i> {{ 'breadcrumb.home'|trans }}
+                    </span>
+                  </a>
+                </li>
+                {{ previousCrumb|raw }}
+                <li class="active">
+                  <a class="f-s-14 f-w-500" href="#">{{ pageTitle|default|raw }}</a>
+                </li>
+              </ul>
+            </div>
+            <div class="col-9">
+              {% block breadbuttons %}{% endblock %}
+            </div>
+          </div>
+          <!-- Breadcrumb end -->
+          {% endif %}
+          {% for type, messages in app.flashes %}
+            {% for msg in messages %}
+              <div class="alert alert-{{ type == 'success' ? 'success' : (type == 'warning' ? 'warning' : 'danger') }} alert-dismissible fade show mx-1 mb-2" role="alert">
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endfor %}
+          <div class="row">
+            <div class="col-12">
+              {% block body %}{% endblock %}
+            </div>
+          </div>
+        </div>
+      </main>
+      <!-- Body main section ends -->
+
+      <!-- tap on top -->
+      <div class="go-top">
+        <span class="progress-value">
+            <i class="ti ti-arrow-up"></i>
+        </span>
+      </div>
+
+
+      <footer>
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-md-9 col-12">
+              <p class="footer-text f-w-600 mb-0">Copyright © 2026 PsY4. All rights reserved 💖
+                v1.0.0</p>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+</div>
+
+  <script src="{{ asset('assets/js/jquery-3.6.3.min.js') }}"></script>
+  <script src="{{ asset('assets/vendor/simplebar/simplebar.js') }}"></script>
+  <script src="{{ asset('assets/vendor/phosphor/phosphor.js') }}"></script>
+  <script src="{{ asset('assets/vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ asset('assets/vendor/notifications/toastify-js.js') }}"></script>
+  <script src="{{ asset('assets/vendor/slick/slick.min.js') }}"></script>
+  <script src="{{ asset('assets/js/font_awesome.js') }}"></script>
+  <script src="{{ asset('assets/js/slick.js') }}"></script>
+  <script src="{{ asset('assets/js/notification-bell.js') }}"></script>
+  <script>
+    localStorage.setItem('ki-admin-theme-mode', '{{ appConfig.theme }}');
+    localStorage.setItem('ki-admin-layout-option', 'ltr {{ appConfig.theme }}');
+  </script>
+  <script src="{{ asset('assets/js/customizer.js') }}"></script>
+  <script src="{{ asset('assets/js/script.js') }}"></script>
+  <script src="{{ asset('assets/vendor/apexcharts/apexcharts.min.js') }}"></script>
+{% block page_scripts %}
+{% endblock %}
+
+{% block javascripts %}
+  <script src="/assets/vendor/datatable/jquery.dataTables.min.js"></script>
+  <script>
+    // Auto-init every table tagged with .js-datatable
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('table.js-datatable').forEach((table) => {
+        if (table.dataset.dtInited === '1') return; // avoid double init on htmx/Turbo
+        table.dataset.dtInited = '1';
+        new DataTable(table, {
+          order: [],                       // keep initial order until user clicks
+          responsive: true,
+          layout: { topEnd: { search: { placeholder: '{{ "datatable.search_placeholder"|trans }}' } } },
+          language: {
+            search: '{{ "datatable.search"|trans }}',
+            lengthMenu: '{{ "datatable.length_menu"|trans }}',
+            info: '{{ "datatable.info"|trans }}',
+            infoEmpty: '{{ "datatable.info_empty"|trans }}',
+            emptyTable: '{{ "datatable.empty_table"|trans }}',
+            paginate: { previous: '{{ "datatable.paginate.previous"|trans }}', next: '{{ "datatable.paginate.next"|trans }}' }
+          }
+        });
+      });
+    });
+  </script>
+
+  <style>
+    /* Helpful utilities for long text cells like file paths */
+    .truncate { max-width: 520px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    table.dataTable thead th, table.dataTable tbody td { vertical-align: middle; }
+  </style>
+{% endblock %}
+  </body>
+</html>

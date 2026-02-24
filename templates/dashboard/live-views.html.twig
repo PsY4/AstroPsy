@@ -1,0 +1,25 @@
+{% set liveObs = allObs|filter(o => o.live) %}
+<div class="card h-100">
+    <div class="card-header d-flex align-items-center gap-2">
+        <h5 class="mb-0 flex-grow-1" id="live-obs-name">{{ obs.name }} — {{ 'dashboard.live_view_title'|trans }}</h5>
+        {% if liveObs|length > 1 %}
+        <select id="live-obs-select" class="form-select form-select-sm" style="width:auto">
+            {% for o in liveObs %}
+            <option value="{{ o.live }}" data-name="{{ o.name }}" {% if o.id == obs.id %}selected{% endif %}>
+                {{ o.name }}
+            </option>
+            {% endfor %}
+        </select>
+        {% endif %}
+    </div>
+    <div class="card-body p-1">
+        <img id="live-stream-img" src="{{ obs.live }}" alt="" style="width:100%">
+    </div>
+</div>
+<script>
+document.getElementById('live-obs-select')?.addEventListener('change', function () {
+    const opt = this.options[this.selectedIndex];
+    document.getElementById('live-stream-img').src = opt.value;
+    document.getElementById('live-obs-name').textContent = opt.dataset.name + ' — {{ 'dashboard.live_view_title'|trans }}';
+});
+</script>

@@ -1,0 +1,59 @@
+
+{% block setup_setup_parts_widget %}
+{% endblock %}
+{% block setup_part_widget %}
+        <div class="card">
+            <div class="card-body row">
+                {{ form_row(form.type) }}
+                {{ form_row(form.make) }}
+                {{ form_row(form.model) }}
+                {{ form_row(form.url) }}
+                {{ form_row(form.notes) }}
+                {{ form_row(form.images) }}
+                {{ form_widget(form.deleteImages) }}
+
+                {# Show existing images (read from form's data) #}
+                {% if form.vars.data.images is defined and form.vars.data.images is iterable and form.vars.data.images|length > 0 %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ 'form.existing_images'|trans }}</label>
+                        <div class="row">
+                            {% for image in form.vars.data.images %}
+                                <div class="col-3 mb-2 existing-image-item" data-filename="{{ image }}">
+                                    <div class="position-relative">
+                                        <img src="{{ path('direct_download', {'filename': image}) }}" alt="Image" class="img-thumbnail" style="max-height: 150px; width: 100%; object-fit: cover;">
+                                        <button type="button"
+                                                class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 btn-delete-image"
+                                                data-target-id="{{ form.deleteImages.vars.id }}"
+                                                data-filename="{{ image }}"
+                                                title="{{ 'form.delete_image'|trans }}">
+                                            <i class="ti ti-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+            </div>
+        </div>
+        <script>
+        if (!window._deleteImageHandlerInstalled) {
+            window._deleteImageHandlerInstalled = true;
+            document.addEventListener('click', function (e) {
+                const btn = e.target.closest('.btn-delete-image');
+                if (!btn) return;
+                const filename = btn.dataset.filename;
+                const hiddenInput = document.getElementById(btn.dataset.targetId);
+                const current = hiddenInput.value ? hiddenInput.value.split(',').filter(Boolean) : [];
+                if (!current.includes(filename)) {
+                    current.push(filename);
+                    hiddenInput.value = current.join(',');
+                }
+                btn.closest('.existing-image-item').style.opacity = '0.3';
+                btn.disabled = true;
+            });
+        }
+        </script>
+{% endblock %}

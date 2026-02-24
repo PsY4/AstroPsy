@@ -1,0 +1,50 @@
+{% set pageTitle = 'nav.observatories'|trans %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+    <div class="fa-pull-right">
+        <div class="input-group mb-3">
+            <button class="fa-pull-right btn btn-outline-primary btn-sm b-r-left" data-bs-target="#createModal"
+                    data-bs-toggle="modal"
+                    type="button"><i class="ti ti-plus"></i> {{ 'observatory.btn_add'|trans }}
+            </button>
+        </div>
+    </div>
+{% endblock %}
+{% block body %}
+    {# ############## MODAL - NEW ############## #}
+    {% form_theme form 'bootstrap_4_layout.html.twig' %}
+    <div aria-hidden="true" aria-labelledby="createModalLabel" class="modal fade"
+         id="createModal"
+         tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" id="staticBackdrop">
+            <div class="modal-content">
+                {{ form_start(form) }}
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="createModalLabel1">{{ 'observatory.btn_create'|trans }}</h1>
+                        <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3" id="newtask">
+                            <div class="modal-body">
+                                <div class="mb-3 app-form" id="newtask">
+                                    {{ form_widget(form) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" id="push"
+                                type="submit">{{ 'observatory.btn_create'|trans }}
+                        </button>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for obs in observatories %}
+            {% include 'observatory/parts/observatory.html.twig' with {'editForms': editForms} %}
+        {% endfor %}
+    </div>
+{% endblock %}

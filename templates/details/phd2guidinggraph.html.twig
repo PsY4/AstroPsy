@@ -1,0 +1,71 @@
+{% set samples   = guiding.samples %}
+{% set headers   = guiding.headers %}
+{% set px_scale  = headers.pixelScaleArcsecPx ?? 1 %}
+{% set started_at = guiding.startedAt %}
+
+<div class="card profile-container">
+    <div class="card-header">
+        <div class="fa-pull-left">
+            <h5>{{ 'phd2.guiding.graph_title'|trans }}</h5>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <canvas id="guidingChart" height="200"></canvas>
+        <div class="row">
+            <div class="col-md-5">
+                <div class="mt-3" id="guidingStats">
+                    <table class="table table-sm table-bordered mb-0" style="max-width:380px">
+                        <thead>
+                        <tr><th></th><th>RMS</th><th>Peak</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr><th>RA</th>   <td id="rmsRa">—</td>   <td id="peakRa">—</td></tr>
+                        <tr><th>Dec</th>  <td id="rmsDec">—</td>  <td id="peakDec">—</td></tr>
+                        <tr><th>Total</th><td id="rmsTot">—</td>  <td id="peakTot">—</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-2" id="graphControls">
+                    <div class="input-group input-group-sm">
+                        <button class="btn btn-primary b-r-left"  type="button" data-mins="0"  id="fullRangeBtn">{{ 'phd2.guiding.filter_full'|trans }}</button>
+                        <button class="btn btn-primary" type="button" data-mins="5">{{ 'phd2.guiding.filter_5min'|trans }}</button>
+                        <button class="btn btn-primary" type="button" data-mins="15">{{ 'phd2.guiding.filter_15min'|trans }}</button>
+                        <button class="btn btn-primary" type="button" data-mins="30">{{ 'phd2.guiding.filter_30min'|trans }}</button>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <div class="input-group-text b-r-left bg-primary b-1-primary">
+                            <input aria-label="{{ 'phd2.guiding.exclude_dither'|trans }}" class="form-check-input mt-0" type="checkbox" id="excludeDitherCbx" checked>
+                            <label style="color: #fff" for="excludeDitherCbx">&nbsp;{{ 'phd2.guiding.exclude_dither'|trans }}</label>
+                        </div>
+                        <div class="input-group-text b-r-left bg-primary b-1-primary  b-r-right">
+                            <input aria-label="{{ 'phd2.guiding.show_dither'|trans }}" class="form-check-input mt-0" type="checkbox" id="showDitherBandsCbx">
+                            <label style="color: #fff" for="showDitherBandsCbx">&nbsp;{{ 'phd2.guiding.show_dither'|trans }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <canvas id="fftChart" height="180" class="mt-4"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const PHD2_RAW            = {{ samples|json_encode(constant('JSON_UNESCAPED_UNICODE'))|raw }};
+const PHD2_PX_TO_ARCSEC   = {{ px_scale is not null ? px_scale : 1 }};
+const PHD2_STARTED_AT_ISO = '{{ started_at|date('c') }}';
+const PHD2_TRANS = {
+    axisRaError:     '{{ 'phd2.guiding.axis_ra_error'|trans|e('js') }}',
+    axisDecError:    '{{ 'phd2.guiding.axis_dec_error'|trans|e('js') }}',
+    axisRaCorr:      '{{ 'phd2.guiding.axis_ra_correction'|trans|e('js') }}',
+    axisDecCorr:     '{{ 'phd2.guiding.axis_dec_correction'|trans|e('js') }}',
+    labelError:      '{{ 'phd2.guiding.label_error'|trans|e('js') }}',
+    labelCorrection: '{{ 'phd2.guiding.label_correction'|trans|e('js') }}',
+    labelPeriod:     '{{ 'phd2.guiding.label_period'|trans|e('js') }}',
+    labelAmplitude:  '{{ 'phd2.guiding.label_amplitude'|trans|e('js') }}',
+};
+</script>
+<script src=”{{ asset('assets/js/phd2-guiding-graph.js') }}”></script>

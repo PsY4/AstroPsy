@@ -1,0 +1,71 @@
+<div class="card h-100">
+    <div class="card-header d-flex align-items-center gap-2">
+        <i class="fa fa-fw fa-moon text-primary"></i>
+        <h5 class="mb-0 flex-grow-1">{{ 'dashboard.alerts.title'|trans }}</h5>
+        <small class="text-muted">{{ 'now'|date('d/m H:i') }}</small>
+    </div>
+
+    <div class="card-body p-2 overflow-auto">
+
+        {# --- Météo --- #}
+        {% set wa = weatherAlert ?? null %}
+        <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom">
+            {% if wa is not null and wa.favorable %}
+                <span class="badge bg-success"><i class="fa fa-check"></i></span>
+                <div class="small lh-sm">
+                    <div class="fw-medium">{{ 'dashboard.alerts.weather_favorable'|trans }}</div>
+                    <span class="text-muted">
+                        <i class="fa fa-cloud"></i> {{ wa.cloud_avg }}%
+                        &nbsp;·&nbsp;<i class="fa fa-wind"></i> {{ wa.wind_max }} m/s
+                        {% if wa.score_avg %}&nbsp;·&nbsp;<i class="fa fa-star"></i> {{ wa.score_avg }}/100{% endif %}
+                    </span>
+                </div>
+            {% elseif wa is not null and wa.cloud_avg is not null %}
+                <span class="badge bg-warning text-dark"><i class="fa fa-cloud"></i></span>
+                <div class="small lh-sm">
+                    <div class="fw-medium">{{ 'dashboard.alerts.weather_unfavorable'|trans }}</div>
+                    <span class="text-muted">
+                        <i class="fa fa-cloud"></i> {{ wa.cloud_avg }}%
+                        &nbsp;·&nbsp;<i class="fa fa-wind"></i> {{ wa.wind_max }} m/s
+                        &nbsp;·&nbsp;<i class="fa fa-droplet"></i> {{ wa.precip }} mm
+                    </span>
+                </div>
+            {% else %}
+                <span class="badge bg-secondary"><i class="fa fa-question"></i></span>
+                <span class="text-muted small">{{ 'dashboard.alerts.weather_unavailable'|trans }}</span>
+            {% endif %}
+        </div>
+
+        {# --- Planning par setup --- #}
+        <div id="alerts-setups">
+            <div class="text-muted small py-1">
+                <span class="spinner-border spinner-border-sm me-1"></span>
+                {{ 'dashboard.alerts.computing'|trans }}
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card-footer text-center py-2">
+        <a href="{{ path('night_planner') }}">
+            <span class="badge text-bg-primary">
+                <i class="fa fa-fw fa-moon"></i> {{ 'nav.night_planner'|trans }}
+            </span>
+        </a>
+    </div>
+</div>
+
+<script src="https://unpkg.com/astronomy-engine/astronomy.browser.js"></script>
+<script>
+const WIDGET_TARGETS = {{ wishlistJson|raw }};
+const WIDGET_SETUPS  = {{ setupsJson|raw }};
+const TARGET_URL     = '{{ path('browse_target', {id: 0}) }}'.replace('/0', '/XXXX');
+const ALERTS_TRANS   = {
+    noTargets:   '{{ 'dashboard.alerts.no_targets'|trans|e('js') }}',
+    moreTargets: '{{ 'dashboard.alerts.more_targets'|trans|e('js') }}',
+};
+</script>
+<script src="{{ asset('assets/js/astronomy-helpers.js') }}"></script>
+<script src="{{ asset('assets/js/visibility-calc.js') }}"></script>
+<script src="{{ asset('assets/js/scheduler.js') }}"></script>
+<script src="{{ asset('assets/js/alerts-widget.js') }}"></script>

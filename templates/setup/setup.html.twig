@@ -1,0 +1,277 @@
+{% set pageTitle = 'nav.setups'|trans %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}{% endblock %}
+{% block body %}
+{{ form_start(form) }}
+
+{# ── Barre du haut : nom + logo + save ──────────────────────────── #}
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="row align-items-center g-2">
+            <div class="col-md-7">
+                {{ form_widget(form.name) }}
+            </div>
+            <div class="col-md-4">
+                {{ form_widget(form.uploadLogo) }}
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-lg btn-primary w-100" style="height:100%">
+                    <i class="fa fa-fw fa-save"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Rangée : Général | Optique + Planning ───────────────────────── #}
+<div class="row g-3 mb-3">
+
+    {# Colonne gauche : Général #}
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header py-2">
+                <h6 class="mb-0 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em;">
+                    <i class="fa fa-fw fa-sliders-h me-1"></i>{{ 'setup.section_general'|trans }}
+                </h6>
+            </div>
+            <div class="card-body">
+                {{ form_row(form.author) }}
+                {{ form_row(form.observatory) }}
+                {{ form_row(form.notes) }}
+            </div>
+        </div>
+    </div>
+
+    {# Colonne droite : Optique + Planning #}
+    <div class="col-md-8">
+
+        {# Optique #}
+        <div class="card mb-3">
+            <div class="card-header py-2">
+                <h6 class="mb-0 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em;">
+                    <i class="fa fa-fw fa-eye me-1"></i>{{ 'setup.section_optics'|trans }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6 col-md-3">{{ form_row(form.sensorWPx) }}</div>
+                    <div class="col-6 col-md-3">{{ form_row(form.sensorHPx) }}</div>
+                    <div class="col-6 col-md-3">{{ form_row(form.pixelSizeUm) }}</div>
+                    <div class="col-6 col-md-3">{{ form_row(form.focalMm) }}</div>
+                </div>
+                <div id="fov-preview" class="mt-2 small text-muted d-none">
+                    <i class="fa fa-fw fa-expand-alt me-1"></i>
+                    FOV : <strong id="fov-w">—</strong> × <strong id="fov-h">—</strong> arcmin
+                    &nbsp;·&nbsp; Résolution : <strong id="fov-res">—</strong> arcsec/px
+                </div>
+            </div>
+        </div>
+
+        {# Planning overhead #}
+        <div class="card">
+            <div class="card-header py-2">
+                <h6 class="mb-0 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em;">
+                    <i class="fa fa-fw fa-clock me-1"></i>{{ 'setup.section_planning'|trans }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6 col-md">{{ form_row(form.slewTimeMin) }}</div>
+                    <div class="col-6 col-md">{{ form_row(form.autofocusTimeMin) }}</div>
+                    <div class="col-6 col-md">{{ form_row(form.autofocusIntervalMin) }}</div>
+                    <div class="col-6 col-md">{{ form_row(form.meridianFlipTimeMin) }}</div>
+                    <div class="col-6 col-md">{{ form_row(form.minShootTimeMin) }}</div>
+                </div>
+            </div>
+        </div>
+
+    </div>{# /col-md-8 #}
+</div>{# /row principale #}
+
+{# ── NINA Séquenceur ─────────────────────────────────────────────── #}
+<div class="card mb-3">
+    <div class="card-header py-2">
+        <h6 class="mb-0 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em;">
+            <i class="fa fa-fw fa-satellite-dish me-1"></i>NINA Séquenceur
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-2">{{ form_row(form.imagingType) }}</div>
+            <div class="col-6 col-md-2">{{ form_row(form.cameraCoolingTemp) }}</div>
+            <div class="col-6 col-md-2">{{ form_row(form.cameraBinning) }}</div>
+            <div class="col-6 col-md-2">{{ form_row(form.cameraGain) }}</div>
+            <div class="col-6 col-md-2">{{ form_row(form.cameraOffset) }}</div>
+            <div class="col-6 col-md-2">{{ form_row(form.ditherEvery) }}</div>
+        </div>
+
+        {# Filters table (MONO uniquement) #}
+        <div id="nina-filters-section"{% if setup.imagingType == 'OSC' %} style="display:none"{% endif %}>
+            <label class="fw-semibold small mb-2">
+                <i class="fa fa-fw fa-filter me-1"></i>{{ 'setup.section_nina_filters'|trans }}
+            </label>
+            {{ form_widget(form.filtersConfigRaw, {'attr': {'id': 'setup_filtersConfigRaw'}}) }}
+            <table class="table table-sm table-bordered table-hover mb-2" id="nina-filters-table">
+                <thead class="table-secondary">
+                    <tr>
+                        <th>Nom NINA</th>
+                        <th style="width:110px">Position roue</th>
+                        <th style="width:110px">Focus offset</th>
+                        <th style="width:110px">Expo (s)</th>
+                        <th style="width:42px"></th>
+                    </tr>
+                </thead>
+                <tbody id="nina-filters-tbody"></tbody>
+            </table>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="nina-add-filter">
+                <i class="fa fa-fw fa-plus"></i> Ajouter un filtre
+            </button>
+        </div>
+    </div>
+</div>
+
+{# ── Pièces ──────────────────────────────────────────────────────── #}
+<div class="card mb-3">
+    <div class="card-header py-2">
+        <h6 class="mb-0 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em;">
+            <i class="fa fa-fw fa-tools me-1"></i>{{ 'setup.section_parts'|trans }}
+        </h6>
+    </div>
+    <div class="card-body">
+        <div id="setup_parts_collection" class="row"
+             data-prototype="{{ form_widget(form.setupParts.vars.prototype)|e('html_attr') }}">
+            {% for setupPart in form.setupParts %}
+                <div class="setup-part-item col-md-6">
+                    {{ form_widget(setupPart) }}
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-setup-part" class="btn btn-primary mt-2">
+            <i class="fa fa-fw fa-plus-circle"></i> {{ 'setup.btn_add_part'|trans }}
+        </button>
+    </div>
+</div>
+
+{{ form_end(form) }}
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Parts collection ────────────────────────────────────────────
+    const collectionHolder = document.getElementById('setup_parts_collection');
+    const addButton        = document.getElementById('add-setup-part');
+    let index = collectionHolder.querySelectorAll('.setup-part-item').length;
+    const prototype = collectionHolder.dataset.prototype;
+
+    collectionHolder.querySelectorAll('.setup-part-item').forEach(addRemoveButton);
+
+    addButton.addEventListener('click', function () {
+        const newForm = prototype.replace(/__name__/g, index);
+        const div = document.createElement('div');
+        div.classList.add('setup-part-item', 'col-md-6');
+        div.innerHTML = newForm;
+        addRemoveButton(div);
+        collectionHolder.appendChild(div);
+        index++;
+    });
+
+    function addRemoveButton(item) {
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'remove-setup-part btn btn-light-primary';
+        removeButton.innerHTML = '<i class="fa fa-fw fa-trash"></i> {{ "setup.btn_remove"|trans }}';
+        removeButton.addEventListener('click', function () { item.remove(); });
+        const footer = item.querySelector('.card-footer');
+        if (footer) footer.appendChild(removeButton);
+    }
+
+    // ── FOV preview ─────────────────────────────────────────────────
+    function updateFov() {
+        const w   = parseFloat(document.querySelector('[name="setup[sensorWPx]"]')?.value);
+        const h   = parseFloat(document.querySelector('[name="setup[sensorHPx]"]')?.value);
+        const px  = parseFloat(document.querySelector('[name="setup[pixelSizeUm]"]')?.value);
+        const f   = parseFloat(document.querySelector('[name="setup[focalMm]"]')?.value);
+        const el  = document.getElementById('fov-preview');
+        if (!el) return;
+        if (w > 0 && h > 0 && px > 0 && f > 0) {
+            const res  = (px / f) * 206.265;
+            const fovW = res * w / 60;
+            const fovH = res * h / 60;
+            document.getElementById('fov-w').textContent   = fovW.toFixed(1);
+            document.getElementById('fov-h').textContent   = fovH.toFixed(1);
+            document.getElementById('fov-res').textContent = res.toFixed(2);
+            el.classList.remove('d-none');
+        } else {
+            el.classList.add('d-none');
+        }
+    }
+    ['sensorWPx','sensorHPx','pixelSizeUm','focalMm'].forEach(name => {
+        const el = document.querySelector('[name="setup[' + name + ']"]');
+        if (el) el.addEventListener('input', updateFov);
+    });
+    updateFov();
+
+    // ── NINA filters table ──────────────────────────────────────────
+    const hiddenInput   = document.getElementById('setup_filtersConfigRaw');
+    const tbody         = document.getElementById('nina-filters-tbody');
+    const addBtn        = document.getElementById('nina-add-filter');
+    const typeSelect    = document.querySelector('[name="setup[imagingType]"]');
+    const filterSection = document.getElementById('nina-filters-section');
+
+    let filters = {{ (setup.filtersConfig ?? [])|json_encode|raw }};
+    if (!Array.isArray(filters)) filters = [];
+
+    function renderRow(f, idx) {
+        const tr = document.createElement('tr');
+        tr.dataset.idx = idx;
+        tr.innerHTML = `
+            <td><input type="text"   class="form-control form-control-sm" value="${f.ninaName||''}"      data-field="ninaName"      placeholder="Ha"></td>
+            <td><input type="number" class="form-control form-control-sm" value="${f.position||0}"       data-field="position"      min="0" max="20"></td>
+            <td><input type="number" class="form-control form-control-sm" value="${f.focusOffset||0}"    data-field="focusOffset"></td>
+            <td><input type="number" class="form-control form-control-sm" value="${f.exposureTime||300}" data-field="exposureTime"  min="1"></td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger nina-remove-filter"><i class="fa fa-trash"></i></button></td>
+        `;
+        tr.querySelectorAll('input').forEach(inp => inp.addEventListener('input', syncFilters));
+        tr.querySelector('.nina-remove-filter').addEventListener('click', () => { tr.remove(); syncFilters(); });
+        return tr;
+    }
+
+    function syncFilters() {
+        filters = [...tbody.querySelectorAll('tr')].map(tr => {
+            const f = {};
+            tr.querySelectorAll('[data-field]').forEach(inp => {
+                f[inp.dataset.field] = (inp.type === 'number') ? Number(inp.value) : inp.value;
+            });
+            return f;
+        });
+        hiddenInput.value = JSON.stringify(filters);
+    }
+
+    function rebuildTable() {
+        tbody.innerHTML = '';
+        filters.forEach((f, i) => tbody.appendChild(renderRow(f, i)));
+        syncFilters();
+    }
+
+    addBtn.addEventListener('click', () => {
+        filters.push({ninaName: '', position: 0, focusOffset: 0, exposureTime: 300});
+        tbody.appendChild(renderRow(filters[filters.length - 1], filters.length - 1));
+        syncFilters();
+    });
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', () => {
+            filterSection.style.display = typeSelect.value === 'OSC' ? 'none' : '';
+        });
+    }
+
+    rebuildTable();
+});
+</script>
+<style>
+    .iconpicker .iconpicker-item { color: rgba(var(--primary), 1); }
+    .iconpicker-popover { z-index:99999 }
+</style>
+{% endblock %}

@@ -1,0 +1,199 @@
+{############################}
+{#          LIGHT           #}
+{############################}
+{% include 'browse/session/details.html.twig' with {'session': session} %}
+<div class="col-xxl-9 order-xxl-1 lights-viewer" id="lights-preview-col">
+    <div class="card">
+        <div class="card-header d-flex align-items-center">
+            <h5 class="mb-0">{{ 'session.exposure_preview'|trans }}</h5>
+            <button class="btn btn-primary icon-btn ms-auto btn-toggle-details"
+                    data-details="#lights-details-col" title="Toggle details">
+                <i class="ti ti-layout-sidebar-right-collapse"></i>
+            </button>
+        </div>
+        <div class="card-body lights-viewer-fits">
+            <div class="JS9Menubar" data-width="100%"></div>
+            <div class="JS9Toolbar" data-width="100%"></div>
+            <div class="JS9" data-width="100%" data-height="600px"></div>
+            <div class="JS9Statusbar"></div>
+        </div>
+        <div class="card-body lights-viewer-nef d-none p-0">
+            <!-- Toolbar stretch/zoom -->
+            <div class="d-flex gap-2 align-items-center px-2 py-2 flex-wrap border-bottom">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" id="nef-zoom-out"><i class="ti ti-zoom-out"></i></button>
+                    <button class="btn btn-outline-secondary" id="nef-zoom-reset">1:1</button>
+                    <button class="btn btn-outline-secondary" id="nef-zoom-in"><i class="ti ti-zoom-in"></i></button>
+                    <button class="btn btn-outline-secondary" id="nef-zoom-fit"><i class="ti ti-arrows-maximize"></i></button>
+                </div>
+                <select id="nef-stretch" class="form-select form-select-sm" style="width:auto">
+                    <option value="asinh">Asinh</option>
+                    <option value="log">Log</option>
+                    <option value="sqrt">Sqrt</option>
+                    <option value="linear">Linéaire</option>
+                </select>
+                <div class="d-flex align-items-center gap-1">
+                    <small class="text-muted">{{ 'exposure.nef_viewer.bp'|trans }}</small>
+                    <input type="range" id="nef-bp" min="0" max="40" value="1" step="0.5" style="width:80px">
+                    <small id="nef-bp-val" class="text-muted">1%</small>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <small class="text-muted">{{ 'exposure.nef_viewer.wp'|trans }}</small>
+                    <input type="range" id="nef-wp" min="60" max="100" value="99" step="0.5" style="width:80px">
+                    <small id="nef-wp-val" class="text-muted">99%</small>
+                </div>
+                <button id="nef-apply" class="btn btn-sm btn-primary">{{ 'exposure.nef_viewer.apply'|trans }}</button>
+                <div id="nef-spinner" class="spinner-border spinner-border-sm text-secondary d-none ms-1"></div>
+            </div>
+            <!-- Zone image (zoom/pan) -->
+            <div id="nef-viewport" style="overflow:hidden; cursor:grab; height:580px; background:#111; position:relative; touch-action:none">
+                <img id="lights-viewer-preview" src="" alt="" draggable="false"
+                     style="position:absolute; top:0; left:0; max-width:none; user-select:none; display:block">
+            </div>
+            <!-- Histogramme R/G/B -->
+            <div class="px-2 pt-1" style="height:90px">
+                <canvas id="nef-histogram-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    let scale = 1, ox = 0, oy = 0;
+    let isDragging = false, dragX0, dragY0, ox0, oy0;
+    let histChart = null;
+
+    const viewport = () => document.getElementById('nef-viewport');
+    const img      = () => document.getElementById('lights-viewer-preview');
+
+    function applyTransform() {
+        const el = img();
+        el.style.transform = `translate(${ox}px,${oy}px) scale(${scale})`;
+        el.style.transformOrigin = '0 0';
+    }
+
+    function zoomAt(factor, cx, cy) {
+        const vp = viewport(), rect = vp.getBoundingClientRect();
+        const px = cx !== undefined ? cx - rect.left : rect.width / 2;
+        const py = cy !== undefined ? cy - rect.top  : rect.height / 2;
+        const newScale = Math.max(0.1, Math.min(20, scale * factor));
+        const ratio = newScale / scale;
+        ox = px - ratio * (px - ox);
+        oy = py - ratio * (py - oy);
+        scale = newScale;
+        applyTransform();
+    }
+
+    function fitToView() {
+        const el = img(), vp = viewport();
+        if (!el.naturalWidth) return;
+        const sf = Math.min(vp.clientWidth / el.naturalWidth, vp.clientHeight / el.naturalHeight);
+        scale = sf;
+        ox = (vp.clientWidth  - el.naturalWidth  * sf) / 2;
+        oy = (vp.clientHeight - el.naturalHeight * sf) / 2;
+        applyTransform();
+    }
+
+    document.addEventListener('wheel', e => {
+        if (!e.target.closest('#nef-viewport')) return;
+        e.preventDefault();
+        zoomAt(e.deltaY < 0 ? 1.15 : 0.87, e.clientX, e.clientY);
+    }, { passive: false });
+
+    document.addEventListener('mousedown', e => {
+        if (!e.target.closest('#nef-viewport')) return;
+        isDragging = true; dragX0 = e.clientX; dragY0 = e.clientY; ox0 = ox; oy0 = oy;
+        viewport().style.cursor = 'grabbing';
+    });
+    document.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        ox = ox0 + (e.clientX - dragX0);
+        oy = oy0 + (e.clientY - dragY0);
+        applyTransform();
+    });
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        const vp = viewport(); if (vp) vp.style.cursor = 'grab';
+    });
+
+    document.getElementById('nef-zoom-in')?.addEventListener('click',  () => zoomAt(1.25));
+    document.getElementById('nef-zoom-out')?.addEventListener('click', () => zoomAt(0.80));
+    document.getElementById('nef-zoom-reset')?.addEventListener('click', () => { scale=1; ox=0; oy=0; applyTransform(); });
+    document.getElementById('nef-zoom-fit')?.addEventListener('click', fitToView);
+
+    ['nef-bp','nef-wp'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', function() {
+            document.getElementById(id+'-val').textContent = this.value + '%';
+        });
+    });
+
+    document.getElementById('nef-apply')?.addEventListener('click', () => {
+        const base = img().dataset.baseUrl; if (!base) return;
+        const url  = base
+            + '&stretch=' + document.getElementById('nef-stretch').value
+            + '&bp='      + document.getElementById('nef-bp').value
+            + '&wp='      + document.getElementById('nef-wp').value;
+        const spinner = document.getElementById('nef-spinner');
+        spinner?.classList.remove('d-none');
+        const el = img(); el.onload = () => spinner?.classList.add('d-none'); el.src = url;
+    });
+
+    function renderHistogram(data) {
+        const canvas = document.getElementById('nef-histogram-canvas'); if (!canvas) return;
+        if (histChart) histChart.destroy();
+        histChart = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: Array.from({length:256},(_,i)=>i),
+                datasets: [
+                    { data: data.r, backgroundColor:'rgba(220,60,60,0.5)',  borderWidth:0, barPercentage:1, categoryPercentage:1 },
+                    { data: data.g, backgroundColor:'rgba(60,180,60,0.5)',  borderWidth:0, barPercentage:1, categoryPercentage:1 },
+                    { data: data.b, backgroundColor:'rgba(60,100,220,0.5)', borderWidth:0, barPercentage:1, categoryPercentage:1 },
+                ]
+            },
+            options: {
+                animation: false, responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                scales: { x: { display: false }, y: { display: false, type: 'logarithmic' } }
+            }
+        });
+    }
+
+    window.initNefViewer = function(renderBaseUrl, histogramUrl) {
+        scale = 1; ox = 0; oy = 0;
+        const el = img();
+        el.dataset.baseUrl = renderBaseUrl;
+        const spinner = document.getElementById('nef-spinner');
+        spinner?.classList.remove('d-none');
+        el.onload = () => { spinner?.classList.add('d-none'); fitToView(); };
+        el.src = renderBaseUrl;
+        fetch(histogramUrl).then(r => r.json()).then(renderHistogram).catch(() => {});
+    };
+})();
+</script>
+<div class="col-xxl-3 order-xxl-2 lights-viewer" id="lights-details-col">
+    <div id="exposure-details"></div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function(event) {
+        $('.exposures span').click(function () {
+            $('.session-content span').removeClass('active')
+            $(this).addClass('active')
+            currentRequest = $.ajax({
+                url: '{{ path('exposure_detail', {'exposure': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                method: 'GET',
+                dataType: 'html',
+                cache: true
+            });
+
+            currentRequest
+                .done(function (html) {
+                    $('.masters-viewer').addClass('d-none');
+                    $('.exports-viewer').addClass('d-none');
+                    $('.lights-viewer').removeClass('d-none');
+                    $('.phd2log-viewer').addClass('d-none');
+                    $('#exposure-details').html(html);
+                })
+        });
+    });
+</script>

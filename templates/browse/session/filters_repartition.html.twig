@@ -1,0 +1,57 @@
+{# DETERMINE FILTERS REPARTITION #}
+{% set filtersNumber = [] %}
+{% set filtersDuration = [] %}
+{% set lights = session.exposures|filter(e => e.type == "LIGHT") %}
+
+{% for e in lights %}
+    {% if e.filterName in filtersNumber|keys %}
+        {% set filtersNumber = filtersNumber|merge({ (e.filterName): filtersNumber.(e.filterName)+1 }) %}
+        {% set filtersDuration = filtersDuration|merge({ (e.filterName): filtersDuration.(e.filterName)+e.exposureS }) %}
+    {% else %}
+        {% set filtersNumber = filtersNumber|merge({(e.filterName): 1}) %}
+        {% set filtersDuration = filtersDuration|merge({(e.filterName): e.exposureS}) %}
+    {% endif %}
+{% endfor %}
+    <div id="audienceChart"></div>
+<script>
+    document.addEventListener("DOMContentLoaded", function(event) {
+        const chartOptions = {
+            series: [{{ filtersNumber|join(",") }}],
+            chart: {
+                height: 200,
+                type: 'donut'
+            },
+            plotOptions: {
+                pie: {
+                    startAngle: 0,
+                    donut: {
+                        size: '50%',
+                        dataLabels: {
+                            enabled: true
+                        },
+                    }
+                }
+            },
+            labels: [
+                {% for f, c in filtersNumber %}
+                "{{ (f=="")?"N/A":f }} : {{ c }} ({{ filtersDuration[(f)]|format_duration }})" {{ ((loop.revindex0>0)?",") }}
+                {% endfor %}
+            ],
+            colors: [{% for f in filtersNumber|keys %}'{{ filterColorMap[f]|default('#6c757d') }}'{% if not loop.last %},{% endif %}{% endfor %}],
+            legend: { show: true },
+            dataLabels: { enabled: false },
+            responsive: [
+                {
+                    breakpoint: 1400,
+                    options: { chart: { height: 200 }, }
+                },
+                {
+                    breakpoint: 992,
+                    options: { chart: { height: 180 }, }
+                }
+            ]
+        }
+        const audienceChart = new ApexCharts(document.querySelector("#audienceChart"), chartOptions);
+        audienceChart.render();
+    });
+</script>

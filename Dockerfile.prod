@@ -1,0 +1,64 @@
+# =============================================================================
+# AstroPsy — Production Dockerfile (multi-stage)
+# =============================================================================
+
+# Stage 1: Composer dependencies
+FROM composer:2 AS deps
+
+WORKDIR /app
+COPY composer.json composer.lock symfony.lock ./
+RUN composer install --no-dev --no-scripts --prefer-dist --optimize-autoloader
+
+# Stage 2: Runtime
+FROM php:8.3-fpm
+
+# Install extensions via pre-compiled binaries (much faster than docker-php-ext-install)
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN install-php-extensions pdo_pgsql intl zip gd opcache
+
+# Nginx + Supervisor
+RUN apt-get update && apt-get install -y --no-install-recommends nginx supervisor \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# PHP prod config
+RUN printf "memory_limit=512M\nupload_max_filesize=100M\npost_max_size=100M\n" \
+    > /usr/local/etc/php/conf.d/zz-custom.ini
+
+# OPcache prod config (no timestamp validation)
+RUN { \
+      echo "opcache.enable=1"; \
+      echo "opcache.enable_cli=1"; \
+      echo "opcache.memory_consumption=256"; \
+      echo "opcache.interned_strings_buffer=16"; \
+      echo "opcache.max_accelerated_files=20000"; \
+      echo "opcache.validate_timestamps=0"; \
+    } > /usr/local/etc/php/conf.d/zz-opcache.ini
+
+# Nginx config
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/site.conf /etc/nginx/conf.d/default.conf
+
+# Supervisor config
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Composer dependencies from stage 1
+COPY --from=deps /app/vendor /app/vendor
+
+# Application source
+COPY . /app
+
+# Entrypoint
+COPY docker/entrypoint.prod.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Ensure var directory exists and is writable
+RUN mkdir -p /app/var/cache /app/var/log && chown -R www-data:www-data /app/var
+
+ENV APP_ENV=prod
+
+EXPOSE 8080
+
+ENTRYPOINT ["entrypoint.sh"]
+CMD ["/usr/bin/supervisord"]

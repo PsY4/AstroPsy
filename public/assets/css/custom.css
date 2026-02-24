@@ -1,0 +1,385 @@
+/* Restore FA icons visibility in collapsed sidebar */
+.app-wrapper .semi-nav .app-nav .main-nav li a i[class*="fa"] {
+    font-size: 1.1rem;
+}
+
+/* Sidebar footer */
+nav .sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(var(--primary), 0.2);
+    background-color: rgba(var(--white), 1);
+}
+nav .app-nav {
+    padding-bottom: 52px !important;
+}
+/* Toggle icon */
+nav .sidebar-footer .header-toggle {
+    cursor: pointer;
+    font-size: 1.4rem;
+    line-height: 1;
+    display: inline-flex;
+}
+/* Dark/light toggle */
+nav .sidebar-footer .header-dark {
+    position: relative;
+    cursor: pointer;
+    font-size: 1.4rem;
+    line-height: 1;
+    display: inline-flex;
+    width: 1.4rem;
+    height: 1.4rem;
+}
+nav .sidebar-footer .header-dark .moon-logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+}
+nav .sidebar-footer .header-dark .sun-logo {
+    opacity: 1;
+}
+nav .sidebar-footer .header-dark .sun {
+    opacity: 0;
+}
+nav .sidebar-footer .header-dark .moon {
+    opacity: 1;
+}
+/* semi-nav: hide locale, center icons */
+nav.semi-nav:not(:hover) .sidebar-footer {
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
+    justify-content: center;
+    align-items: center;
+}
+nav.semi-nav:not(:hover) .sidebar-footer .locale-switcher {
+    display: none;
+}
+/* Suppression du header : padding minimal en haut du contenu */
+.app-content main {
+    padding-top: 0.25rem;
+}
+
+.session-file {
+    display: inline-block;
+    background-color: rgba(var(--secondary), 1);
+    color: rgba(var(--white), 1);
+    border-radius: 10px;
+    font-size: 20px;
+    position: relative;
+    text-align: center;
+    z-index: 1;
+    width: 63px;
+    height: 100px;
+    transition: var(--app-transition);
+    padding: 8px 0;
+    line-height: 20px;
+    margin-bottom: 3px
+}
+
+/* ── Notification Bell ──────────────────────────────────────────────────── */
+#notif-bell {
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+#notif-bell:hover {
+    opacity: 0.75;
+}
+
+/* Dropdown panel — positionné juste au-dessus du sidebar-footer */
+#notif-dropdown {
+    position: absolute;
+    bottom: 52px;
+    left: 8px;
+    right: 8px;
+    z-index: 1100;
+}
+.notif-dropdown-inner {
+    background: rgba(var(--white), 1);
+    border: 1px solid rgba(var(--primary), 0.15);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+.notif-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: .85rem;
+    border-bottom: 1px solid rgba(var(--primary), 0.1);
+}
+.notif-dropdown-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 260px;
+    overflow-y: auto;
+}
+.notif-dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(var(--primary), 0.05);
+}
+.notif-dropdown-item:hover {
+    background: rgba(var(--primary), 0.05);
+}
+.notif-item-unread {
+    background: rgba(var(--primary), 0.06);
+}
+.notif-item-title {
+    font-size: .82rem;
+    font-weight: 500;
+}
+.notif-item-meta {
+    font-size: .72rem;
+    color: #888;
+    margin-top: 2px;
+}
+.notif-dropdown-empty {
+    padding: 16px 12px;
+    font-size: .82rem;
+    color: #888;
+    text-align: center;
+}
+.notif-dropdown-footer {
+    padding: 6px 12px;
+    font-size: .8rem;
+    text-align: right;
+    border-top: 1px solid rgba(var(--primary), 0.1);
+}
+
+/* ── Directory Browser ─────────────────────────────────────── */
+.dir-browser-item {
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: .88rem;
+    font-family: var(--bs-font-monospace);
+}
+.dir-browser-item:hover {
+    background: rgba(var(--primary), 0.08);
+}
+
+/* ── Session Template Editor ────────────────────────────────── */
+.template-tree {
+    list-style: none;
+    padding-left: 28px;
+    margin: 0;
+    position: relative;
+}
+#template-editor > .template-tree {
+    padding-left: 0;
+}
+
+/* Tree connector lines */
+.template-tree .template-node {
+    position: relative;
+    margin-bottom: 0;
+    padding: 2px 0;
+}
+.template-tree .template-tree > .template-node::before {
+    content: '';
+    position: absolute;
+    left: -18px;
+    top: 0;
+    bottom: 50%;
+    width: 1px;
+    border-left: 1px solid rgba(var(--primary), 0.2);
+}
+.template-tree .template-tree > .template-node::after {
+    content: '';
+    position: absolute;
+    left: -18px;
+    top: 50%;
+    width: 14px;
+    height: 0;
+    border-top: 1px solid rgba(var(--primary), 0.2);
+}
+.template-tree .template-tree > .template-node:not(:last-child)::before {
+    bottom: 0;
+}
+
+/* Node row */
+.template-node-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+.template-node-row:hover {
+    background: rgba(var(--primary), 0.04);
+}
+
+/* Collapse toggle */
+.template-toggle {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: .7rem;
+    color: rgba(var(--primary), 0.5);
+    flex-shrink: 0;
+    transition: transform 0.15s, background 0.15s;
+}
+.template-toggle:hover {
+    background: rgba(var(--primary), 0.1);
+}
+.template-toggle.collapsed {
+    transform: rotate(-90deg);
+}
+.template-toggle-spacer {
+    width: 20px;
+    flex-shrink: 0;
+}
+
+/* Folder icon */
+.template-folder-icon {
+    font-size: .9rem;
+    flex-shrink: 0;
+}
+
+/* Name input */
+.template-name-input {
+    width: 180px !important;
+    flex: 0 0 180px;
+    font-size: .82rem;
+    padding: 2px 8px;
+    height: 28px;
+    border-color: transparent;
+    background: transparent;
+}
+.template-name-input:focus {
+    border-color: rgba(var(--primary), 0.3);
+    background: rgba(var(--white), 1);
+}
+
+/* Role select — compact */
+.template-role-select {
+    width: 120px !important;
+    flex: 0 0 120px;
+    font-size: .78rem;
+    padding: 2px 4px;
+    height: 28px;
+}
+
+/* Role badges — colored by category */
+.template-role-badge {
+    font-size: .68rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+.template-role-badge.role-capture {
+    background: #28a74520;
+    color: #28a745;
+    border: 1px solid #28a74540;
+}
+.template-role-badge.role-calib {
+    background: #fd7e1420;
+    color: #fd7e14;
+    border: 1px solid #fd7e1440;
+}
+.template-role-badge.role-process {
+    background: #007bff20;
+    color: #007bff;
+    border: 1px solid #007bff40;
+}
+.template-role-badge.role-log {
+    background: #6c757d20;
+    color: #6c757d;
+    border: 1px solid #6c757d40;
+}
+.template-role-badge.role-doc {
+    background: #6f42c120;
+    color: #6f42c1;
+    border: 1px solid #6f42c140;
+}
+
+/* Action buttons — small and subtle */
+.template-actions {
+    display: flex;
+    gap: 2px;
+    margin-left: auto;
+    opacity: 0.3;
+    transition: opacity 0.15s;
+}
+.template-node-row:hover .template-actions {
+    opacity: 1;
+}
+.template-actions .btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    font-size: .72rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+/* allowExtra icon */
+.template-extra-icon {
+    font-size: .72rem;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: opacity 0.15s;
+}
+.template-extra-icon.active {
+    opacity: 1;
+    color: #28a745;
+}
+.template-node-row:hover .template-extra-icon {
+    opacity: 0.7;
+}
+.template-extra-icon.active,
+.template-node-row:hover .template-extra-icon.active {
+    opacity: 1;
+}
+
+/* Collapsed children */
+.template-tree.collapsed {
+    display: none;
+}
+
+/* Migrate danger zone */
+.template-danger-zone {
+    border: 1px dashed rgba(220, 53, 69, 0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    background: rgba(220, 53, 69, 0.03);
+}
+.template-danger-zone .btn-outline-danger {
+    font-size: .8rem;
+}
+
+/* ── FS Scan Banner ───────────────────────────────────────── */
+.scan-banner {
+    border-left: 4px solid #ffc107;
+}
+.scan-banner .scan-item-new {
+    color: #28a745;
+}
+.scan-banner .scan-item-missing {
+    color: #dc3545;
+}
+.scan-spinner {
+    padding: 4px 0;
+}

@@ -1,0 +1,170 @@
+{% set headers = exposure.rawHeader %}
+{% if exposure.format == "FITS" %}
+    <script>
+        $('.lights-viewer-fits').removeClass('d-none');
+        $('.lights-viewer-nef').addClass('d-none');
+        JS9.Load("{{ path('fits_stream_js9safe', { id: exposure.id }) }}", {scale:"log"});
+    </script>
+{% endif %}
+{% if exposure.format == "NEF" %}
+    <script>
+        $('.lights-viewer-fits').addClass('d-none');
+        $('.lights-viewer-nef').removeClass('d-none');
+        window.initNefViewer(
+            "{{ path('nef_render', { 'exposure': exposure.id, 'w': 1920 }) }}?stretch=asinh&bp=0.1&wp=99.9",
+            "{{ path('nef_histogram', { 'exposure': exposure.id }) }}"
+        );
+    </script>
+{% endif %}
+<div class="card profile-container">
+    <div class="card-header">
+        <div class="fa-pull-left">
+            <h5>{{ 'exposure.title'|trans }}</h5>
+        </div>
+        <div class="fa-pull-right">
+            <a href="openfolder:{{ local_folder_base }}/{{ exposure.path }}"
+               class="btn btn-primary icon-btn b-r-4" title="{{ 'exposure.btn_open_local'|trans }}">
+                <i class="fa primary fa-arrow-right-to-file"></i>
+            </a>
+        </div>
+    </div>
+    <div class="card-header person-details mt-0" >
+        <div class="details mt-0">
+            <div>
+                <h4 class="text-primary">
+                    {{ headers['NAXIS1'] }}x{{ headers['NAXIS2'] }}
+                </h4>
+                <p class="text-secondary">SIZE</p>
+            </div>
+            <div>
+                <h4 class="text-primary">{{ headers['IMAGETYP'] }}</h4>
+                <p class="text-secondary">TYPE</p>
+            </div>
+            <div>
+                <h4 class="text-primary">{{ headers['EXPTIME'] }}s</h4>
+                <p class="text-secondary">EXPO</p>
+            </div>
+            <div>
+                <h4 class="text-primary">{{ headers['FILTER'] }}</h4>
+                <p class="text-secondary">FILTER</p>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="about-list">
+            {% if headers['SIMPLE'] or headers['BITPIX'] or headers['NAXIS'] or headers['NAXIS1'] or headers['NAXIS2'] or headers['BZERO'] or headers['EXTEND'] or headers['ROWORDER'] or headers['EQUINOX'] or headers['SWCREATE'] %}
+            <h6>IMAGE</h6>
+            {% if headers['SIMPLE'] %}<div><span class="fw-medium"><i class="ti ti-file-description"></i> SIMPLE</span> <span class="float-end f-s-13 text-secondary">{{ headers['SIMPLE'] }}</span></div>{% endif %}
+            {% if headers['BITPIX'] %}<div><span class="fw-medium"><i class="ti ti-ruler-measure"></i> BITPIX</span> <span class="float-end f-s-13 text-secondary">{{ headers['BITPIX'] }}</span></div>{% endif %}
+            {% if headers['NAXIS'] %}<div><span class="fw-medium"><i class="ti ti-layout"></i> NAXIS</span> <span class="float-end f-s-13 text-secondary">{{ headers['NAXIS'] }}</span></div>{% endif %}
+            {% if headers['NAXIS1'] %}<div><span class="fw-medium"><i class="ti ti-layout"></i> NAXIS1</span> <span class="float-end f-s-13 text-secondary">{{ headers['NAXIS1'] }}</span></div>{% endif %}
+            {% if headers['NAXIS2'] %}<div><span class="fw-medium"><i class="ti ti-layout"></i> NAXIS2</span> <span class="float-end f-s-13 text-secondary">{{ headers['NAXIS2'] }}</span></div>{% endif %}
+            {% if headers['BZERO'] is not null and headers['BZERO'] != '' %}<div><span class="fw-medium"><i class="ti ti-number"></i> BZERO</span> <span class="float-end f-s-13 text-secondary">{{ headers['BZERO'] }}</span></div>{% endif %}
+            {% if headers['EXTEND'] %}<div><span class="fw-medium"><i class="ti ti-arrows-maximize"></i> EXTEND</span> <span class="float-end f-s-13 text-secondary">{{ headers['EXTEND'] }}</span></div>{% endif %}
+            {% if headers['ROWORDER'] %}<div><span class="fw-medium"><i class="ti ti-list-numbers"></i> ROWORDER</span> <span class="float-end f-s-13 text-secondary">{{ headers['ROWORDER'] }}</span></div>{% endif %}
+            {% if headers['EQUINOX'] is not null and headers['EQUINOX'] != '' %}<div><span class="fw-medium"><i class="ti ti-planet"></i> EQUINOX</span> <span class="float-end f-s-13 text-secondary">{{ headers['EQUINOX'] }}</span></div>{% endif %}
+            {% if headers['SWCREATE'] %}<div><span class="fw-medium"><i class="ti ti-code"></i> SWCREATE</span> <span class="float-end f-s-13 text-secondary">{{ headers['SWCREATE'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if headers['IMAGETYP'] or headers['EXPOSURE'] is not null or headers['EXPTIME'] is not null %}
+            <hr>
+            <h6>EXPOSURE</h6>
+            {% if headers['IMAGETYP'] %}<div><span class="fw-medium"><i class="ti ti-photo"></i> IMAGETYP</span> <span class="float-end f-s-13 text-secondary">{{ headers['IMAGETYP'] }}</span></div>{% endif %}
+            {% if headers['EXPOSURE'] is not null and headers['EXPOSURE'] != '' %}<div><span class="fw-medium"><i class="ti ti-timer"></i> EXPOSURE</span> <span class="float-end f-s-13 text-secondary">{{ headers['EXPOSURE'] }}</span></div>{% endif %}
+            {% if headers['EXPTIME'] is not null and headers['EXPTIME'] != '' %}<div><span class="fw-medium"><i class="ti ti-timer"></i> EXPTIME</span> <span class="float-end f-s-13 text-secondary">{{ headers['EXPTIME'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if headers['DATE-LOC'] or headers['DATE-OBS'] or headers['MJD-OBS'] is not null or headers['DATE-AVG'] or headers['MJD-AVG'] is not null %}
+            <hr>
+            <h6>DATE / TIME</h6>
+            {% if headers['DATE-LOC'] %}<div><span class="fw-medium"><i class="ti ti-calendar"></i> DATE-LOC</span> <span class="float-end f-s-13 text-secondary">{{ headers['DATE-LOC'] }}</span></div>{% endif %}
+            {% if headers['DATE-OBS'] %}<div><span class="fw-medium"><i class="ti ti-calendar"></i> DATE-OBS</span> <span class="float-end f-s-13 text-secondary">{{ headers['DATE-OBS'] }}</span></div>{% endif %}
+            {% if headers['MJD-OBS'] is not null and headers['MJD-OBS'] != '' %}<div><span class="fw-medium"><i class="ti ti-calendar"></i> MJD-OBS</span> <span class="float-end f-s-13 text-secondary">{{ headers['MJD-OBS'] }}</span></div>{% endif %}
+            {% if headers['DATE-AVG'] %}<div><span class="fw-medium"><i class="ti ti-calendar"></i> DATE-AVG</span> <span class="float-end f-s-13 text-secondary">{{ headers['DATE-AVG'] }}</span></div>{% endif %}
+            {% if headers['MJD-AVG'] is not null and headers['MJD-AVG'] != '' %}<div><span class="fw-medium"><i class="ti ti-calendar"></i> MJD-AVG</span> <span class="float-end f-s-13 text-secondary">{{ headers['MJD-AVG'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if headers['XBINNING'] is not null or headers['YBINNING'] is not null or headers['GAIN'] is not null or headers['OFFSET'] is not null or headers['EGAIN'] is not null or headers['XPIXSZ'] is not null or headers['YPIXSZ'] is not null %}
+            <hr>
+            <h6>SETTINGS</h6>
+            {% if headers['XBINNING'] is not null and headers['XBINNING'] != '' %}<div><span class="fw-medium"><i class="ti ti-columns"></i> XBINNING</span> <span class="float-end f-s-13 text-secondary">{{ headers['XBINNING'] }}</span></div>{% endif %}
+            {% if headers['YBINNING'] is not null and headers['YBINNING'] != '' %}<div><span class="fw-medium"><i class="ti ti-columns"></i> YBINNING</span> <span class="float-end f-s-13 text-secondary">{{ headers['YBINNING'] }}</span></div>{% endif %}
+            {% if headers['GAIN'] is not null and headers['GAIN'] != '' %}<div><span class="fw-medium"><i class="ti ti-adjustments"></i> GAIN</span> <span class="float-end f-s-13 text-secondary">{{ headers['GAIN'] }}</span></div>{% endif %}
+            {% if headers['OFFSET'] is not null and headers['OFFSET'] != '' %}<div><span class="fw-medium"><i class="ti ti-adjustments"></i> OFFSET</span> <span class="float-end f-s-13 text-secondary">{{ headers['OFFSET'] }}</span></div>{% endif %}
+            {% if headers['EGAIN'] is not null and headers['EGAIN'] != '' %}<div><span class="fw-medium"><i class="ti ti-graph"></i> EGAIN</span> <span class="float-end f-s-13 text-secondary">{{ headers['EGAIN'] }}</span></div>{% endif %}
+            {% if headers['XPIXSZ'] is not null and headers['XPIXSZ'] != '' %}<div><span class="fw-medium"><i class="ti ti-arrows-horizontal"></i> XPIXSZ</span> <span class="float-end f-s-13 text-secondary">{{ headers['XPIXSZ'] }}</span></div>{% endif %}
+            {% if headers['YPIXSZ'] is not null and headers['YPIXSZ'] != '' %}<div><span class="fw-medium"><i class="ti ti-arrows-vertical"></i> YPIXSZ</span> <span class="float-end f-s-13 text-secondary">{{ headers['YPIXSZ'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if headers['INSTRUME'] or headers['CAMERAID'] or headers['SET-TEMP'] is not null or headers['CCD-TEMP'] is not null or headers['USBLIMIT'] is not null %}
+            <hr>
+            <h6>CAMERA</h6>
+            {% if headers['INSTRUME'] %}<div><span class="fw-medium"><i class="ti ti-camera"></i> INSTRUME</span> <span class="float-end f-s-13 text-secondary">{{ headers['INSTRUME'] }}</span></div>{% endif %}
+            {% if headers['CAMERAID'] %}<div><span class="fw-medium"><i class="ti ti-id"></i> CAMERAID</span> <span class="float-end f-s-13 text-secondary">{{ headers['CAMERAID'] }}</span></div>{% endif %}
+            {% if headers['SET-TEMP'] is not null and headers['SET-TEMP'] != '' %}<div><span class="fw-medium"><i class="ti ti-temperature"></i> SET-TEMP</span> <span class="float-end f-s-13 text-secondary">{{ headers['SET-TEMP'] }}</span></div>{% endif %}
+            {% if headers['CCD-TEMP'] is not null and headers['CCD-TEMP'] != '' %}<div><span class="fw-medium"><i class="ti ti-temperature"></i> CCD-TEMP</span> <span class="float-end f-s-13 text-secondary">{{ headers['CCD-TEMP'] }}</span></div>{% endif %}
+            {% if headers['USBLIMIT'] is not null and headers['USBLIMIT'] != '' %}<div><span class="fw-medium"><i class="ti ti-usb"></i> USBLIMIT</span> <span class="float-end f-s-13 text-secondary">{{ headers['USBLIMIT'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if headers['TELESCOP'] or headers['FOCALLEN'] is not null or headers['FOCRATIO'] is not null or headers['PIERSIDE'] %}
+            <hr>
+            <h6>TELESCOPE</h6>
+            {% if headers['TELESCOP'] %}<div><span class="fw-medium"><i class="ti ti-briefcase"></i> TELESCOP</span> <span class="float-end f-s-13 text-secondary">{{ headers['TELESCOP'] }}</span></div>{% endif %}
+            {% if headers['FOCALLEN'] is not null and headers['FOCALLEN'] != '' %}<div><span class="fw-medium"><i class="ti ti-focus"></i> FOCALLEN</span> <span class="float-end f-s-13 text-secondary">{{ headers['FOCALLEN'] }}</span></div>{% endif %}
+            {% if headers['FOCRATIO'] is not null and headers['FOCRATIO'] != '' %}<div><span class="fw-medium"><i class="ti ti-focus"></i> FOCRATIO</span> <span class="float-end f-s-13 text-secondary">{{ headers['FOCRATIO'] }}</span></div>{% endif %}
+            {% if headers['PIERSIDE'] %}<div><span class="fw-medium"><i class="ti ti-device-landscape"></i> PIERSIDE</span> <span class="float-end f-s-13 text-secondary">{{ headers['PIERSIDE'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if headers['RA'] is not null or headers['DEC'] is not null or headers['OBJCTRA'] or headers['OBJCTDEC'] or headers['CENTALT'] is not null or headers['CENTAZ'] is not null or headers['AIRMASS'] is not null %}
+            <hr>
+            <h6>TARGET</h6>
+            {% if headers['RA'] is not null and headers['RA'] != '' %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> RA</span> <span class="float-end f-s-13 text-secondary">{{ headers['RA'] }}</span></div>{% endif %}
+            {% if headers['DEC'] is not null and headers['DEC'] != '' %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> DEC</span> <span class="float-end f-s-13 text-secondary">{{ headers['DEC'] }}</span></div>{% endif %}
+            {% if headers['OBJCTRA'] %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> OBJCTRA</span> <span class="float-end f-s-13 text-secondary">{{ headers['OBJCTRA'] }}</span></div>{% endif %}
+            {% if headers['OBJCTDEC'] %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> OBJCTDEC</span> <span class="float-end f-s-13 text-secondary">{{ headers['OBJCTDEC'] }}</span></div>{% endif %}
+            {% if headers['CENTALT'] is not null and headers['CENTALT'] != '' %}<div><span class="fw-medium"><i class="ti ti-mountain"></i> CENTALT</span> <span class="float-end f-s-13 text-secondary">{{ headers['CENTALT'] }}</span></div>{% endif %}
+            {% if headers['CENTAZ'] is not null and headers['CENTAZ'] != '' %}<div><span class="fw-medium"><i class="ti ti-compass"></i> CENTAZ</span> <span class="float-end f-s-13 text-secondary">{{ headers['CENTAZ'] }}</span></div>{% endif %}
+            {% if headers['AIRMASS'] is not null and headers['AIRMASS'] != '' %}<div><span class="fw-medium"><i class="ti ti-chart-line"></i> AIRMASS</span> <span class="float-end f-s-13 text-secondary">{{ headers['AIRMASS'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if headers['SITEELEV'] is not null or headers['SITELAT'] is not null or headers['SITELONG'] is not null %}
+            <hr>
+            <h6>OBSERVATORY</h6>
+            {% if headers['SITEELEV'] is not null and headers['SITEELEV'] != '' %}<div><span class="fw-medium"><i class="ti ti-arrow-up"></i> SITEELEV</span> <span class="float-end f-s-13 text-secondary">{{ headers['SITEELEV'] }}</span></div>{% endif %}
+            {% if headers['SITELAT'] is not null and headers['SITELAT'] != '' %}<div><span class="fw-medium"><i class="ti ti-map-pin"></i> SITELAT</span> <span class="float-end f-s-13 text-secondary">{{ headers['SITELAT'] }}</span></div>{% endif %}
+            {% if headers['SITELONG'] is not null and headers['SITELONG'] != '' %}<div><span class="fw-medium"><i class="ti ti-map-pin"></i> SITELONG</span> <span class="float-end f-s-13 text-secondary">{{ headers['SITELONG'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if headers['FWHEEL'] or headers['FILTER'] %}
+            <hr>
+            <h6>FILTER WHEEL</h6>
+            {% if headers['FWHEEL'] %}<div><span class="fw-medium"><i class="ti ti-filter"></i> FWHEEL</span> <span class="float-end f-s-13 text-secondary">{{ headers['FWHEEL'] }}</span></div>{% endif %}
+            {% if headers['FILTER'] %}<div><span class="fw-medium"><i class="ti ti-filter"></i> FILTER</span> <span class="float-end f-s-13 text-secondary">{{ headers['FILTER'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if headers['FOCNAME'] or headers['FOCPOS'] is not null or headers['FOCUSPOS'] is not null or headers['FOCUSSZ'] is not null or headers['FOCTEMP'] is not null or headers['FOCUSTEM'] is not null %}
+            <hr>
+            <h6>FOCUSER</h6>
+            {% if headers['FOCNAME'] %}<div><span class="fw-medium"><i class="ti ti-focus"></i> FOCNAME</span> <span class="float-end f-s-13 text-secondary">{{ headers['FOCNAME'] }}</span></div>{% endif %}
+            {% if headers['FOCPOS'] is not null and headers['FOCPOS'] != '' %}<div><span class="fw-medium"><i class="ti ti-focus"></i> FOCPOS</span> <span class="float-end f-s-13 text-secondary">{{ headers['FOCPOS'] }}</span></div>{% endif %}
+            {% if headers['FOCUSPOS'] is not null and headers['FOCUSPOS'] != '' %}<div><span class="fw-medium"><i class="ti ti-focus"></i> FOCUSPOS</span> <span class="float-end f-s-13 text-secondary">{{ headers['FOCUSPOS'] }}</span></div>{% endif %}
+            {% if headers['FOCUSSZ'] is not null and headers['FOCUSSZ'] != '' %}<div><span class="fw-medium"><i class="ti ti-arrows-sort"></i> FOCUSSZ</span> <span class="float-end f-s-13 text-secondary">{{ headers['FOCUSSZ'] }}</span></div>{% endif %}
+            {% if headers['FOCTEMP'] is not null and headers['FOCTEMP'] != '' %}<div><span class="fw-medium"><i class="ti ti-temperature"></i> FOCTEMP</span> <span class="float-end f-s-13 text-secondary">{{ headers['FOCTEMP'] }}</span></div>{% endif %}
+            {% if headers['FOCUSTEM'] is not null and headers['FOCUSTEM'] != '' %}<div><span class="fw-medium"><i class="ti ti-temperature"></i> FOCUSTEM</span> <span class="float-end f-s-13 text-secondary">{{ headers['FOCUSTEM'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if headers['CLOUDCVR'] is not null or headers['DEWPOINT'] is not null or headers['HUMIDITY'] is not null or headers['PRESSURE'] is not null or headers['AMBTEMP'] is not null or headers['WINDDIR'] is not null or headers['WINDGUST'] is not null or headers['WINDSPD'] is not null %}
+            <hr>
+            <h6>WEATHER</h6>
+            {% if headers['CLOUDCVR'] is not null and headers['CLOUDCVR'] != '' %}<div><span class="fw-medium"><i class="ti ti-cloud"></i> CLOUDCVR</span> <span class="float-end f-s-13 text-secondary">{{ headers['CLOUDCVR'] }}</span></div>{% endif %}
+            {% if headers['DEWPOINT'] is not null and headers['DEWPOINT'] != '' %}<div><span class="fw-medium"><i class="ti ti-temperature"></i> DEWPOINT</span> <span class="float-end f-s-13 text-secondary">{{ headers['DEWPOINT'] }}</span></div>{% endif %}
+            {% if headers['HUMIDITY'] is not null and headers['HUMIDITY'] != '' %}<div><span class="fw-medium"><i class="ti ti-droplet"></i> HUMIDITY</span> <span class="float-end f-s-13 text-secondary">{{ headers['HUMIDITY'] }}</span></div>{% endif %}
+            {% if headers['PRESSURE'] is not null and headers['PRESSURE'] != '' %}<div><span class="fw-medium"><i class="ti ti-gauge"></i> PRESSURE</span> <span class="float-end f-s-13 text-secondary">{{ headers['PRESSURE'] }}</span></div>{% endif %}
+            {% if headers['AMBTEMP'] is not null and headers['AMBTEMP'] != '' %}<div><span class="fw-medium"><i class="ti ti-temperature"></i> AMBTEMP</span> <span class="float-end f-s-13 text-secondary">{{ headers['AMBTEMP'] }}</span></div>{% endif %}
+            {% if headers['WINDDIR'] is not null and headers['WINDDIR'] != '' %}<div><span class="fw-medium"><i class="ti ti-compass"></i> WINDDIR</span> <span class="float-end f-s-13 text-secondary">{{ headers['WINDDIR'] }}</span></div>{% endif %}
+            {% if headers['WINDGUST'] is not null and headers['WINDGUST'] != '' %}<div><span class="fw-medium"><i class="ti ti-wind"></i> WINDGUST</span> <span class="float-end f-s-13 text-secondary">{{ headers['WINDGUST'] }}</span></div>{% endif %}
+            {% if headers['WINDSPD'] is not null and headers['WINDSPD'] != '' %}<div><span class="fw-medium"><i class="ti ti-wind"></i> WINDSPD</span> <span class="float-end f-s-13 text-secondary">{{ headers['WINDSPD'] }}</span></div>{% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>

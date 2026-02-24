@@ -1,0 +1,50 @@
+/vendor/
+/var/
+/node_modules/
+/public/build/
+/.env.local
+/.idea/
+/.cache/
+/.DS_Store
+
+/data/sessions/
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+.phpunit.result.cache
+###< phpunit/phpunit ###
+
+###> symfony/asset-mapper ###
+/assets/vendor/
+###< symfony/asset-mapper ###
+
+###> symfony/phpunit-bridge ###
+.phpunit.result.cache
+/phpunit.xml
+###< symfony/phpunit-bridge ###
+**/__pycache__/
+*.pyc
+alpaca_server/alpaca_config.json
+alpaca_server/switch_config.json
+
+# Environment overrides (keep .env as template)
+.env.dev
+.env.test
+.env.local
+docker-compose.override.yml
+
+# Claude Code / AI tooling
+CLAUDE.md
+.claude/
+.mcp.json
+.playwright-mcp/
+memory/

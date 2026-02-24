@@ -1,0 +1,51 @@
+{############################}
+{#          MASTER          #}
+{############################}
+<div class="col-xxl-9 order-xxl-2 masters-viewer d-none" id="masters-preview-col">
+    <div class="card">
+        <div class="card-header d-flex align-items-center">
+            <h5 class="mb-0">{{ 'session.preview'|trans }}</h5>
+            <button class="btn btn-primary icon-btn ms-auto btn-toggle-details"
+                    data-details="#masters-details-col" title="Toggle details">
+                <i class="ti ti-layout-sidebar-right-collapse"></i>
+            </button>
+        </div>
+        <div class="card-body">
+            <img id="master-preview" src="" alt="" width="100%">
+        </div>
+    </div>
+
+</div>
+<div class="col-xxl-3 order-xxl-3 masters-viewer d-none" id="masters-details-col">
+    <div id="master-details"></div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(event) {
+        $('.masters span').click(function () {
+            $('.session-content span').removeClass('active')
+            $(this).addClass('active')
+            $('.masters-viewer').removeClass('d-none');
+            $('.exports-viewer').addClass('d-none');
+            $('.lights-viewer').addClass('d-none');
+            $('.phd2log-viewer').addClass('d-none');
+            console.log("MASTER " + $(this).data("id"))
+
+            currentRequest = $.ajax({
+                url: '{{ path('master_detail', {'master': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                method: 'GET',
+                dataType: 'html',
+                cache: true
+            });
+
+            currentRequest
+                .done(function (html) {
+                    $('#master-details').html(html);
+                })
+
+            if ($(this).data('type')=="XISF")
+                $('#master-preview').attr("src", "{{ path('xisf-thumbnail', { 'master': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", $(this).data("id")));
+
+        });
+    });
+</script>

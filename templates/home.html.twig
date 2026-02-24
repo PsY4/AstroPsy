@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+{% block body %}
+<div class="container">
+  <h1>{{ 'home.title'|trans }}</h1>
+  <div class="grid">
+    {% for e in latest %}
+      <div class="card">
+        <div class="p">
+          <div><strong>#{{ e.id }}</strong></div>
+          <div>{{ e.format }} — {{ e.filterName ?? '—' }}</div>
+        </div>
+      </div>
+    {% else %}
+      <p>{{ 'home.empty'|trans|raw }}</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

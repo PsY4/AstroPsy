@@ -1,0 +1,69 @@
+{% set pageTitle = 'doc.title'|trans %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+    <div class="fa-pull-right">
+        <div class="input-group mb-3">
+            <a class="fa-pull-right btn btn-outline-primary btn-sm b-r-left"
+                href="{{ path('doc_new') }}">
+                <i class="ti ti-plus"></i> {{ 'doc.btn_add'|trans }}
+            </a>
+        </div>
+    </div>
+{% endblock %}
+{% block body %}
+    <div class="row">
+        <div class="card ">
+            <div class="card-body p-0">
+                <div class="app-datatable-default overflow-auto">
+                    <table class="display app-data-table default-data-table" id="example">
+                <thead>
+                <tr>
+                    <th>{{ 'doc.col_title'|trans }}</th>
+                    <th>{{ 'doc.col_creation'|trans }}</th>
+                    <th>{{ 'doc.col_update'|trans }}</th>
+                    <th>{{ 'doc.col_target'|trans }}</th>
+                    <th>{{ 'doc.col_session'|trans }}</th>
+                    <th>{{ 'doc.col_action'|trans }}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for doc in docs %}
+                <tr>
+                    <td>
+                        <a href="{{ path('doc_view', {'doc': doc.id}) }}">
+                            <i class="{{ doc.icon }}"></i>
+                            {{ doc.title }}
+                            {% for tag in doc.tags %}
+                                <span class="badge text-bg-primary">{{ tag }}</span>
+                            {% endfor %}
+                        </a>
+                    </td>
+                    <td><span class="badge text-light-secondary">{{ doc.creationDate|date }}</span></td>
+                    <td><span class="badge text-light-secondary">{{ doc.updateDate|date }}</span></td>
+                    <td>{{ doc.target.id }}</td>
+                    <td>{{ doc.session.id }}</td>
+                    <td>
+                        <a class="btn btn-light-success icon-btn b-r-4" type="button"
+                           href="{{ path('doc_edit', {'doc': doc.id}) }}">
+                            <i class="ti ti-edit text-success"></i>
+                        </a>
+                        <a class="btn btn-light-danger icon-btn b-r-4 delete-btn"
+                           href="{{ path('doc_delete', {'doc': doc.id}) }}"
+                           onclick="return confirm('{{ 'doc.confirm_delete'|trans }}')"
+                        >
+                            <i class="ti ti-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block page_scripts %}
+    <script src="{{ asset('assets/js/data_table.js') }}"></script>
+
+{% endblock %}

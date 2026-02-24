@@ -1,0 +1,53 @@
+<div class="card profile-container">
+    <div class="card-header">
+        <div class="fa-pull-left">
+            <h5>{{ 'phd2.guiding.title'|trans }}</h5>
+        </div>
+        <div class="fa-pull-right">
+            <a href="openfolder:{{ local_folder_base }}/{{ guiding.sourcePath }}"
+               class="btn btn-primary icon-btn b-r-4" title="{{ 'phd2.guiding.btn_open_local'|trans }}">
+                <i class="fa primary fa-arrow-right-to-file"></i>
+            </a>
+            <a href="{{ path('phd2guiding_hide', {'id': guiding.id, 'hidden': true}) }}"
+               class="btn btn-light-secondary icon-btn b-r-4" title="{{ 'phd2.guiding.btn_hide'|trans }}">
+                <i class="fa primary fa-delete-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="profile-container mt-0">
+            <div class="person-details mt-0">
+                <div class="details mt-0">
+                    <div>
+                        <h4 class="text-primary">{{ guiding.startedAt|date("H:i") }} ▶ {{ guiding.endedAt|date("H:i") }} <small> - {{ guiding.startedAt|date("M d") }}</small></h4>
+                        <p class="text-secondary">{{ 'phd2.guiding.col_time'|trans }}</p>
+                    </div>
+                </div>
+                <div class="details mt-0">
+                    <div>
+                        <h4 class="text-primary">{{ guiding.exposureMs/1000 }}s</h4>
+                        <p class="text-secondary">{{ 'phd2.guiding.col_expo'|trans }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-primary">{{ guiding.frameCount }}</h4>
+                        <p class="text-secondary">{{ 'phd2.guiding.col_frames'|trans }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-primary">{{ guiding.totalRmsArcsec|number_format(2, '.', ' ') }}"</h4>
+                        <p class="text-secondary">{{ 'phd2.guiding.col_rms'|trans }}</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="about-list">
+            {% for key, value in guiding.headers %}
+                <div>
+                    <span class="fw-medium">{{ key[:1]|upper ~ key[1:] }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ value|join(' ') }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

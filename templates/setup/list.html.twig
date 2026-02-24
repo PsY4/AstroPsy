@@ -1,0 +1,19 @@
+{% set pageTitle = 'nav.setups'|trans %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+    <div class="fa-pull-right">
+        <div class="input-group mb-3">
+            <a class="fa-pull-right btn btn-outline-primary btn-sm b-r-left"
+                    href="{{ path('setup_new') }}"
+                    type="button"><i class="ti ti-plus"></i> {{ 'setup.btn_add'|trans }}
+            </a>
+        </div>
+    </div>
+{% endblock %}
+{% block body %}
+    <div class="row">
+        {% for setup in setups %}
+            {% include 'setup/parts/setup.html.twig' %}
+        {% endfor %}
+    </div>
+{% endblock %}

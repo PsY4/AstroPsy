@@ -1,0 +1,87 @@
+{% set pageTitle = 'doc.btn_edit'|trans %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+    {% if doc.id > 0 %}
+        <div class="fa-pull-right">
+            <div class="input-group mb-3">
+                <a class="fa-pull-right btn btn-outline-primary btn-sm b-r-left"
+                   href="{{ path('doc_view', {'doc': doc.id}) }}" target="_blank">
+                    <i class="ti ti-eye"></i>
+                </a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block body %}
+    <div class="card">
+        <div class="card-body">
+            {{ form_start(form) }}
+            <div class="row">
+                <div class="col-md-11">
+                    {{ form_widget(form.title) }}
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-lg btn-primary" style="height:100%; width: 100%"
+                            onclick="return fillTA();">
+                        <i class="fa fa-fw fa-save"></i>
+                    </button>
+                </div>
+                <div class="col-md-6">{{ form_row(form.target) }}</div>
+                <div class="col-md-6">{{ form_row(form.session) }}</div>
+                <div class="col-md-2">
+                    <div class="input-group">
+                        {{ form_row(form.icon) }}
+                        <span class="input-group-addon"></span>
+                    </div>
+                </div>
+                <div class="col-md-10">{{ form_row(form.tags) }}</div>
+                <div class="col-md-12  mt-3">
+                    {{ form_widget(form.doc) }}
+                    {% if doc.getPath()|default("") == "" %}
+                        <div id="editor"></div>
+                    {% else %}
+                        <iframe src="{{ path('doc_download', {'doc': doc.id}) }}" frameborder="0" style=" width: 100%; height: 90vh"></iframe>
+                    {% endif %}
+                </div>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}
+{% block page_scripts %}
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.css" />
+    <link rel="stylesheet" href="https://itsjavi.com/fontawesome-iconpicker/dist/css/fontawesome-iconpicker.min.css" />
+    <script src="https://itsjavi.com/fontawesome-iconpicker/dist/js/fontawesome-iconpicker.js"></script>
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+    <script>
+        let content = {{ doc.doc|default("")|json_encode|raw }};
+
+        const Editor = toastui.Editor;
+        const editor = new Editor({
+            el: document.querySelector('#editor'),
+            height: '500px',
+            initialEditType: 'markdown',
+            previewStyle: 'vertical',
+            usageStatistics: false,
+            initialValue: content,
+            theme: 'dark'
+        });
+        function fillTA() {
+            $("#doc_doc").val(editor.getMarkdown());
+            return true;
+        }
+
+        $(function () {
+            $('#doc_icon').iconpicker({
+                animation: false, // fade in/out on show/hide ?
+                input: 'input,.iconpicker-input', // children input selector
+                component:'.btn > i'
+            });
+        });
+    </script>
+    <style>
+        .iconpicker .iconpicker-item { color: rgba(var(--primary), 1); }
+        .iconpicker-popover { z-index:99999 }
+    </style>
+{% endblock %}

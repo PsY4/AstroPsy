@@ -1,0 +1,57 @@
+<div class="col-xl-4">
+    <div class="card">
+        <div class="profile-container">
+            <div class="image-details">
+                <div class="profile-image"
+                     style="background-image: url({{ author.astrobinGalleryHeaderImage }});background-color: transparent;background-position: center;">
+                </div>
+                <div class="profile-pic">
+                    <div class="avatar-upload">
+                        <div class="avatar-preview">
+                            <div id="imgPreview"
+                                 style="background-image: url({{ author.logo }});background-color: transparent;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="person-details">
+                <h5 class="f-w-600">{{ author.name }}</h5>
+                <div class="details">
+                    <div>
+                        <h4 class="text-primary">{{ author.astrobinImageCount }}</h4>
+                        <p class="text-secondary">{{ 'author.col_images'|trans }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-primary">{{ author.astrobinImageIndex|round(1) }}</h4>
+                        <p class="text-secondary">{{ 'author.col_image_index'|trans }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-primary">{{ author.astrobinViews }}</h4>
+                        <p class="text-secondary">{{ 'author.col_views'|trans }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-primary">{{ author.astrobinLikes }}</h4>
+                        <p class="text-secondary">{{ 'author.col_likes'|trans }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-primary">{{ author.astrobinFollowersCount }}</h4>
+                        <p class="text-secondary">{{ 'author.col_followers'|trans }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-primary">{{ author.astrobinFollowingCount }}</h4>
+                        <p class="text-secondary">{{ 'author.col_following'|trans }}</p>
+                    </div>
+                </div>
+                {% if author.linkAstrobin != "" %}
+                    <div class="my-2">
+                        <a class="btn btn-primary btn-sm  b-r-22" href="{{ author.linkAstrobin }}" target="_blank">
+                            <i class="fa fa-fw fa-external-link"></i>
+                            <strong>AstroBin™</strong>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
