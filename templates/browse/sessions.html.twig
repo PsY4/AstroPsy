@@ -1,0 +1,168 @@
+{% set pageTitle = "Sessions" %}
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
+    <style>
+        /* Intégration thème sombre */
+        :root {
+            --fc-border-color: rgba(255,255,255,0.1);
+            --fc-today-bg-color: rgba(99,179,237,0.08);
+            --fc-neutral-bg-color: transparent;
+            --fc-page-bg-color: transparent;
+            --fc-event-text-color: #fff;
+        }
+        .fc .fc-col-header-cell-cushion,
+        .fc .fc-daygrid-day-number,
+        .fc .fc-list-day-text,
+        .fc .fc-list-day-side-text { color: rgba(255,255,255,0.7); text-decoration: none; }
+        .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { color: var(--bs-primary); font-weight: 700; }
+        .fc .fc-event { cursor: pointer; font-size: 0.78rem; }
+        .fc .fc-multimonth-title { color: rgba(255,255,255,0.8); font-weight: 600; }
+        .fc .fc-multimonth-daygrid-table { background: transparent; }
+        .fc-theme-standard td, .fc-theme-standard th { border-color: rgba(255,255,255,0.08); }
+        #sessions-calendar { min-height: 500px; }
+    </style>
+{% endblock %}
+
+{% block breadbuttons %}
+<div class="d-flex align-items-center gap-2 flex-nowrap justify-content-end">
+
+    {# Navigation #}
+    <div class="btn-group btn-group-sm">
+        <button class="btn btn-outline-primary" id="cal-prev" title="Précédent">
+            <i class="ti ti-chevron-left"></i>
+        </button>
+        <button class="btn btn-outline-primary" id="cal-today">
+            {{ 'sessions.today'|trans }}
+        </button>
+        <button class="btn btn-outline-primary" id="cal-next" title="Suivant">
+            <i class="ti ti-chevron-right"></i>
+        </button>
+    </div>
+
+    {# Titre dynamique #}
+    <span id="cal-period-title" class="fw-semibold text-muted" style="min-width:140px;text-align:center"></span>
+
+    {# Toggle vue #}
+    <div class="btn-group btn-group-sm" role="group">
+        <button class="btn btn-primary" id="btn-view-month">
+            <i class="ti ti-calendar-month me-1"></i>{{ 'sessions.view_month'|trans }}
+        </button>
+        <button class="btn btn-outline-primary" id="btn-view-year">
+            <i class="ti ti-calendar me-1"></i>{{ 'sessions.view_year'|trans }}
+        </button>
+    </div>
+
+    {# Filtre + compteur #}
+    <div class="input-group input-group-sm flex-nowrap" style="width:auto">
+        <input type="text" id="cal-filter" class="form-control b-r-left"
+               placeholder="{{ 'sessions.filter_placeholder'|trans }}" style="width:180px">
+        <span class="input-group-text b-r-right" id="cal-count-badge">{{ count }}</span>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block body %}
+<div id="sessions-calendar"></div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const SESSION_VIEW_KEY = 'sessions_cal_view';
+    const sessions = {{ sessionsJson|raw }};
+
+    // Couleur par premier code de type
+    function typeColor(rawType) {
+        const t = (rawType || '').split(',')[0].trim().toLowerCase();
+        if (['egx','bgx','agn','bla','gx','cgx','dwgx','dsgx','bcgx','cgxs','cggxs'].includes(t) || t.endsWith('gx'))
+            return '#8b5cf6'; // galaxies → violet
+        if (t === 'eneb') return '#ef4444'; // nébuleuse en émission → rouge
+        if (t === 'pneb') return '#10b981'; // nébuleuse planétaire → vert
+        if (t === 'rneb') return '#3b82f6'; // nébuleuse par réflexion → bleu
+        if (t === 'dkneb') return '#64748b'; // nébuleuse sombre → gris
+        if (['dineb','snr','bub'].includes(t)) return '#38bdf8'; // diffuse / SNR → cyan
+        if (t === 'opncl') return '#f59e0b'; // amas ouvert → ambre
+        if (t === 'glob')  return '#f97316'; // amas globulaire → orange
+        return '#6b7280'; // défaut
+    }
+
+    const SESSION_URL = '{{ path('browse_session', {id: 0}) }}'.replace('/0', '/XXXX');
+
+    const allEvents = sessions.map(s => ({
+        id:              String(s.id),
+        title:           s.target_name,
+        start:           s.date,
+        url:             SESSION_URL.replace('XXXX', s.id),
+        backgroundColor: typeColor(s.target_type),
+        borderColor:     typeColor(s.target_type),
+        extendedProps:   { type: s.target_type, targetId: s.target_id },
+    }));
+
+    const savedView   = localStorage.getItem(SESSION_VIEW_KEY) || 'dayGridMonth';
+    const countBadge  = document.getElementById('cal-count-badge');
+    const periodTitle = document.getElementById('cal-period-title');
+
+    const calendar = new FullCalendar.Calendar(document.getElementById('sessions-calendar'), {
+        initialView:  savedView,
+        locale:       '{{ app.request.locale }}',
+        headerToolbar: false,
+        events:        allEvents,
+        height:       'auto',
+        dayMaxEvents:  true,
+        eventClick: function (info) {
+            info.jsEvent.preventDefault();
+            window.location.href = info.event.url;
+        },
+        datesSet: function (info) {
+            periodTitle.textContent = info.view.title;
+        },
+    });
+
+    calendar.render();
+
+    // Sync boutons vue active
+    function syncViewButtons(view) {
+        document.getElementById('btn-view-month').classList.toggle('btn-primary',         view === 'dayGridMonth');
+        document.getElementById('btn-view-month').classList.toggle('btn-outline-primary', view !== 'dayGridMonth');
+        document.getElementById('btn-view-year').classList.toggle('btn-primary',          view === 'multiMonthYear');
+        document.getElementById('btn-view-year').classList.toggle('btn-outline-primary',  view !== 'multiMonthYear');
+    }
+    syncViewButtons(savedView);
+
+    // Navigation
+    document.getElementById('cal-prev').addEventListener('click',  () => calendar.prev());
+    document.getElementById('cal-today').addEventListener('click', () => calendar.today());
+    document.getElementById('cal-next').addEventListener('click',  () => calendar.next());
+
+    // Toggle vue
+    document.getElementById('btn-view-month').addEventListener('click', function () {
+        calendar.changeView('dayGridMonth');
+        localStorage.setItem(SESSION_VIEW_KEY, 'dayGridMonth');
+        syncViewButtons('dayGridMonth');
+    });
+    document.getElementById('btn-view-year').addEventListener('click', function () {
+        calendar.changeView('multiMonthYear');
+        localStorage.setItem(SESSION_VIEW_KEY, 'multiMonthYear');
+        syncViewButtons('multiMonthYear');
+    });
+
+    // Filtre texte
+    document.getElementById('cal-filter').addEventListener('input', function () {
+        const val = this.value.toLowerCase().trim();
+        const filtered = val
+            ? allEvents.filter(e => e.title.toLowerCase().includes(val))
+            : allEvents;
+        calendar.setOption('events', filtered);
+        countBadge.textContent = filtered.length;
+    });
+
+});
+</script>
+{% endblock %}

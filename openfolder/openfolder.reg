@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\openfolder]
+@="Open Folder Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\openfolder\shell\open\command]
+@="\"C:\\Tools\\OpenFolder\\openfolder.exe\" \"%1\""

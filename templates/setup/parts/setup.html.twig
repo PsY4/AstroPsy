@@ -1,0 +1,61 @@
+<div class="col-xl-6  horizontal-card">
+    <div class="card mb-3  hover-effect">
+        <div class="row g-0">
+            <div class="col-md-6 col-xl-8">
+                <div class="card-body">
+                    <a href="{{ path('setup_edit', {'setup': setup.id}) }}">
+                        <ul class="avatar-group float-end breadcrumb-start ">
+                            <li class="h-30 w-30 d-flex-center b-r-50 position-relative" data-bs-title="{{ setup.author.name }}" data-bs-toggle="tooltip">
+                                <img alt="{{ setup.author.name }}" class="img-fluid b-r-50 overflow-hidden" src="{{ setup.author.logo }}">
+                            </li>
+                        </ul>
+                        <h5 class="card-title"><i class="fa fa-fw fa-tower-observation"></i> {{ setup.name }}</h5>
+                        <p class="card-text"><cite>{{ setup.notes }}</cite></p>
+                        <p class="card-text">
+                            <small class="text-body-secondary">
+                                {{ 'setup.label_author'|trans }} <strong>{{ setup.author.name }}</strong><br/>
+                                {{ 'setup.label_observatory'|trans }} <strong>{{ setup.observatory.name }}</strong><br>
+                            </small>
+                        </p>
+                        {% for part in setup.setupParts|filter(p => p.type not in ['filter', 'accessory', 'software']) %}
+                            <p class="card-text">
+                                <small class="text-body-secondary">
+                                    <strong>{{ ("parts.type."~part.type)|trans }} : </strong>{{ part.make }} {{ part.model }}
+                                </small>
+                            </p>
+                        {% endfor %}
+                        {% if setup.setupParts|filter(p => p.type == 'filter')|length %}
+                            <p class="card-text">
+                                <small class="text-body-secondary">
+                                    <strong>{{ ("parts.type.filters")|trans }} : </strong>
+                                    {{ setup.setupParts|filter(p => p.type == 'filter')|map(p => p.make~" "~p.model)|join(", ") }}
+                                </small>
+                            </p>
+                        {% endif %}
+                        {% if setup.setupParts|filter(p => p.type == 'accessory')|length %}
+                            <p class="card-text">
+                                <small class="text-body-secondary">
+                                    <strong>{{ ("parts.type.accessories")|trans }} : </strong>
+                                    {{ setup.setupParts|filter(p => p.type == 'accessory')|map(p => p.make~" "~p.model)|join(", ") }}
+                                </small>
+                            </p>
+                        {% endif %}
+                        {% if setup.setupParts|filter(p => p.type == 'software')|length %}
+                            <p class="card-text">
+                                <small class="text-body-secondary">
+                                    <strong>{{ ("parts.type.softwares")|trans }} : </strong>
+                                    {{ setup.setupParts|filter(p => p.type == 'software')|map(p => p.make~" "~p.model)|join(", ") }}
+                                </small>
+                            </p>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                {% if setup.logo != "" %}
+                <img alt="{{ obs.city }}" class="img-fluid" src="{{ path('direct_download', {'filename': setup.logo}) }}">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

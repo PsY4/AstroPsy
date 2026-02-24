@@ -1,0 +1,123 @@
+{% extends 'base.html.twig' %}
+{% set pageTitle = 'SafetyMonitor Setup' %}
+{% set previousCrumb %}
+    <li><a class="f-s-14 f-w-500" href="{{ path('alpaca_setup_index') }}">Alpaca</a></li>
+{% endset %}
+
+{% block body %}
+
+{% if data.error is defined %}
+<div class="alert alert-danger">
+    <i class="fa fa-triangle-exclamation"></i>
+    {{ 'alpaca.safetymonitor_setup.server_unreachable'|trans }} <strong>{{ data.error }}</strong>
+</div>
+{% else %}
+
+{% set cfg     = data.config %}
+{% set weather = data.weather %}
+
+{# ── Status banner ── #}
+<div class="alert {{ weather.is_safe ? 'alert-success' : 'alert-danger' }} d-flex gap-3 align-items-start mb-4">
+    <i class="fa fa-fw fa-{{ weather.is_safe ? 'circle-check' : 'circle-xmark' }} fa-2x mt-1"></i>
+    <div>
+        <strong>{{ weather.is_safe ? 'alpaca.safetymonitor_setup.safe'|trans : 'alpaca.safetymonitor_setup.not_safe'|trans }}</strong><br>
+        {{ 'alpaca.safetymonitor_setup.label_condition'|trans }} <strong>{{ weather.condition }}</strong> —
+        {{ 'alpaca.safetymonitor_setup.label_last_update'|trans }} {{ weather.last_updated ?? 'alpaca.safetymonitor_setup.label_never'|trans }}
+    </div>
+</div>
+
+<form method="POST">
+<div class="row g-4">
+
+    {# ── Device ── #}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><strong>{{ 'alpaca.safetymonitor_setup.section_device'|trans }}</strong></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ 'alpaca.safetymonitor_setup.label_device_name'|trans }}</label>
+                        <input class="form-control" type="text" name="device_name" value="{{ cfg.device_name }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ 'alpaca.safetymonitor_setup.label_location'|trans }}</label>
+                        <input class="form-control" type="text" name="location" value="{{ cfg.location }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Coordinates ── #}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><strong>{{ 'alpaca.safetymonitor_setup.section_coords'|trans }}</strong></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">{{ 'alpaca.safetymonitor_setup.label_latitude'|trans }}</label>
+                        <input class="form-control" type="number" step="0.0001" name="latitude" value="{{ cfg.latitude }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ 'alpaca.safetymonitor_setup.label_longitude'|trans }}</label>
+                        <input class="form-control" type="number" step="0.0001" name="longitude" value="{{ cfg.longitude }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ 'alpaca.safetymonitor_setup.label_altitude'|trans }}</label>
+                        <input class="form-control" type="number" name="elevation" value="{{ cfg.elevation }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ 'alpaca.safetymonitor_setup.label_timezone'|trans }}</label>
+                        <input class="form-control" type="text" name="timezone" value="{{ cfg.timezone }}"
+                               placeholder="{{ 'alpaca.safetymonitor_setup.placeholder_timezone'|trans }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ 'alpaca.safetymonitor_setup.label_forecast_url'|trans }}</label>
+                        <input class="form-control" type="text" name="forecast_url" value="{{ cfg.forecast_url }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Unsafe conditions ── #}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><strong>{{ 'alpaca.safetymonitor_setup.section_unsafe'|trans }}</strong></div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    {{ 'alpaca.safetymonitor_setup.unsafe_hint'|trans|raw }}
+                </p>
+                <div class="row g-2">
+                    {% for condition in cfg.all_conditions %}
+                    <div class="col-md-4 col-sm-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                id="unsafe_{{ condition|replace({' ': '_'}) }}"
+                                name="unsafe_{{ condition }}"
+                                {% if condition in cfg.unsafe_conditions %}checked{% endif %}>
+                            <label class="form-check-label" for="unsafe_{{ condition|replace({' ': '_'}) }}">
+                                {{ condition }}
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">
+            <i class="fa fa-fw fa-floppy-disk"></i> {{ 'alpaca.safetymonitor_setup.btn_save'|trans }}
+        </button>
+        <a href="{{ path('alpaca_setup_index') }}" class="btn btn-outline-secondary ms-2">
+            {{ 'alpaca.safetymonitor_setup.btn_back'|trans }}
+        </a>
+    </div>
+
+</div>
+</form>
+
+{% endif %}
+{% endblock %}

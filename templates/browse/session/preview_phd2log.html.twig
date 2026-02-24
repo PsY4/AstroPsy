@@ -1,0 +1,74 @@
+{##############################}
+{#          PHD2 LOG          #}
+{##############################}
+<div class="col-xxl-9 order-xxl-2 phd2log-viewer d-none" id="phd2-preview-col">
+    <div class="card">
+        <div class="card-header d-flex align-items-center">
+            <h5 class="mb-0">PHD2</h5>
+            <button class="btn btn-primary icon-btn ms-auto btn-toggle-details"
+                    data-details="#phd2-details-col" title="Toggle details">
+                <i class="ti ti-layout-sidebar-right-collapse"></i>
+            </button>
+        </div>
+        <div class="card-body p-0" id="phd2log-preview"></div>
+    </div>
+</div>
+<div class="col-xxl-3 order-xxl-3 phd2log-viewer d-none" id="phd2-details-col">
+    <div id="phd2-calibration-details"></div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(event) {
+        $('.phd2logs span').click(function () {
+            $('.session-content span').removeClass('active')
+            $(this).addClass('active')
+            $('.phd2log-viewer').removeClass('d-none');
+            $('.masters-viewer').addClass('d-none');
+            $('.exports-viewer').addClass('d-none');
+            $('.lights-viewer').addClass('d-none');
+
+            if ($(this).data('type') === 'calibration') {
+
+                // Details
+                $.ajax({
+                    url: '{{ path('phd2calibration_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                    method: 'GET',
+                    dataType: 'html',
+                    cache: true
+                }).done(function (html) {
+                    $('#phd2-calibration-details').html(html);
+                })
+                // Graph
+                $.ajax({
+                    url: '{{ path('phd2calibrationgraph_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                    method: 'GET',
+                    dataType: 'html',
+                    cache: true
+                }).done(function (html) {
+                    $('#phd2log-preview').html(html);
+                })
+            }
+            if ($(this).data('type') === 'guiding') {
+
+                // Details
+                $.ajax({
+                    url: '{{ path('phd2guiding_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                    method: 'GET',
+                    dataType: 'html',
+                    cache: true
+                }).done(function (html) {
+                    $('#phd2-calibration-details').html(html);
+                })
+                // Graph
+                $.ajax({
+                    url: '{{ path('phd2guidinggraph_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                    method: 'GET',
+                    dataType: 'html',
+                    cache: true
+                }).done(function (html) {
+                    $('#phd2log-preview').html(html);
+                })
+            }
+        });
+    });
+</script>

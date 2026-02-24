@@ -1,0 +1,95 @@
+services:
+  php:
+    mem_limit: 10g
+    user: root
+    build:
+      context: .
+      dockerfile: Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./:/app
+      - ${SESSIONS_VOLUME:-./data/sessions}:/app/data/sessions
+      - ./docker/zz-timezone.ini:/usr/local/etc/php/conf.d/zz-timezone.ini:ro
+    environment:
+      APP_ENV: dev
+      TZ: ${TZ:-Europe/Paris}
+    depends_on:
+      db:
+        condition: service_started
+      astropy:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-80}:8080"   # nginx
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.astobin_ingest.schedule: "0 */10 * * * *"
+      ofelia.job-exec.astobin_ingest.command: "bash -lc 'cd /app && php bin/console app:update-astrobin-images --no-interaction'"
+      ofelia.job-exec.astobin_ingest_authors.schedule: "0 */5 * * * *"
+      ofelia.job-exec.astobin_ingest_authors.command: "bash -lc 'cd /app && php bin/console app:update-astrobin-authors --no-interaction'"
+      ofelia.job-exec.notify_evening.schedule: "0 0 20 * * *"
+      ofelia.job-exec.notify_evening.command: "bash -lc 'cd /app && php bin/console app:notify:evening --no-interaction --env=prod'"
+
+  db:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-astro}
+      POSTGRES_USER: ${POSTGRES_USER:-astro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-astro}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  astropy:
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+      - ${SESSIONS_VOLUME:-./data/sessions}:/app/data/sessions
+    environment:
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  alpaca:
+    network_mode: "host"
+    build:
+      context: ./alpaca_server
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  ofelia:
+    image: mcuadros/ofelia:latest
+    container_name: ofelia
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+    command: daemon --docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - php
+
+volumes:
+  db_data:
+  pgadmin_data:

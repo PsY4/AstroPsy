@@ -1,0 +1,30 @@
+parameters:
+  locale: 'en'
+
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    bind:
+      string $projectDir: '%kernel.project_dir%'
+
+  App\Twig\AppExtension: ~
+
+  App\:
+    resource: '../src/'
+    exclude:
+      - '../src/DependencyInjection/'
+      - '../src/Entity/'
+      - '../src/Kernel.php'
+
+  App\Service\AstropyClient:
+    arguments:
+      $baseUrl: '%env(ASTROPY_BASE_URL)%'
+
+  App\Service\AlpacaClient:
+    arguments:
+      $baseUrl: '%env(ALPACA_BASE_URL)%'
+
+  App\Service\TelescopiusAPIService:
+    arguments:
+      $apiKey: '%env(TELESCOPIUS_API_KEY)%'

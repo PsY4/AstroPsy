@@ -1,0 +1,126 @@
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ 'target.progress_tracker.title'|trans }}</h5>
+    </div>
+    <div class="card-body p-3">
+
+        {% if allFilters is empty %}
+            <p class="text-muted text-center small mb-0">{{ 'target.progress_tracker.no_data'|trans }}</p>
+        {% else %}
+            {% for filter in allFilters %}
+                {% set accSec  = accumulated[filter]|default(0) %}
+                {% set goal    = goals[filter]|default(null) %}
+                {% set goalSec = goal ? goal.goalSeconds : 0 %}
+                {% set pct     = goalSec > 0 ? min(100, (accSec / goalSec * 100)|round) : null %}
+
+                <div class="mb-2">
+                    <div class="d-flex align-items-center gap-1 mb-1">
+                        <span class="rounded-circle d-inline-block flex-shrink-0"
+                              style="width:10px;height:10px;background:{{ filterColorMap[filter]|default('#6c757d') }}"></span>
+                        <span class="fw-medium" style="min-width:3.5rem">{{ filter }}</span>
+                        <span class="text-muted small">{{ (accSec / 3600)|round(1) }}h</span>
+                        {% if goalSec > 0 %}
+                            <span class="text-muted small">/ {{ (goalSec / 3600)|round(1) }}h</span>
+                            {% if pct >= 100 %}
+                                <span class="badge bg-success ms-1 py-0 px-1"><i class="fa fa-check"></i></span>
+                            {% endif %}
+                        {% endif %}
+                        <button class="btn btn-link btn-sm p-0 ms-auto text-muted btn-edit-goal"
+                                data-filter="{{ filter }}"
+                                data-current="{{ goalSec > 0 ? (goalSec / 3600)|round(1) : 0 }}"
+                                title="{{ 'target.progress_tracker.edit_goal'|trans }}">
+                            <i class="fa fa-fw fa-pencil f-s-12"></i>
+                        </button>
+                    </div>
+                    {% if goalSec > 0 %}
+                        <div class="progress" style="height:6px">
+                            <div class="progress-bar {% if pct >= 100 %}bg-success{% elseif pct >= 60 %}bg-primary{% else %}bg-warning{% endif %}"
+                                 role="progressbar" style="width:{{ pct }}%"></div>
+                        </div>
+                    {% else %}
+                        <div class="progress" style="height:6px;opacity:.25">
+                            <div class="progress-bar bg-secondary" style="width:100%"></div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {# Bouton pour ajouter un objectif sur un filtre sans objectif #}
+        <button class="btn btn-link btn-sm p-0 text-muted mt-1 btn-edit-goal"
+                data-filter="" data-current="0">
+            <i class="fa fa-fw fa-plus f-s-12"></i> {{ 'target.progress_tracker.add_goal'|trans }}
+        </button>
+
+        {# Formulaire inline d'édition #}
+        <div id="goal-edit-form" class="d-none mt-2 p-2 border rounded bg-body-tertiary">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <select id="goal-edit-filter" class="form-select form-select-sm" style="width:auto">
+                    {% for f in canonicalFilters %}
+                        <option value="{{ f }}">{{ f }}</option>
+                    {% endfor %}
+                </select>
+                <input type="number" id="goal-edit-hours" class="form-control form-control-sm"
+                       style="width:5rem" min="0" step="0.5"
+                       placeholder="h">
+                <button id="goal-edit-save" class="btn btn-sm btn-primary"
+                        data-url="{{ path('target_goal_save', {id: target.id}) }}">
+                    <i class="fa fa-fw fa-save"></i>
+                </button>
+                <button id="goal-edit-cancel" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa fa-fw fa-times"></i>
+                </button>
+                <button id="goal-edit-delete" class="btn btn-sm btn-outline-danger d-none">
+                    <i class="fa fa-fw fa-trash"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const $form   = $('#goal-edit-form');
+    const $filter = $('#goal-edit-filter');
+    const $hours  = $('#goal-edit-hours');
+    const $del    = $('#goal-edit-delete');
+
+    $(document).on('click', '.btn-edit-goal', function () {
+        const f = $(this).data('filter');
+        const h = parseFloat($(this).data('current')) || 0;
+        if (f !== '') {
+            $filter.val(f);
+        } else {
+            $filter.prop('selectedIndex', 0);
+        }
+        $hours.val(h || '');
+        $del.toggleClass('d-none', h <= 0);
+        $form.removeClass('d-none');
+        $hours.focus();
+    });
+
+    $('#goal-edit-cancel').on('click', function () {
+        $form.addClass('d-none');
+    });
+
+    $('#goal-edit-save').on('click', function () {
+        const url = $(this).data('url');
+        const f   = $filter.val();
+        const h   = parseFloat($hours.val()) || 0;
+        if (!f) return;
+        $.post(url, { filter: f, hours: h }, function () {
+            location.reload();
+        });
+    });
+
+    $('#goal-edit-delete').on('click', function () {
+        const url = $('#goal-edit-save').data('url');
+        const f   = $filter.val();
+        if (!f) return;
+        $.post(url, { filter: f, hours: 0 }, function () {
+            location.reload();
+        });
+    });
+});
+</script>

@@ -1,0 +1,239 @@
+{% set weatherObs = allObs|filter(o => o.lat is not null and o.lon is not null) %}
+<div class="card h-100">
+    <div class="card-header d-flex align-items-center gap-2">
+        <h5 class="mb-0 flex-grow-1" id="weather-obs-name">{{ obs.name }} - {{ 'dashboard.weather_title'|trans }}</h5>
+        {# Gardé caché pour mise à jour JS lors du changement d'obs #}
+        <span class="d-none" id="weather-meta">{% if forecast %}LAT:{{ forecast.meta.latitude }}, LON:{{ forecast.meta.longitude }} @ {{ forecast.meta.generated_at }}{% endif %}</span>
+        {% if weatherObs|length > 1 %}
+        <select id="weather-obs-select" class="form-select form-select-sm" style="width:auto">
+            {% for o in weatherObs %}
+            <option value="{{ o.id }}"
+                    data-url="{{ path('dashboard_obs', {id: o.id}) }}"
+                    data-name="{{ o.name }}"
+                    data-city="{{ o.city }}"
+                    {% if o.id == obs.id %}selected{% endif %}>
+                {{ o.name }}
+            </option>
+            {% endfor %}
+        </select>
+        {% endif %}
+    </div>
+
+    <div class="card-body p-1 flex-grow-1 position-relative">
+        {% if forecast is null %}
+            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                <div class="text-center">
+                    <i class="fa fa-cloud-sun fa-2x mb-2"></i>
+                    <p class="mb-0">{{ 'dashboard.alerts.weather_unavailable'|trans }}</p>
+                </div>
+            </div>
+        {% else %}
+            <canvas id="astroForecastChart"></canvas>
+        {% endif %}
+    </div>
+    <div class="card-footer text-center py-2">
+        <a href="https://www.meteoblue.com/fr/meteo/outdoorsports/seeing/{{ obs.city }}"
+           id="meteoblue-link" target="_blank">
+            <span class="badge text-bg-primary">
+                <i class="fa fa-fw fa-cloud-moon"></i> meteoblue&trade;
+            </span>
+        </a>
+    </div>
+</div>
+
+{% if forecast is not null %}
+<script>
+let forecastChart = null;
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    function buildForecastChart(fc) {
+        const tz = fc?.meta?.timezone || 'Europe/Paris';
+        const series = Array.isArray(fc?.series) ? fc.series : [];
+
+        const points = series.map(p => {
+            const dt = luxon.DateTime.fromISO(p.t, { zone: 'utc' }).setZone(tz);
+            return {
+                x:           dt.toMillis(),
+                cloud:       p.cloud_total ?? null,
+                cloudh:      p.cloud_high ?? null,
+                cloudm:      p.cloud_mid ?? null,
+                cloudl:      p.cloud_low ?? null,
+                seeing:      p.seeing_arcsec ?? null,
+                transp:      p.transparency_index ?? null,
+                wind:        p.wind_speed ?? null,
+                precip:      p.precip_mm ?? null,
+                score:       p.condition_score ?? null,
+                temperature: p.temperature ?? null,
+            };
+        });
+
+        const dsCloud = {
+            label: '{{ "dashboard.cloud_cover"|trans }}',
+            data: points.map(p => ({ x: p.x, y: p.cloud })),
+            yAxisID: 'y', tension: 0.25, fill: true, pointRadius: 0, borderWidth: 2,
+            borderColor: 'rgb(62,188,253)', backgroundColor: 'rgba(62,188,253, 0.3)',
+        };
+        const dsCloudH = {
+            label: '{{ "dashboard.cloud_high"|trans }}',
+            data: points.map(p => ({ x: p.x, y: p.cloudh })),
+            yAxisID: 'y', tension: 0.25, fill: true, pointRadius: 0, borderWidth: 1,
+            borderColor: 'rgb(104,198,255)', backgroundColor: 'rgba(104,198,255, 0.3)', borderDash: [2, 3],
+        };
+        const dsCloudM = {
+            label: '{{ "dashboard.cloud_medium"|trans }}',
+            data: points.map(p => ({ x: p.x, y: p.cloudm })),
+            yAxisID: 'y', tension: 0.25, fill: true, pointRadius: 0, borderWidth: 2,
+            borderColor: 'rgba(135, 206, 250, 1)', backgroundColor: 'rgba(135, 206, 250, 0.3)', borderDash: [2, 3],
+        };
+        const dsCloudL = {
+            label: '{{ "dashboard.cloud_low"|trans }}',
+            data: points.map(p => ({ x: p.x, y: p.cloudl })),
+            yAxisID: 'y', tension: 0.25, fill: true, pointRadius: 0, borderWidth: 3,
+            borderColor: 'rgb(156,216,251)', backgroundColor: 'rgba(156,216,251, 0.3)', borderDash: [2, 3],
+        };
+        const dsSeeing = {
+            label: '{{ "dashboard.seeing"|trans }}',
+            data: points.map(p => ({ x: p.x, y: p.seeing })),
+            yAxisID: 'y_right', tension: 0.25, pointRadius: 0, borderWidth: 2,
+            borderColor: 'rgb(211,178,27)',
+        };
+        const dsTransp = {
+            label: '{{ "dashboard.transparency"|trans }}',
+            data: points.map(p => ({ x: p.x, y: p.transp })),
+            yAxisID: 'y_transp', tension: 0.25, pointRadius: 0, borderDash: [2, 3], borderWidth: 2,
+            borderColor: 'rgba(196,113,255,0.67)',
+        };
+        const dsWind = {
+            label: '{{ "dashboard.wind"|trans }}',
+            data: points.map(p => ({ x: p.x, y: p.wind })),
+            yAxisID: 'y_wind', tension: 0.25, pointRadius: 0, borderDash: [2, 3], borderWidth: 2,
+            borderColor: 'rgb(255,113,113,0.67)',
+        };
+        const dsPrecip = {
+            type: 'bar',
+            label: '{{ "dashboard.precipitation"|trans }}',
+            data: points.map(p => ({ x: p.x, y: p.precip !== null ? p.precip * 10 : null })),
+            yAxisID: 'y', borderWidth: 0,
+            borderColor: 'rgb(0,110,174)', backgroundColor: 'rgba(0,110,174, 0.3)',
+        };
+        const dsScore = {
+            label: '{{ "dashboard.condition_score"|trans }}',
+            data: points.map(p => ({ x: p.x, y: p.score })),
+            yAxisID: 'y', tension: 0.25, pointRadius: 0, borderWidth: 2,
+            borderColor: 'rgb(255,255,255)',
+        };
+        const dsTemperature = {
+            label: '{{ "dashboard.temperature"|trans }}',
+            data: points.map(p => ({ x: p.x, y: p.temperature })),
+            yAxisID: 'y_temp', tension: 0.25, pointRadius: 0, borderWidth: 2,
+            borderColor: 'rgb(85,163,53,0.67)', borderDash: [2, 3],
+        };
+
+        if (forecastChart) { forecastChart.destroy(); forecastChart = null; }
+
+        const ctx = document.getElementById('astroForecastChart').getContext('2d');
+        Chart.defaults.color = '#fff';
+        Chart.defaults.plugins.legend.labels.color = '#fff';
+        forecastChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [dsCloud, dsCloudH, dsCloudM, dsCloudL, dsSeeing, dsTransp, dsWind, dsTemperature, dsPrecip, dsScore]
+            },
+            options: {
+                parsing: false,
+                interaction: { mode: 'nearest', intersect: false },
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        adapters: { date: { zone: tz } },
+                        time: { tooltipFormat: 'ccc dd LLL HH:mm', displayFormats: { hour: 'dd HH:mm' } },
+                        grid: { drawOnChartArea: false },
+                        ticks: { autoSkip: true, maxRotation: 0 }
+                    },
+                    y: {
+                        position: 'left',
+                        title: { text: '% / mm / score', display: true },
+                        suggestedMin: 0, suggestedMax: 100
+                    },
+                    y_right: {
+                        position: 'right', title: { text: 'Seeing (arcsec)', display: true },
+                        grid: { drawOnChartArea: false }, suggestedMin: 0, display: false,
+                    },
+                    y_transp: {
+                        position: 'right', title: { text: 'Transparency (0-1)', display: true },
+                        min: 0, max: 1, grid: { drawOnChartArea: false },
+                        ticks: { stepSize: 0.2 }, offset: true, display: false,
+                    },
+                    y_wind: {
+                        position: 'right', title: { text: 'Wind (m/s)', display: true },
+                        grid: { drawOnChartArea: false }, suggestedMin: 0, offset: true, display: false,
+                    },
+                    y_temp: {
+                        position: 'right', title: { text: 'Temperature (°c)', display: true },
+                        grid: { drawOnChartArea: false }, suggestedMin: 0, offset: true, display: false,
+                    },
+                },
+                plugins: {
+                    legend: { labels: { font: { size: 10 }, boxWidth: 10, padding: 6 } },
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => {
+                                if (!items.length) return '';
+                                return luxon.DateTime.fromMillis(items[0].parsed.x, { zone: tz })
+                                    .toFormat('ccc dd LLL · HH:mm (ZZZZ)');
+                            },
+                            label: (ctx) => {
+                                const k = ctx.dataset.label || '';
+                                const v = ctx.parsed.y;
+                                if (v == null) return null;
+                                if (k.includes('Cloud'))       return `${k}: ${v.toFixed(0)} %`;
+                                if (k.includes('Seeing'))      return `${k}: ${v.toFixed(2)} "`;
+                                if (k.includes('Transparency')) return `${k}: ${v.toFixed(2)}`;
+                                if (k.includes('Wind'))        return `${k}: ${v.toFixed(1)} m/s`;
+                                if (k.includes('Precip'))      return `${k}: ${(v / 10).toFixed(2)} mm`;
+                                if (k.includes('Condition'))   return `${k}: ${v.toFixed(0)}`;
+                                if (k.includes('Temperature')) return `${k}: ${v.toFixed(1)} °c`;
+                                return `${k}: ${v}`;
+                            }
+                        }
+                    }
+                },
+                elements: { line: { spanGaps: true }, point: { radius: 0 } }
+            }
+        });
+    }
+
+    // Initial render
+    buildForecastChart({{ forecast|json_encode(constant('JSON_INVALID_UTF8_SUBSTITUTE'))|raw }});
+
+    // Observatory switcher
+    document.getElementById('weather-obs-select')?.addEventListener('change', function () {
+        const opt = this.options[this.selectedIndex];
+        const spinner = '<span class="spinner-border spinner-border-sm ms-2"></span>';
+        document.getElementById('weather-obs-name').innerHTML =
+            opt.dataset.name + ' - {{ 'dashboard.weather_title'|trans }}' + spinner;
+
+        fetch(opt.dataset.url)
+            .then(r => r.json())
+            .then(data => {
+                const m = data.forecast?.meta ?? {};
+                document.getElementById('weather-obs-name').textContent =
+                    data.name + ' - {{ 'dashboard.weather_title'|trans }}';
+                document.getElementById('weather-meta').textContent =
+                    'LAT:' + (m.latitude ?? '') + ', LON:' + (m.longitude ?? '') + ' @ ' + (m.generated_at ?? '');
+                document.getElementById('meteoblue-link').href =
+                    'https://www.meteoblue.com/fr/meteo/outdoorsports/seeing/' + (data.city || '');
+                buildForecastChart(data.forecast);
+            })
+            .catch(() => {
+                document.getElementById('weather-obs-name').textContent =
+                    opt.dataset.name + ' - {{ 'dashboard.weather_title'|trans }}';
+            });
+    });
+
+});
+</script>
+{% endif %}

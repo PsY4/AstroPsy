@@ -1,0 +1,93 @@
+{% set headers = master.header %}
+{% set fits = master.header.metadata.FITS %}
+
+<div class="card profile-container">
+    <div class="card-header">
+        <div class="fa-pull-left">
+            <h5>{{ 'master.title'|trans }}</h5>
+        </div>
+        <div class="fa-pull-right">
+            <a href="openfolder:{{ local_folder_base }}/{{ master.path }}"
+               class="btn btn-primary icon-btn b-r-4" title="{{ 'master.btn_open_local'|trans }}">
+                <i class="fa primary fa-arrow-right-to-file"></i>
+            </a>
+        </div>
+    </div>
+    <div class="card-header person-details mt-0" >
+        <div class="details mt-0">
+            <div>
+                <h4 class="text-primary">
+                    <small>{{ headers.shape[1] }}x{{ headers.shape[0] }}</small>
+                </h4>
+                <p class="text-secondary">SIZE</p>
+            </div>
+            <div>
+                <h4 class="text-primary"><small>{{ fits['IMAGETYP'] }}</small></h4>
+                <p class="text-secondary">TYPE</p>
+            </div>
+            <div>
+                <h4 class="text-primary"><small>{{ fits['EXPTIME']|replace({".000":''}) }}s</small></h4>
+                <p class="text-secondary">EXPO</p>
+            </div>
+            {% if fits['FILTER'] != "" %}
+            <div>
+                <h4 class="text-primary"><small>{{ fits['FILTER'] }}</small></h4>
+                <p class="text-secondary">FILTER</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="about-list">
+            {% if fits['IMAGETYP'] or fits['EXPTIME'] is not null %}
+            <h6>EXPOSURE</h6>
+            {% if fits['IMAGETYP'] %}<div><span class="fw-medium"><i class="ti ti-photo"></i> IMAGETYP</span> <span class="float-end f-s-13 text-secondary">{{ fits['IMAGETYP'] }}</span></div>{% endif %}
+            {% if fits['EXPTIME'] is not null and fits['EXPTIME'] != '' %}<div><span class="fw-medium"><i class="ti ti-timer"></i> EXPTIME</span> <span class="float-end f-s-13 text-secondary">{{ fits['EXPTIME'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if fits['DATE-OBS'] %}
+            <hr>
+            <h6>DATE / TIME</h6>
+            <div><span class="fw-medium"><i class="ti ti-calendar"></i> DATE-OBS</span> <span class="float-end f-s-13 text-secondary">{{ fits['DATE-OBS'] }}</span></div>
+            {% endif %}
+
+            {% if fits['XBINNING'] is not null or fits['YBINNING'] is not null or fits['EGAIN'] is not null or fits['XPIXSZ'] is not null or fits['YPIXSZ'] is not null %}
+            <hr>
+            <h6>SETTINGS</h6>
+            {% if fits['XBINNING'] is not null and fits['XBINNING'] != '' %}<div><span class="fw-medium"><i class="ti ti-columns"></i> XBINNING</span> <span class="float-end f-s-13 text-secondary">{{ fits['XBINNING'] }}</span></div>{% endif %}
+            {% if fits['YBINNING'] is not null and fits['YBINNING'] != '' %}<div><span class="fw-medium"><i class="ti ti-columns"></i> YBINNING</span> <span class="float-end f-s-13 text-secondary">{{ fits['YBINNING'] }}</span></div>{% endif %}
+            {% if fits['EGAIN'] is not null and fits['EGAIN'] != '' %}<div><span class="fw-medium"><i class="ti ti-graph"></i> EGAIN</span> <span class="float-end f-s-13 text-secondary">{{ fits['EGAIN'] }}</span></div>{% endif %}
+            {% if fits['XPIXSZ'] is not null and fits['XPIXSZ'] != '' %}<div><span class="fw-medium"><i class="ti ti-arrows-horizontal"></i> XPIXSZ</span> <span class="float-end f-s-13 text-secondary">{{ fits['XPIXSZ'] }}</span></div>{% endif %}
+            {% if fits['YPIXSZ'] is not null and fits['YPIXSZ'] != '' %}<div><span class="fw-medium"><i class="ti ti-arrows-vertical"></i> YPIXSZ</span> <span class="float-end f-s-13 text-secondary">{{ fits['YPIXSZ'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if fits['INSTRUME'] %}
+            <hr>
+            <h6>CAMERA</h6>
+            <div><span class="fw-medium"><i class="ti ti-camera"></i> INSTRUME</span> <span class="float-end f-s-13 text-secondary">{{ fits['INSTRUME'] }}</span></div>
+            {% endif %}
+
+            {% if fits['TELESCOP'] or fits['FOCALLEN'] is not null %}
+            <hr>
+            <h6>TELESCOPE</h6>
+            {% if fits['TELESCOP'] %}<div><span class="fw-medium"><i class="ti ti-briefcase"></i> TELESCOP</span> <span class="float-end f-s-13 text-secondary">{{ fits['TELESCOP'] }}</span></div>{% endif %}
+            {% if fits['FOCALLEN'] is not null and fits['FOCALLEN'] != '' %}<div><span class="fw-medium"><i class="ti ti-focus"></i> FOCALLEN</span> <span class="float-end f-s-13 text-secondary">{{ fits['FOCALLEN'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if fits['RA'] is not null or fits['DEC'] is not null or fits['OBJCTRA'] or fits['OBJCTDEC'] %}
+            <hr>
+            <h6>TARGET</h6>
+            {% if fits['RA'] is not null and fits['RA'] != '' %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> RA</span> <span class="float-end f-s-13 text-secondary">{{ fits['RA'] }}</span></div>{% endif %}
+            {% if fits['DEC'] is not null and fits['DEC'] != '' %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> DEC</span> <span class="float-end f-s-13 text-secondary">{{ fits['DEC'] }}</span></div>{% endif %}
+            {% if fits['OBJCTRA'] %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> OBJCTRA</span> <span class="float-end f-s-13 text-secondary">{{ fits['OBJCTRA'] }}</span></div>{% endif %}
+            {% if fits['OBJCTDEC'] %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> OBJCTDEC</span> <span class="float-end f-s-13 text-secondary">{{ fits['OBJCTDEC'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {% if fits['FILTER'] %}
+            <hr>
+            <h6>FILTER WHEEL</h6>
+            <div><span class="fw-medium"><i class="ti ti-filter"></i> FILTER</span> <span class="float-end f-s-13 text-secondary">{{ fits['FILTER'] }}</span></div>
+            {% endif %}
+        </div>
+    </div>
+</div>

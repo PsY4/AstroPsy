@@ -1,0 +1,89 @@
+{% set pageTitle = doc.title %}
+{% set hideBreadcrumb = true %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+{% endblock %}
+{% block body %}
+    {{ form_start(form) }}
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+            <div class="col-9">
+                <div class="fa-pull-left">
+                    <h5>
+                        <i class="{{ doc.icon }}"></i>
+                        {{ doc.title }}
+                        {% for tag in doc.tags %}
+                            <span class="badge text-bg-primary">{{ tag }}</span>
+                        {% endfor %}
+                    </h5>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="input-group input-group-sm fa-pull-right" style="width: auto">
+                    <button type="submit" class="btn btn-primary icon-btn b-r-left"
+                            onclick="return fillTA();">
+                        <i class="fa fa-fw fa-save"></i>
+                    </button>
+                    <a class="btn btn-sm btn-outline-primary icon-btn b-r-right"
+                       href="{{ path("doc_edit", {'doc':doc.id}) }}">
+                        <i class="ti ti-edit"></i>
+                    </a>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {{ form_widget(form.doc) }}
+            {% if doc.getPath()|default("") == "" %}
+                <div id="editor"></div>
+            {% else %}
+                <iframe src="{{ path('doc_download', {'doc': doc.id}) }}" frameborder="0" style=" width: 100%; height: 90vh"></iframe>
+            {% endif %}
+        </div>
+    </div>
+    <div style="display:none">
+        {{ form_widget(form.title) }}
+        {{ form_widget(form.icon) }}
+        {{ form_widget(form.tags) }}
+        {{ form_widget(form.target) }}
+        {{ form_widget(form.session) }}
+    </div>
+    {{ form_end(form) }}
+{% endblock %}
+{% block page_scripts %}
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.css" />
+    <link rel="stylesheet" href="https://itsjavi.com/fontawesome-iconpicker/dist/css/fontawesome-iconpicker.min.css" />
+    <script src="https://itsjavi.com/fontawesome-iconpicker/dist/js/fontawesome-iconpicker.js"></script>
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+    <script>
+        let content = {{ doc.doc|json_encode|raw }};
+
+        const Editor = toastui.Editor;
+        const editor = new Editor({
+            el: document.querySelector('#editor'),
+            height: '700px',
+            usageStatistics: false,
+            initialValue: content,
+            theme: 'dark',
+            initialEditType: 'wysiwyg'
+        });
+        function fillTA() {
+            $("#doc_doc").val(editor.getMarkdown());
+            return true;
+        }
+
+        $(function () {
+            $('#doc_icon').iconpicker({
+                animation: false, // fade in/out on show/hide ?
+                input: 'input,.iconpicker-input', // children input selector
+                component:'.btn > i'
+            });
+        });
+    </script>
+    <style>
+        .iconpicker .iconpicker-item { color: rgba(var(--primary), 1); }
+        .iconpicker-popover { z-index:99999 }
+    </style>
+{% endblock %}

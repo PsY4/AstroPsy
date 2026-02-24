@@ -1,0 +1,132 @@
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'messages' %}
+
+{% block body %}
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="mb-0">
+            <i class="ti ti-bell me-2"></i>{{ 'notif.title'|trans }}
+        </h5>
+        {% if notifications|length > 0 %}
+        <button id="btn-read-all" class="btn btn-sm btn-outline-secondary">
+            <i class="ti ti-checks me-1"></i>{{ 'notif.mark_all_read'|trans }}
+        </button>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if notifications|length == 0 %}
+            <div class="text-muted text-center py-5">
+                <i class="ti ti-bell-off fs-3 d-block mb-2"></i>
+                {{ 'notif.empty'|trans }}
+            </div>
+        {% else %}
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:160px">Date</th>
+                        <th>Titre</th>
+                        <th>Résumé</th>
+                        <th style="width:80px">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for notif in notifications %}
+                    <tr class="notif-row{% if not notif.read %} fw-semibold{% endif %}"
+                        data-id="{{ notif.id }}"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#notif-detail-{{ notif.id }}"
+                        style="cursor:pointer">
+                        <td class="text-nowrap text-muted small">
+                            {{ notif.createdAt|date('d/m/Y H:i') }}
+                        </td>
+                        <td>
+                            {% if notif.type == 'evening_alert' %}
+                                <i class="ti ti-moon-stars text-primary me-1"></i>
+                            {% else %}
+                                <i class="ti ti-bell text-secondary me-1"></i>
+                            {% endif %}
+                            {{ notif.title }}
+                        </td>
+                        <td class="text-muted small">{{ notif.summary }}</td>
+                        <td class="text-center">
+                            {% if notif.read %}
+                                <span class="badge bg-light text-secondary">Lu</span>
+                            {% else %}
+                                <span class="badge bg-primary notif-unread-badge">Non lu</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% set data = notif.data %}
+                    {% if data and data.targets is defined and data.targets|length > 0 %}
+                    <tr class="collapse" id="notif-detail-{{ notif.id }}">
+                        <td colspan="4" class="bg-light py-3 px-4">
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                {% for t in data.targets %}
+                                <div class="card border-0 shadow-sm" style="min-width:180px">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="fw-semibold">{{ t.name }}</div>
+                                        <div class="text-muted small">
+                                            {% if t.window_start and t.window_end %}
+                                                {{ t.window_start }} → {{ t.window_end }}
+                                                &nbsp;·&nbsp; {{ t.useful_h }}h
+                                            {% endif %}
+                                            {% if t.moon_sep %}
+                                                &nbsp;·&nbsp; Lune {{ t.moon_sep }}°
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <a href="{{ path('night_planner') }}" class="btn btn-sm btn-outline-primary mt-1">
+                                <i class="ti ti-telescope me-1"></i>Ouvrir Night Planner
+                            </a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Mark row as read on expand
+    document.querySelectorAll('.notif-row').forEach(function (row) {
+        row.addEventListener('click', function () {
+            const id = this.dataset.id;
+            const badge = this.querySelector('.notif-unread-badge');
+            if (badge) {
+                fetch('/api/notifications/' + id + '/read', { method: 'POST' });
+                badge.replaceWith(Object.assign(document.createElement('span'), {
+                    className: 'badge bg-light text-secondary',
+                    textContent: 'Lu'
+                }));
+                this.classList.remove('fw-semibold');
+            }
+        });
+    });
+
+    // Mark all read
+    const btnAll = document.getElementById('btn-read-all');
+    if (btnAll) {
+        btnAll.addEventListener('click', function (e) {
+            e.stopPropagation();
+            fetch('/api/notifications/read-all', { method: 'POST' }).then(function () {
+                document.querySelectorAll('.notif-unread-badge').forEach(function (b) {
+                    b.replaceWith(Object.assign(document.createElement('span'), {
+                        className: 'badge bg-light text-secondary',
+                        textContent: 'Lu'
+                    }));
+                });
+                document.querySelectorAll('.notif-row.fw-semibold').forEach(function (r) {
+                    r.classList.remove('fw-semibold');
+                });
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

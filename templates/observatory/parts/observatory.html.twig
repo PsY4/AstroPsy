@@ -1,0 +1,66 @@
+{# ############## MODAL - EDIT OBSERVATORY ############## #}
+{% form_theme editForms[obs.id] 'bootstrap_4_layout.html.twig' %}
+<div aria-hidden="true" class="modal fade" id="editObsModal{{ obs.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            {{ form_start(editForms[obs.id]) }}
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5">{{ 'observatory.btn_edit'|trans }}</h1>
+                    <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body app-form">
+                    {{ form_widget(editForms[obs.id]) }}
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="submit">{{ 'observatory.btn_update'|trans }}</button>
+                </div>
+            {{ form_end(editForms[obs.id]) }}
+        </div>
+    </div>
+</div>
+
+<div class="col-xl-6  horizontal-card">
+    <div class="card mb-3  hover-effect">
+        <div class="row g-0">
+            <div class="col-md-6 col-xl-8">
+                <div class="card-body">
+                    <ul class="avatar-group float-end breadcrumb-start ">
+                        {% for author in obs.authors %}
+                            <li class="h-30 w-30 d-flex-center b-r-50 position-relative" data-bs-title="{{ author.name }}" data-bs-toggle="tooltip">
+                                <img alt="{{ author.name }}" class="img-fluid b-r-50 overflow-hidden" src="{{ author.logo }}">
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <h5 class="card-title"><i class="fa fa-fw fa-tower-observation"></i> {{ obs.name }} {{ (obs.favorite==true)?"⭐":"" }}</h5>
+                    <p class="card-text"><cite>{{ obs.comments }}</cite></p>
+                    <p class="card-text">
+                        <strong>{{ 'observatory.label_authors'|trans }}</strong>
+                        <small class="text-body-secondary">
+                            {{ obs.authors|map(s => s.name)|join(', ') }}
+                        </small>
+                    </p>
+                    <p class="card-text">
+                        <strong>📍 {{ obs.city }}</strong>
+                        <small class="text-body-secondary">
+                            (Lat: <strong>{{ obs.lat }}</strong> ; Lon: <strong>{{ obs.lon }}</strong>)<br>
+                        </small>
+                    </p>
+                    {% if obs.setups|length > 0 %}
+                        <p class="card-text">
+                            <strong>{{ 'observatory.label_setups'|trans }}</strong>
+                            {{ obs.setups|map(s => s.name)|join(', ') }}
+                        </p>
+                    {% endif %}
+                    <button class="btn btn-primary icon-btn b-r-22"
+                            data-bs-target="#editObsModal{{ obs.id }}"
+                            data-bs-toggle="modal" type="button">
+                        <i class="ti ti-edit"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                <img alt="{{ obs.city }}" class="img-fluid" src="https://maps.googleapis.com/maps/api/staticmap?center={{ obs.lat }},{{ obs.lon }}&zoom=7&size=300x150&key={{ google_maps_api_key }}&markers=color:red|{{ obs.lat }},{{ obs.lon }}">
+            </div>
+        </div>
+    </div>
+</div>

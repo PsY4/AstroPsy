@@ -1,0 +1,86 @@
+{# === Alpaca widgets : SafetyMonitor + Switch ================================ #}
+
+{# ── SafetyMonitor ── #}
+<div class="col-12 col-lg-3">
+    {% set smError = sm.error is defined %}
+    {% set isSafe  = not smError and sm.weather.is_safe %}
+    <div class="card h-100">
+        <span class="{{ smError ? 'bg-secondary' : (isSafe ? 'bg-primary' : 'bg-danger') }} h-50 w-50 d-flex-center rounded-circle m-auto eshop-icon-box">
+            <i class="ph {{ smError ? 'ph-shield-warning' : (isSafe ? 'ph-shield-check' : 'ph-shield-warning') }} f-s-24"></i>
+        </span>
+        <div class="card-body eshop-cards">
+            <span class="ripple-effect"></span>
+            <div class="overflow-hidden">
+                {% if smError %}
+                    <h3 class="text-secondary mb-0">—</h3>
+                    <p class="mb-0 f-w-600 text-dark-800 txt-ellipsis-1">{{ 'alpaca.safety.title'|trans }}</p>
+                    <p class="text-danger f-s-12 mb-0 mt-1">{{ 'alpaca.inaccessible'|trans({'%error%': sm.error}) }}</p>
+                {% else %}
+                    <h3 class="{{ isSafe ? 'text-primary' : 'text-danger' }} mb-0 txt-ellipsis-1">{{ sm.weather.condition }}</h3>
+                    <p class="f-w-600 text-dark-800 mb-1 txt-ellipsis-1">{{ sm.config.location }}</p>
+                    <p class="text-secondary mb-0 f-s-12">{{ sm.weather.last_updated ? sm.weather.last_updated|date('d M H:i') : '—' }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-footer text-center py-2">
+            <a href="{{ path('alpaca_setup_safetymonitor', {deviceNumber: 0}) }}">
+                <span class="badge text-bg-primary">{{ 'alpaca.btn_configure'|trans }}</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+{# ── Switch ── #}
+<div class="col-12 col-lg-4">
+    <div class="card h-100">
+        <span class="bg-primary h-50 w-50 d-flex-center rounded-circle m-auto eshop-icon-box">
+            <i class="ph ph-toggle-right f-s-24"></i>
+        </span>
+        <div class="card-body eshop-cards">
+            <span class="ripple-effect"></span>
+            <div class="overflow-hidden w-100">
+                {% if switch.error is defined %}
+                    <h3 class="text-secondary mb-0">—</h3>
+                    <p class="mb-0 f-w-600 text-dark-800 txt-ellipsis-1">{{ 'alpaca.switch.title'|trans }}</p>
+                    <p class="text-danger f-s-12 mb-0 mt-1">{{ 'alpaca.inaccessible'|trans({'%error%': switch.error}) }}</p>
+                {% else %}
+                    <p class="f-w-600 text-dark-800 mb-3 txt-ellipsis-1">{{ 'alpaca.switch.title'|trans }}</p>
+                    <div class="row g-3 text-center">
+                        {% for item in switch.items %}
+                        <div class="col-4">
+                            {% if item.is_boolean %}
+                                <span class="badge {{ item.value > 0 ? 'bg-light-success' : 'bg-light-dark' }} f-s-14 mb-1">
+                                    {{ item.value > 0 ? ('alpaca.switch.on'|trans) : ('alpaca.switch.off'|trans) }}
+                                </span>
+                                <p class="mb-0 f-w-500 f-s-12 txt-ellipsis-1">{{ item.name }}</p>
+                            {% else %}
+                                {# Arc gauge SVG — demi-cercle r=38, longueur arc = π×38 ≈ 119.4 #}
+                                {% set pct    = item.max_value > 0 ? (item.value / item.max_value * 100) : 0 %}
+                                {% set arcLen = (pct * 1.194)|round(2) %}
+                                <svg viewBox="0 0 100 58" width="100%" style="max-width:88px" class="d-block m-auto">
+                                    <path d="M 12,50 A 38,38 0 0,1 88,50"
+                                          stroke="rgba(128,128,128,0.2)" stroke-width="8"
+                                          fill="none" stroke-linecap="round"/>
+                                    <path d="M 12,50 A 38,38 0 0,1 88,50"
+                                          stroke="var(--bs-warning)" stroke-width="8"
+                                          fill="none" stroke-linecap="round"
+                                          stroke-dasharray="{{ arcLen }} 119.4"/>
+                                    <text x="50" y="40" text-anchor="middle"
+                                          dominant-baseline="middle"
+                                          fill="currentColor" font-size="16" font-weight="700">{{ item.value|number_format(1) }}</text>
+                                </svg>
+                                <p class="mb-0 f-w-500 f-s-12 txt-ellipsis-1">{{ item.name }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-footer text-center py-2">
+            <a href="{{ path('alpaca_setup_switch', {deviceNumber: 0}) }}">
+                <span class="badge text-bg-primary">{{ 'alpaca.btn_configure'|trans }}</span>
+            </a>
+        </div>
+    </div>
+</div>

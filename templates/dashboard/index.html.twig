@@ -1,0 +1,48 @@
+{% set pageTitle = "AstroPsy" %}
+{% set hideBreadcrumb = true %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+{% endblock %}
+{% block body %}
+
+    {% if noObservatory|default(false) %}
+        <div class="alert alert-warning text-center my-5">
+            <h4>{{ 'dashboard.no_observatory_title'|trans }}</h4>
+            <p>{{ 'dashboard.no_observatory_message'|trans }}</p>
+            <a href="{{ path('observatories') }}" class="btn btn-primary">{{ 'dashboard.configure_observatory'|trans }}</a>
+        </div>
+    {% else %}
+
+    {# ── Ligne 1 : Evening Alerts | Live View | Météo ── #}
+    <div class="row g-3 mb-3">
+        <div class="col-lg-3">
+            {{ include('dashboard/alerts.html.twig') }}
+        </div>
+        <div class="col-lg-4">
+            {{ include('dashboard/live-views.html.twig') }}
+        </div>
+        <div class="col-lg-5">
+            {{ include('dashboard/weather.html.twig') }}
+        </div>
+    </div>
+
+    {# ── Ligne 2 : Documents | SafetyMonitor | Switch | Compteurs 2×2 ── #}
+    <div class="row g-3">
+        <div class="col-lg-3">
+            {{ include('dashboard/documents.html.twig') }}
+        </div>
+        {{ include('dashboard/alpaca.html.twig') }}
+        <div class="col-lg-2">
+            {{ include('dashboard/counters.html.twig') }}
+        </div>
+    </div>
+
+    {% endif %}
+
+{% endblock %}
+{% block page_scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
+    <script src="https://unpkg.com/astronomy-engine/astronomy.browser.js"></script>
+{% endblock %}

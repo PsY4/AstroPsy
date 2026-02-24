@@ -1,0 +1,384 @@
+{% set pageTitle = target.name %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+    <div class="input-group input-group-sm fa-pull-right" style="width: auto">
+        <button class="btn {% if target.isWishlist %}btn-warning{% else %}btn-outline-secondary{% endif %} icon-btn b-r-left"
+                id="btn-wishlist"
+                data-id="{{ target.id }}"
+                title="{{ 'targets.btn_wishlist'|trans }}"
+                type="button">
+            <i class="fa fa-star"></i>
+        </button>
+        <button class="btn btn-primary icon-btn"
+                data-bs-target="#editModal"
+                data-bs-toggle="modal" type="button">
+            <i class="ti ti-edit"></i>
+        </button>
+        <button class="btn btn-primary"
+                data-bs-target="#createModal"
+                data-bs-toggle="modal" type="button">
+            <i class="ti ti-plus"></i> {{ 'target.btn_add_session'|trans }}
+        </button>
+        <button class="btn btn-outline-primary"
+                data-bs-target="#telescopiusModal" data-bs-toggle="modal" type="button">
+            <i class="fa primary fa-download"></i>  {{ 'target.btn_update_telescopius'|trans }}
+        </button>
+        <a href="{{ path('refresh_target', {'id':target.id}) }}"
+           title="{{ 'target.btn_refresh_storage'|trans }}"
+           class="btn btn-primary b-r-right">
+            <i class="fa primary fa-refresh"></i> {{ 'target.btn_refresh_storage'|trans }}
+        </a>
+    </div>
+{% endblock %}
+{% block body %}
+    {# ############## MODAL - EDIT TARGET ############## #}
+    {% form_theme editForm 'bootstrap_4_layout.html.twig' %}
+    <div aria-hidden="true" aria-labelledby="editModalLabel" class="modal fade"
+         id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                {{ form_start(editForm) }}
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="editModalLabel">{{ 'target.btn_edit'|trans }}</h1>
+                        <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3 app-form">
+                            {{ form_widget(editForm) }}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit">{{ 'target.btn_update'|trans }}</button>
+                    </div>
+                {{ form_end(editForm) }}
+            </div>
+        </div>
+    </div>
+    {# ############## MODAL - TELESCOPIUS ############## #}
+    <div aria-hidden="true" aria-labelledby="telescopiusModalLabel" class="modal fade"
+         id="telescopiusModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="get" action="{{ path('app_target_refresh_about', {'target': target.id}) }}">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="telescopiusModalLabel">{{ 'target.btn_update_telescopius'|trans }}</h1>
+                        <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                    </div>
+                    <div class="modal-body app-form">
+                        <label class="form-label" for="searchName">{{ 'target.telescopius_search_name'|trans }}</label>
+                        <input class="form-control" id="searchName" name="searchName"
+                               type="text" value="{{ target.name }}">
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fa fa-download"></i> {{ 'target.btn_update_telescopius'|trans }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="fs-scan-container"
+         data-scan-url="{{ path('api_scan_sessions', {targetId: target.id}) }}"
+         data-scan-apply-url="{{ path('api_scan_sessions_apply', {targetId: target.id}) }}"
+         data-scan-level="sessions"
+         data-scan-trans="{{ {
+             scanning: 'scan.scanning'|trans,
+             changes_detected: 'scan.changes_detected'|trans,
+             new_session_item: 'scan.new_session_item'|trans,
+             missing_session_item: 'scan.missing_session_item'|trans,
+             apply: 'scan.apply'|trans,
+             ignore: 'scan.ignore'|trans,
+             refresh: 'scan.refresh'|trans,
+             applying: 'scan.applying'|trans,
+             applied_error: 'scan.applied_error'|trans,
+             confirm_remove: 'scan.confirm_remove'|trans,
+         }|json_encode|e('html_attr') }}">
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 col-xxl-3 order-md-2 order-xxl-1">
+            <div class="card">
+                <div class="card-body">
+                    <div class="profile-container">
+                        <div class="image-details">
+                            <div class="profile-image" style="background-image: url({{ path('target_preview', {id: target.id}) }});"></div>
+                        </div>
+                        <div class="person-details">
+                            <h4 class="f-w-600">{{ target.name }}</h4>
+                            {% if target.type %}
+                                <hr>
+                                <h6 class="f-w-600">
+                                    {% for t in target.type|split(",") %}
+                                        {{ (loop.index0<3)?"<strong>":"" }}
+                                        {{ ("target.details.type."~t)|trans }}{{ (loop.index0<3)?"</strong>":"" }}{{ (loop.revindex0!=0)?", " }}
+                                    {% endfor %}
+                                </h6>
+                            {% endif %}
+                            {% if target.catalogIds|length > 0 %}
+                                <p>{{ target.catalogIds|join(', ') }}</p>
+                            {% endif %}
+                            {% if target.visualMag > 0 or target.ra is not null or target.dec is not null %}
+                                <hr>
+                                <div class="details">
+                                    {% if target.visualMag > 0 %}
+                                        <div>
+                                            <h4 class="text-primary">{{ target.visualMag }}</h4>
+                                            <p class="text-secondary">MAG</p>
+                                        </div>
+                                    {% endif %}
+                                    {% if target.ra is not null %}
+                                        <div>
+                                            <h4 class="text-primary">{{ target.ra|number_format(2) }}</h4>
+                                            <p class="text-secondary">RA</p>
+                                        </div>
+                                    {% endif %}
+                                    {% if target.dec is not null %}
+                                        <div>
+                                            <h4 class="text-primary">{{ target.dec|number_format(2) }}</h4>
+                                            <p class="text-secondary">DEC</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            <div class="my-2">
+                                {% if target.telescopiusUrl %}
+                                    <a href="{{ target.telescopiusUrl }}" class="btn btn-primary b-r-22 mb-2" type="button">
+                                        <i class="fa fa-fw fa-solid fa-globe"></i>
+                                        <strong>Telescopius™</strong>
+                                    </a>&nbsp;
+                                {% endif %}
+                                <a href="https://www.astrobin.com/search/?q={{ target.name | url_encode }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer" class="btn btn-primary b-r-22 mb-2" type="button">
+                                    <i class="fa fa-fw fa-solid fa-photo-video"></i>
+                                    <strong>AstroBin™</strong>
+                                </a>
+                                <a href="{{ path('app_target_get_nina_sequence', {'target': target.id}) }}"
+                                   class="btn btn-primary b-r-22 mb-2" type="button">
+                                    <i class="fa fa-fw fa-solid fa-cog"></i>
+                                    {{ 'target.btn_download_nina'|trans }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="project-details-table table table-borderless  align-middle mb-0">
+                        <tbody>
+                        {% if target.constellation %}
+                        <tr>
+                            <td><p class="f-w-600 mb-0">Constellation</p></td>
+                            <td class="text-end">{{ target.constellation }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td class="pb-0"><p class="f-w-600 mb-0">Sessions</p></td>
+                            <td class="text-end pb-0"><h6>{{ target.sessions.count }}</h6></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-6 order-xxl-2">
+            <div class="card">
+                <div class="card-header">
+                    <div class="fa-pull-left">
+                        <h5>{{ 'target.section_sessions'|trans }}</h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <ul class="app-timeline-box">
+                        {% for s in target.sessions %}
+                            {% include 'browse/target/session-timeline_section.html.twig' with {'s': s}%}
+                        {% else %}
+                            <li>
+                                <strong>{{ 'target.no_sessions'|trans }}</strong>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div aria-hidden="true" aria-labelledby="createModalLabel" class="modal fade" id="createModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered" id="staticBackdrop">
+                <div class="modal-content">
+                    <form action="{{ path("new_session", {'target': target.id}) }}">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="createModalLabel1">{{ 'target.btn_create_session'|trans }}</h1>
+                            <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3" id="newtask">
+                                <label class="form-label">{{ 'target.col_session_date'|trans }}</label>
+                                <input class="form-control todo-inputs" id="sessionDate" name="sessionDate"
+                                       required="required"
+                                       type="date">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-primary" id="push" type="submit">{{ 'target.btn_create_session'|trans }}</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xxl-3 order-md-1 order-xxl-3">
+            <div class="card">
+                <div class="card-header">
+                    <div class="mb-3">
+                        <h5>Today position</h5>
+                        <canvas id="altChart"></canvas>
+                        <div id="meta" style="width: 100%; text-align: center">—</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5>{{ 'target.section_documents'|trans }}</h5>
+                    <div class="data-list-box mt-3">
+                        {% for doc in docsRepo.findby({'target': target.id}) %}
+                            <a href="{{ path('doc_view', {'doc': doc.id }) }}">
+                                <div class="filebox">
+                                    <div class="d-flex align-items-center position-relative">
+                                        <div class="position-absolute start-0">
+                                            <i class="{{ doc.icon }} fa-2x"></i>
+                                        </div>
+                                        <div class="flex-grow-1 mg-s-40">
+                                            <h6 class="mb-0">{{ doc.title }}</h6>
+                                            <p class="text-secondary mb-0">
+                                                {% for tag in doc.tags %}
+                                                    <span class="badge text-bg-primary">{{ tag }}</span>
+                                                {% endfor %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        {% else %}
+                            <p class="text-center text-muted">
+                                {{ 'target.no_documents'|trans }}
+                            </p>
+                        {% endfor %}
+                        <div class="text-center">
+                            <a href="{{ path('doc_list') }}" title="{{ 'target.btn_view_all'|trans }}">
+                                <span class="badge text-bg-primary">{{ 'target.btn_view_all'|trans }}</span>
+                            </a>
+                            <a href="{{ path('doc_list') }}" title="{{ 'target.btn_create_new'|trans }}">
+                                <span class="badge text-bg-primary">{{ 'target.btn_create_new'|trans }}</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{ include('browse/target/progress_tracker.html.twig') }}
+
+            {% if favoriteObs and favoriteObs.lat and favoriteObs.lon %}
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ 'target.shooting_advice.title'|trans }}</h5>
+                    <small class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>{{ favoriteObs.name }}</small>
+                </div>
+                <div class="card-body p-2" id="shootingAdvice">
+                    <div class="text-center text-muted py-2">
+                        <div class="spinner-border spinner-border-sm me-1"></div>
+                        {{ 'target.shooting_advice.computing'|trans }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Astronomy + Chart.js (CDN) -->
+    <script src="https://unpkg.com/astronomy-engine/astronomy.browser.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+    <script src="{{ asset('assets/js/astronomy-helpers.js') }}"></script>
+
+    <script>
+        const ADVICE_LAT    = {{ favoriteObs ? favoriteObs.lat : 'null' }};
+        const ADVICE_LON    = {{ favoriteObs ? favoriteObs.lon : 'null' }};
+        const ADVICE_ALT    = {{ favoriteObs ? favoriteObs.altitudeHorizon : 30 }};
+        const TARGET_TYPE   = {{ target.type ? target.type|lower|json_encode|raw : 'null' }};
+        const FILTER_CONFIG = {{ filtersJsConfig|json_encode|raw }};
+        const ADVICE_CONFIG = {
+            raH:  {{ target.ra is not null ? target.ra : 0 }},
+            decD: {{ target.dec is not null ? target.dec : 0 }},
+            monthNames: ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'],
+            trans: {
+                filters:     '{{ 'target.shooting_advice.filters'|trans|e('js') }}',
+                bestNights:  '{{ 'target.shooting_advice.best_nights'|trans|e('js') }}',
+                bestMonths:  '{{ 'target.shooting_advice.best_months'|trans|e('js') }}',
+                usefulHours: '{{ 'target.shooting_advice.useful_hours'|trans|e('js') }}',
+            },
+        };
+    </script>
+
+    <script src="{{ asset('assets/js/altitude-chart.js') }}"></script>
+    <script>
+    initAltitudeChart({
+        canvasId: 'altChart',
+        metaId:   'meta',
+        name:     '{{ target.name|e('js') }}',
+        raH:      {{ target.ra }},
+        decD:     {{ target.dec }},
+        lat:      ADVICE_LAT !== null ? ADVICE_LAT : 43.597939,
+        lon:      ADVICE_LON !== null ? ADVICE_LON : 5.484940,
+        dateStr:  null,
+    });
+    </script>
+
+    {% if favoriteObs and favoriteObs.lat and favoriteObs.lon %}
+    <script src="{{ asset('assets/js/shooting-advice.js') }}"></script>
+    {% endif %}
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.notes-popover').forEach(function (el) {
+            new bootstrap.Popover(el, { placement: 'top', container: 'body' });
+        });
+    });
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.btn-toggle-progress-exclude').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const url = btn.dataset.url;
+                fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(r => r.json())
+                    .then(data => {
+                        const icon = btn.querySelector('i');
+                        btn.dataset.excluded = data.excluded ? 'true' : 'false';
+                        btn.title = data.excluded ? btn.dataset.titleInclude : btn.dataset.titleExclude;
+                        if (data.excluded) {
+                            icon.classList.add('text-warning');
+                            icon.classList.remove('opacity-25');
+                        } else {
+                            icon.classList.remove('text-warning');
+                            icon.classList.add('opacity-25');
+                        }
+                    });
+            });
+        });
+    });
+    // Wishlist toggle
+    document.getElementById('btn-wishlist')?.addEventListener('click', function () {
+        const id  = this.dataset.id;
+        const url = '{{ path('target_wishlist_toggle', {id: 0}) }}'.replace('/0/', '/' + id + '/');
+        fetch(url, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                this.className = data.wishlist
+                    ? 'btn btn-warning icon-btn'
+                    : 'btn btn-outline-secondary icon-btn';
+            });
+    });
+    </script>
+    <script src="{{ asset('assets/js/fs-scan.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% set pageTitle = 'nav.authors'|trans %}
+{% extends 'base.html.twig' %}
+{% block breadbuttons %}
+    <div class="fa-pull-right">
+        <div class="input-group mb-3">
+            <button class="fa-pull-right btn btn-outline-primary btn-sm b-r-left" data-bs-target="#createModal"
+                    data-bs-toggle="modal"
+                    type="button"><i class="ti ti-plus"></i> {{ 'author.btn_add'|trans }}
+            </button>
+        </div>
+    </div>
+{% endblock %}
+{% block body %}
+    <div aria-hidden="true" aria-labelledby="createModalLabel" class="modal fade"
+         id="createModal"
+         tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" id="staticBackdrop">
+            <div class="modal-content">
+                <form action="{{ path("new_author") }}">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="createModalLabel1">{{ 'author.btn_create'|trans }}</h1>
+                        <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3" id="newtask">
+                            <label class="form-label">{{ 'nav.authors'|trans }}</label>
+                            <input class="form-control todo-inputs" id="authorName" name="authorName"
+                                   placeholder="{{ 'author.name_placeholder'|trans }}" required="required"
+                                   type="text">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" id="push"
+                                type="submit">{{ 'author.btn_create'|trans }}
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+    {% for author in authors %}
+        {% include 'author/parts/author.html.twig' %}
+    {% endfor %}
+    </div>
+{% endblock %}
