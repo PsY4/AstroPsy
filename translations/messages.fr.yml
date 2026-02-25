@@ -583,6 +583,27 @@ exposure:
 master:
   title: "Détails du master"
   btn_open_local: "Ouvrir le fichier localement"
+  detail:
+    target: "Cible"
+    object: "Objet"
+    exposure: "Exposition"
+    exposure_time: "Temps de pose"
+    filter: "Filtre"
+    settings: "Paramètres"
+    sensor_temp: "Temp. capteur"
+    pixel_size: "Taille pixel"
+    camera: "Caméra"
+    instrument: "Instrument"
+    set_temp: "Temp. consigne"
+    telescope: "Télescope"
+    scope: "Tube"
+    focal_length: "Focale"
+    focal_ratio: "Rapport focal"
+    date: "Date / Heure"
+    image_info: "Image"
+    resolution: "Résolution"
+    data_type: "Type de données"
+    channels: "Canaux"
 
 image:
   title: "Détails de l'export"

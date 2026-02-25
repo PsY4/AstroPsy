@@ -233,7 +233,11 @@ final class SessionController extends AbstractController
 
     if ($master->getHeader() == [])
     {
-        $master->setHeader($astropy->xisfHeader($this->resolver->toAbsolutePath($master->getPath())));
+        $absPath = $this->resolver->toAbsolutePath($master->getPath());
+        $headers = $master->getType() === 'XISF'
+            ? $astropy->xisfHeader($absPath)
+            : $astropy->fitsHeader($absPath);
+        $master->setHeader($headers);
         $entityManager->persist($master);
         $entityManager->flush();
     }
