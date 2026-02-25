@@ -74,7 +74,7 @@ class SessionRefreshService
                     ? (float) $headers['EXPOSURE']
                     : null;
 
-                $format = in_array($ext, ['fit', 'fits'], true) ? 'FITS' : strtoupper($ext);
+                $format = in_array($ext, self::FITS_EXTENSIONS, true) ? 'FITS' : strtoupper($ext);
 
                 $exposure = new Exposure();
                 $exposure->setSession($session)
@@ -208,17 +208,23 @@ class SessionRefreshService
         return md5(sprintf('%d-%s', $size, $absPath));
     }
 
+    /** FITS extensions (parsed by astropy). */
+    private const FITS_EXTENSIONS = ['fit', 'fits'];
+
+    /** Camera RAW extensions (parsed by rawpy/exifread). */
+    private const RAW_EXTENSIONS = ['nef', 'cr2', 'cr3', 'arw', 'orf', 'rw2', 'raf', 'dng', 'pef', 'srw', 'nrw'];
+
     /**
-     * Extract headers from a raw file (FITS or NEF) via the Python microservice.
+     * Extract headers from a raw file (FITS or camera RAW) via the Python microservice.
      */
     private function extractRawHeaders(string $absPath, string $ext): array
     {
-        if (in_array($ext, ['fit', 'fits'], true)) {
+        if (in_array($ext, self::FITS_EXTENSIONS, true)) {
             return $this->astropyClient->fitsHeader($absPath);
         }
 
-        if ($ext === 'nef') {
-            return $this->astropyClient->nefHeader($absPath);
+        if (in_array($ext, self::RAW_EXTENSIONS, true)) {
+            return $this->astropyClient->rawHeader($absPath);
         }
 
         throw new \InvalidArgumentException(sprintf('Unsupported raw format: .%s', $ext));

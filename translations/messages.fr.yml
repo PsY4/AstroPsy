@@ -560,7 +560,7 @@ fits:
 exposure:
   title: "Détails de l'exposition"
   btn_open_local: "Ouvrir le fichier localement"
-  nef_viewer:
+  raw_viewer:
     bp: "Noir"
     wp: "Blanc"
     apply: "Appliquer"

@@ -41,9 +41,9 @@ class AstropyClient
         return $resp->toArray(false);
     }
 
-    public function nefHeader(string $path): array
+    public function rawHeader(string $path): array
     {
-        $resp = $this->client->request('GET', $this->url('/nef/header'), [
+        $resp = $this->client->request('GET', $this->url('/raw/header'), [
             'query'   => ['path' => $path],
             'timeout' => self::DEFAULT_TIMEOUT,
         ]);
@@ -100,27 +100,27 @@ class AstropyClient
         return $resp->getContent();
     }
 
-    public function nefThumbnail(string $path, int $w = 512): string
+    public function rawThumbnail(string $path, int $w = 512): string
     {
-        $resp = $this->client->request('GET', $this->url('/nef/thumbnail'), [
+        $resp = $this->client->request('GET', $this->url('/raw/thumbnail'), [
             'query'   => ['path' => $path, 'w' => $w],
             'timeout' => self::DEFAULT_TIMEOUT,
         ]);
         return $resp->getContent();
     }
 
-    public function nefHistogram(string $path): array
+    public function rawHistogram(string $path): array
     {
-        $resp = $this->client->request('GET', $this->url('/nef/histogram'), [
+        $resp = $this->client->request('GET', $this->url('/raw/histogram'), [
             'query'   => ['path' => $path],
             'timeout' => self::DEFAULT_TIMEOUT,
         ]);
         return $resp->toArray(false);
     }
 
-    public function nefRender(string $path, int $w, string $stretch, float $bp, float $wp): string
+    public function rawRender(string $path, int $w, string $stretch, float $bp, float $wp): string
     {
-        $resp = $this->client->request('GET', $this->url('/nef/render'), [
+        $resp = $this->client->request('GET', $this->url('/raw/render'), [
             'query'   => ['path' => $path, 'w' => $w, 'stretch' => $stretch, 'bp' => $bp, 'wp' => $wp],
             'timeout' => 30,
         ]);

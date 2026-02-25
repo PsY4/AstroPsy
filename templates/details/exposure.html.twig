@@ -2,17 +2,17 @@
 {% if exposure.format == "FITS" %}
     <script>
         $('.lights-viewer-fits').removeClass('d-none');
-        $('.lights-viewer-nef').addClass('d-none');
+        $('.lights-viewer-raw').addClass('d-none');
         JS9.Load("{{ path('fits_stream_js9safe', { id: exposure.id }) }}", {scale:"log"});
     </script>
 {% endif %}
-{% if exposure.format == "NEF" %}
+{% if exposure.format != "FITS" %}
     <script>
         $('.lights-viewer-fits').addClass('d-none');
-        $('.lights-viewer-nef').removeClass('d-none');
-        window.initNefViewer(
-            "{{ path('nef_render', { 'exposure': exposure.id, 'w': 1920 }) }}?stretch=asinh&bp=0.1&wp=99.9",
-            "{{ path('nef_histogram', { 'exposure': exposure.id }) }}"
+        $('.lights-viewer-raw').removeClass('d-none');
+        window.initRawViewer(
+            "{{ path('raw_render', { 'exposure': exposure.id, 'w': 1920 }) }}?stretch=asinh&bp=0.1&wp=99.9",
+            "{{ path('raw_histogram', { 'exposure': exposure.id }) }}"
         );
     </script>
 {% endif %}

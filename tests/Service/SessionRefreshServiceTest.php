@@ -68,7 +68,7 @@ class SessionRefreshServiceTest extends TestCase
 
         $astropy = $this->mockAstropyClient();
         $astropy->expects($this->once())
-            ->method('nefHeader')
+            ->method('rawHeader')
             ->willReturn($this->fakeNefHeaders());
 
         $em = $this->mockEm(Exposure::class);
@@ -87,7 +87,7 @@ class SessionRefreshServiceTest extends TestCase
 
         $astropy = $this->mockAstropyClient();
         $astropy->method('fitsHeader')->willReturn($this->fakeFitsHeaders());
-        $astropy->method('nefHeader')->willReturn($this->fakeNefHeaders());
+        $astropy->method('rawHeader')->willReturn($this->fakeNefHeaders());
 
         $persisted = [];
         $em = $this->mockEm(Exposure::class);
@@ -176,7 +176,7 @@ class SessionRefreshServiceTest extends TestCase
 
         $astropy = $this->mockAstropyClient();
         $astropy->expects($this->never())->method('fitsHeader');
-        $astropy->expects($this->never())->method('nefHeader');
+        $astropy->expects($this->never())->method('rawHeader');
 
         $em = $this->mockEm(Exposure::class);
         $em->expects($this->never())->method('persist');
@@ -185,6 +185,47 @@ class SessionRefreshServiceTest extends TestCase
         $count = $service->refreshRaws($this->mockSession());
 
         self::assertSame(0, $count);
+    }
+
+    /**
+     * @dataProvider cameraRawExtensionProvider
+     */
+    public function testRefreshRawsDetectsCameraRawFormats(string $ext, string $expectedFormat): void
+    {
+        $this->touchFile(SessionFolder::LIGHT, 'image.' . $ext);
+
+        $astropy = $this->mockAstropyClient();
+        $astropy->expects($this->once())
+            ->method('rawHeader')
+            ->willReturn($this->fakeNefHeaders());
+        $astropy->expects($this->never())->method('fitsHeader');
+
+        $persisted = [];
+        $em = $this->mockEm(Exposure::class);
+        $em->method('persist')->willReturnCallback(function ($entity) use (&$persisted) {
+            $persisted[] = $entity;
+        });
+
+        $service = $this->createService($astropy, $em);
+        $service->refreshRaws($this->mockSession());
+
+        self::assertSame(1, count($persisted));
+        self::assertSame($expectedFormat, $persisted[0]->getFormat());
+    }
+
+    public static function cameraRawExtensionProvider(): array
+    {
+        return [
+            'nef'  => ['nef', 'NEF'],
+            'cr2'  => ['cr2', 'CR2'],
+            'cr3'  => ['cr3', 'CR3'],
+            'arw'  => ['arw', 'ARW'],
+            'orf'  => ['orf', 'ORF'],
+            'rw2'  => ['rw2', 'RW2'],
+            'raf'  => ['raf', 'RAF'],
+            'dng'  => ['dng', 'DNG'],
+            'pef'  => ['pef', 'PEF'],
+        ];
     }
 
     public function testRefreshRawsScansAllFourFolders(): void
@@ -530,6 +571,14 @@ class SessionRefreshServiceTest extends TestCase
             'fit extension'  => [SessionFolder::LIGHT, 'img.fit', true],
             'nef extension'  => [SessionFolder::DARK, 'DSC_001.NEF', true],
             'nef lowercase'  => [SessionFolder::DARK, 'dsc_001.nef', true],
+            'cr2 canon'      => [SessionFolder::LIGHT, 'IMG_001.CR2', true],
+            'cr3 canon'      => [SessionFolder::LIGHT, 'IMG_001.cr3', true],
+            'arw sony'       => [SessionFolder::LIGHT, 'DSC_001.ARW', true],
+            'orf olympus'    => [SessionFolder::FLAT, 'P1000001.orf', true],
+            'rw2 panasonic'  => [SessionFolder::BIAS, 'P1000001.RW2', true],
+            'raf fuji'       => [SessionFolder::LIGHT, 'DSCF0001.raf', true],
+            'dng universal'  => [SessionFolder::LIGHT, 'photo.dng', true],
+            'pef pentax'     => [SessionFolder::DARK, 'IMGP0001.pef', true],
             'txt not raw'    => [SessionFolder::LIGHT, 'notes.txt', false],
             'jpg not raw'    => [SessionFolder::LIGHT, 'preview.jpg', false],
 

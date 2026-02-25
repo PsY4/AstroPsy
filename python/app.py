@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from routers import fits, nef, xisf, image, forecast
+from routers import fits, raw, xisf, image, forecast
 
 app = FastAPI(title="Astropy FITS helper")
 
@@ -11,7 +11,7 @@ def health():
 
 
 app.include_router(fits.router)
-app.include_router(nef.router)
+app.include_router(raw.router)
 app.include_router(xisf.router)
 app.include_router(image.router)
 app.include_router(forecast.router)
