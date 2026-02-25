@@ -149,11 +149,12 @@ parts:
 
 # ── Navigation ───────────────────────────────────────────────────────────────
 nav:
+  dashboard: "Tableau de bord"
   objects: "Objets"
   management: "Gestion"
   targets: "Cibles"
   sessions: "Sessions"
-  night_planner: "Night Planner"
+  night_planner: "Planificateur de nuit"
   settings: "Paramètres"
   authors: "Auteurs"
   observatories: "Observatoires"
@@ -455,6 +456,7 @@ observatory:
   btn_update: "Mettre à jour"
   label_authors: "👥 Auteurs :"
   label_setups: "🔭 Configurations :"
+  toggle_favorite: "Définir comme observatoire favori"
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 setup:
@@ -653,7 +655,13 @@ framing:
     label: "Filtres à utiliser (export NINA)"
     all: "Tous"
     no_setup: "Sélectionnez un setup pour choisir les filtres"
+  survey:
+    dss2_color: "DSS2 Couleur (HiPS)"
+    dss2_red: "DSS2 Rouge (SkyView)"
+    sdss: "SDSS (SkyView)"
 
+header:
+  search_placeholder: "Rechercher…"
 
 settings:
   title: "Paramètres"
@@ -684,18 +692,15 @@ settings:
     migrate_confirm: "Ceci va déplacer les fichiers des sessions existantes pour correspondre au nouveau template. Continuer ?"
     migrate_dispatched: "Migration lancée. Vous recevrez une notification à la fin."
     dry_run_btn: "Prévisualiser les changements"
-  sessions_root:
-    title: "Dossier racine des sessions"
-    help: "Dossier contenant toutes les cibles et sessions d'astrophotographie."
-    current_path: "Chemin actuel"
-    browse: "Parcourir"
-    select: "Sélectionner ce dossier"
-    go_up: "Dossier parent"
-    reset_env: "Réinitialiser (variable d'env)"
-    using_env: "Variable d'environnement"
-    using_custom: "Personnalisé"
-    not_found: "Ce dossier n'existe pas sur le serveur."
-    empty_dir: "Aucun sous-dossier."
+    dry_run_no_changes: "Aucun changement nécessaire. Toutes les sessions correspondent au template actuel."
+    dry_run_sessions_affected: "session(s) affectée(s)"
+    dry_run_file_moves: "déplacement(s) de fichier(s)"
+    folder_name: "Nom du dossier"
+    add_child: "Ajouter un sous-dossier"
+    remove: "Supprimer"
+  language:
+    title: "Langue"
+    help: "Choisissez la langue d'affichage de l'interface."
   openfolder:
     title: "Ouvrir localement (OpenFolder)"
     description: "Le protocole OpenFolder permet d'ouvrir vos fichiers et dossiers de sessions directement depuis AstroPsy dans l'explorateur de votre PC."

@@ -62,7 +62,7 @@
             nameInput.type = 'text';
             nameInput.className = 'form-control form-control-sm template-name-input';
             nameInput.value = node.name || '';
-            nameInput.placeholder = 'Folder name';
+            nameInput.placeholder = container.dataset.msgFolderName || 'Folder name';
             nameInput.addEventListener('input', function () {
                 node.name = this.value;
                 serialize();
@@ -125,7 +125,7 @@
             addBtn.type = 'button';
             addBtn.className = 'btn btn-outline-secondary';
             addBtn.innerHTML = '<i class="fa fa-plus"></i>';
-            addBtn.title = 'Add child';
+            addBtn.title = container.dataset.msgAddChild || 'Add child';
             addBtn.addEventListener('click', function () {
                 if (!node.children) node.children = [];
                 node.children.push({ name: '', children: [] });
@@ -137,7 +137,7 @@
             removeBtn.type = 'button';
             removeBtn.className = 'btn btn-outline-danger';
             removeBtn.innerHTML = '<i class="fa fa-trash"></i>';
-            removeBtn.title = 'Remove';
+            removeBtn.title = container.dataset.msgRemove || 'Remove';
             removeBtn.addEventListener('click', function () {
                 nodes.splice(idx, 1);
                 renderAll();

@@ -24,18 +24,24 @@ class DashboardController extends AbstractController
     public function home(AstropyClient $astropyClient, ObservatoryRepository $obsRepo, AlpacaClient $alpaca, EntityManagerInterface $em, AppConfig $config, ProgressTrackingService $progress, TargetRepository $targetRepo, AstroNightService $astroNight, WishListEntryRepository $wleRepo): Response
     {
         $obs = $obsRepo->findOneBy(['favorite' => true]);
+
+        // Independent widgets (Alpaca, Documents, Counters) always shown
+        $sm     = $alpaca->getSafetyMonitorConfig(0);
+        $switch = $alpaca->getSwitchConfig(0);
+
         if (!$obs) {
             return $this->render('dashboard/index.html.twig', [
                 'noObservatory' => true,
+                'sm'            => $sm,
+                'switch'        => $switch,
             ]);
         }
+
         try {
             $forecastData = json_decode($astropyClient->forecast($obs->getLat(), $obs->getLon()), true);
         } catch (\Throwable) {
             $forecastData = null;
         }
-        $sm     = $alpaca->getSafetyMonitorConfig(0);
-        $switch = $alpaca->getSwitchConfig(0);
 
         $wishlistTargets = $targetRepo->findWishlistWithCoordinates();
 

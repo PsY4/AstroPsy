@@ -20,7 +20,7 @@ final class SetupController extends AbstractController
     #[Route('/setup/list', name: 'setup_list')]
     public function list(EntityManagerInterface $em): Response
     {
-        $setups = $em->getRepository(Setup::class)->findAll();
+        $setups = $em->getRepository(Setup::class)->findBy([], ['name' => 'ASC']);
 
         return $this->render('setup/list.html.twig', [
             'setups' => $setups,

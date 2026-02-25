@@ -6,59 +6,31 @@
 <div class="row">
 
     {# ============================================================
-       SECTION : Dossier racine des sessions
+       SECTION : Language / Langue
     ============================================================ #}
     <div class="col-lg-6">
         <div class="card mb-4">
             <div class="card-header d-flex align-items-center gap-2">
-                <i class="fa fa-fw fa-hard-drive text-primary"></i>
-                <h5 class="mb-0">{{ 'settings.sessions_root.title'|trans }}</h5>
+                <i class="fa fa-fw fa-language text-primary"></i>
+                <h5 class="mb-0">{{ 'settings.language.title'|trans }}</h5>
             </div>
-            <form method="post" action="{{ path('settings_save_section', {section: 'sessions_root'}) }}">
-                <div class="card-body">
-                    <p class="text-muted small mb-3">{{ 'settings.sessions_root.help'|trans }}</p>
-
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <label class="form-label fw-medium mb-0">{{ 'settings.sessions_root.current_path'|trans }}</label>
-                        {% if sessions_root_is_custom %}
-                            <span class="badge bg-info">{{ 'settings.sessions_root.using_custom'|trans }}</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ 'settings.sessions_root.using_env'|trans }}</span>
-                        {% endif %}
-                    </div>
-
-                    <div class="input-group mb-3">
-                        <input type="text" name="sessions_root" id="sessions-root-input"
-                               class="form-control font-monospace" value="{{ sessions_root }}" readonly>
-                        <button type="button" id="sessions-root-browse" class="btn btn-outline-secondary">
-                            <i class="fa fa-folder-open me-1"></i>{{ 'settings.sessions_root.browse'|trans }}
+            <div class="card-body">
+                <p class="text-muted small mb-3">{{ 'settings.language.help'|trans }}</p>
+                <div class="d-flex gap-2">
+                    <form method="post" action="{{ path('settings_locale', {locale: 'fr'}) }}">
+                        <button type="submit"
+                                class="btn {% if app.request.locale == 'fr' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            Fran&ccedil;ais
                         </button>
-                        <button type="button" id="sessions-root-reset" class="btn btn-outline-warning">
-                            <i class="fa fa-rotate-left me-1"></i>{{ 'settings.sessions_root.reset_env'|trans }}
+                    </form>
+                    <form method="post" action="{{ path('settings_locale', {locale: 'en'}) }}">
+                        <button type="submit"
+                                class="btn {% if app.request.locale == 'en' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            English
                         </button>
-                    </div>
-
-                    <div id="sessions-root-browser" class="d-none border rounded p-2 mb-3">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <button type="button" id="sessions-root-go-up" class="btn btn-sm btn-outline-secondary">
-                                <i class="fa fa-arrow-up me-1"></i>{{ 'settings.sessions_root.go_up'|trans }}
-                            </button>
-                            <span id="sessions-root-current-path" class="font-monospace small text-muted"></span>
-                        </div>
-                        <div id="sessions-root-dirs"></div>
-                        <div class="mt-2 text-end">
-                            <button type="button" id="sessions-root-select" class="btn btn-sm btn-primary">
-                                <i class="fa fa-check me-1"></i>{{ 'settings.sessions_root.select'|trans }}
-                            </button>
-                        </div>
-                    </div>
+                    </form>
                 </div>
-                <div class="card-footer text-end">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="fa fa-fw fa-save"></i> {{ 'settings.save'|trans }}
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -285,7 +257,10 @@
                          data-msg-valid="{{ 'settings.template.roles_valid'|trans }}"
                          data-msg-missing="{{ 'settings.template.roles_missing'|trans }}"
                          data-msg-duplicate="{{ 'settings.template.roles_duplicate'|trans }}"
-                         data-msg-allow-extra="{{ 'settings.template.allow_extra'|trans }}">
+                         data-msg-allow-extra="{{ 'settings.template.allow_extra'|trans }}"
+                         data-msg-folder-name="{{ 'settings.template.folder_name'|trans }}"
+                         data-msg-add-child="{{ 'settings.template.add_child'|trans }}"
+                         data-msg-remove="{{ 'settings.template.remove'|trans }}">
                     </div>
 
                     <input type="hidden" name="session_template" id="template-json"
@@ -362,65 +337,6 @@
 </script>
 <script>
 (function () {
-    var input = document.getElementById('sessions-root-input');
-    var browseBtn = document.getElementById('sessions-root-browse');
-    var resetBtn = document.getElementById('sessions-root-reset');
-    var browser = document.getElementById('sessions-root-browser');
-    var dirsContainer = document.getElementById('sessions-root-dirs');
-    var goUpBtn = document.getElementById('sessions-root-go-up');
-    var selectBtn = document.getElementById('sessions-root-select');
-    var currentPathSpan = document.getElementById('sessions-root-current-path');
-    var browsePath = '';
-
-    function loadDirs(path) {
-        var url = '{{ path('api_browse_dirs') }}' + '?path=' + encodeURIComponent(path);
-        fetch(url).then(function (r) { return r.json(); }).then(function (data) {
-            if (data.error) { return; }
-            browsePath = data.current;
-            currentPathSpan.textContent = data.current;
-            dirsContainer.innerHTML = '';
-            if (data.dirs.length === 0) {
-                dirsContainer.innerHTML = '<div class="text-muted small p-2">{{ 'settings.sessions_root.empty_dir'|trans }}</div>';
-                return;
-            }
-            data.dirs.forEach(function (d) {
-                var item = document.createElement('div');
-                item.className = 'dir-browser-item';
-                item.innerHTML = '<i class="fa fa-folder text-warning me-2"></i>' + d;
-                item.addEventListener('click', function () { loadDirs(data.current + '/' + d); });
-                dirsContainer.appendChild(item);
-            });
-        });
-    }
-
-    browseBtn.addEventListener('click', function () {
-        browser.classList.toggle('d-none');
-        if (!browser.classList.contains('d-none')) {
-            loadDirs(input.value || '{{ sessions_root }}');
-        }
-    });
-
-    goUpBtn.addEventListener('click', function () {
-        if (browsePath) {
-            var parent = browsePath.replace(/\/[^\/]+$/, '') || '/';
-            loadDirs(parent);
-        }
-    });
-
-    selectBtn.addEventListener('click', function () {
-        input.value = browsePath;
-        input.removeAttribute('readonly');
-        browser.classList.add('d-none');
-    });
-
-    resetBtn.addEventListener('click', function () {
-        input.value = '';
-        input.removeAttribute('readonly');
-    });
-})();
-</script>
-<script>
-(function () {
     const tmpl = `<tr>
   <td><input type="color" name="filter_color[]" class="form-control form-control-color p-0 border-0" value="#6c757d" style="width:36px;height:32px;cursor:pointer"></td>
   <td><input name="filter_label[]" class="form-control form-control-sm"></td>
@@ -454,9 +370,9 @@
                     resultDiv.classList.remove('d-none');
                     if (data.total_moves === 0) {
                         resultDiv.className = 'mt-2 alert alert-info py-2 small';
-                        resultDiv.textContent = 'No changes needed. All sessions match the current template.';
+                        resultDiv.textContent = '{{ 'settings.template.dry_run_no_changes'|trans|e('js') }}';
                     } else {
-                        var html = '<strong>' + data.affected + ' session(s) affected, ' + data.total_moves + ' file move(s)</strong>';
+                        var html = '<strong>' + data.affected + ' {{ 'settings.template.dry_run_sessions_affected'|trans|e('js') }}, ' + data.total_moves + ' {{ 'settings.template.dry_run_file_moves'|trans|e('js') }}</strong>';
                         html += '<ul class="mb-0 mt-1">';
                         data.details.forEach(function (d) {
                             html += '<li>' + d.session;

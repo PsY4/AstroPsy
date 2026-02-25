@@ -146,12 +146,4 @@ class SmokeTest extends WebTestCase
         self::assertArrayHasKey('missing', $data);
     }
 
-    public function testApiBrowseDirs(): void
-    {
-        $this->client->request('GET', '/api/browse-dirs');
-        $code = $this->client->getResponse()->getStatusCode();
-        // 200 when sessions root exists (local), 404 when it doesn't (CI)
-        self::assertContains($code, [200, 404]);
-        self::assertResponseHeaderSame('content-type', 'application/json');
-    }
 }

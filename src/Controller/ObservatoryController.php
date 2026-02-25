@@ -7,6 +7,7 @@ use App\Form\ObservatoryType;
 use App\Form\SessionType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Repository\ObservatoryRepository;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -27,7 +28,7 @@ final class ObservatoryController extends AbstractController
         }
 
         $obsRepo       = $em->getRepository(Observatory::class);
-        $observatories = $obsRepo->findAll();
+        $observatories = $obsRepo->findBy([], ['name' => 'ASC']);
 
         $editForms = [];
         foreach ($observatories as $obs) {
@@ -58,6 +59,23 @@ final class ObservatoryController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
         }
+
+        return $this->redirectToRoute('observatories');
+    }
+
+    #[Route('/observatory/{id}/favorite', name: 'toggle_favorite_observatory', methods: ['POST'])]
+    public function toggleFavorite(int $id, EntityManagerInterface $em, ObservatoryRepository $obsRepo): Response
+    {
+        $obs = $obsRepo->find($id);
+        if (!$obs) {
+            throw $this->createNotFoundException();
+        }
+
+        // Unset all others
+        foreach ($obsRepo->findAll() as $o) {
+            $o->setFavorite($o->getId() === $obs->getId());
+        }
+        $em->flush();
 
         return $this->redirectToRoute('observatories');
     }

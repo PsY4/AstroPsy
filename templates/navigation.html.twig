@@ -14,6 +14,12 @@
     </div>
     <div class="app-nav" id="app-simple-bar">
         <ul class="main-nav p-0 mt-2">
+            <li class="no-sub">
+                <a href="{{ path('home') }}">
+                    <i class="fa fa-fw fa-chart-line"></i> &nbsp;
+                    {{ 'nav.dashboard'|trans }}
+                </a>
+            </li>
             <li class="menu-title"><span>{{ 'nav.objects'|trans }}</span></li>
             <li class="no-sub">
                 <a href="{{ path('browse_targets') }}">
@@ -44,7 +50,7 @@
             </li>
             <li class="no-sub">
                 <a href="{{ path('observatories') }}">
-                    <i class="fa fa-fw fa-house"></i> &nbsp;
+                    <i class="fa fa-fw fa-tower-observation"></i> &nbsp;
                     {{ 'nav.observatories'|trans }}
                 </a>
             </li>
