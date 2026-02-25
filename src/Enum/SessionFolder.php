@@ -28,4 +28,29 @@ enum SessionFolder: string
             self::DOC      => '99 - Docs',
         };
     }
+
+    /**
+     * Regex pattern for Finder->name() matching supported file extensions.
+     * Returns null if the folder has no scannable file pattern.
+     */
+    public function filePattern(): ?string
+    {
+        return match ($this) {
+            self::LIGHT, self::DARK, self::BIAS, self::FLAT
+                       => '/\.(fit|fits|nef)$/i',
+            self::MASTER   => '/\.(xisf|fits)$/i',
+            self::EXPORT   => '/\.(jpg|jpeg|png|tif|tiff)$/i',
+            self::LOG_PHD2 => '/\.(txt)$/i',
+            default        => null,
+        };
+    }
+
+    /**
+     * All raw-type folders (contain Exposure entities).
+     * @return self[]
+     */
+    public static function rawFolders(): array
+    {
+        return [self::LIGHT, self::DARK, self::FLAT, self::BIAS];
+    }
 }

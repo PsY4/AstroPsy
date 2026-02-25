@@ -95,18 +95,19 @@ final class SessionController extends AbstractController
     {
         $counts = [];
         $folders = [
-            'lights' => [SessionFolder::LIGHT, '/\.(fit|fits|nef)$/i'],
-            'darks'  => [SessionFolder::DARK,  '/\.(fit|fits|nef)$/i'],
-            'flats'  => [SessionFolder::FLAT,  '/\.(fit|fits|nef)$/i'],
-            'bias'   => [SessionFolder::BIAS,  '/\.(fit|fits|nef)$/i'],
-            'masters'=> [SessionFolder::MASTER,'/\.(xisf|fits)$/i'],
-            'exports'=> [SessionFolder::EXPORT,'/\.(jpg|jpeg|png|tif)$/i'],
-            'phd2'   => [SessionFolder::LOG_PHD2, '/\.(txt)$/i'],
+            'lights' => SessionFolder::LIGHT,
+            'darks'  => SessionFolder::DARK,
+            'flats'  => SessionFolder::FLAT,
+            'bias'   => SessionFolder::BIAS,
+            'masters'=> SessionFolder::MASTER,
+            'exports'=> SessionFolder::EXPORT,
+            'phd2'   => SessionFolder::LOG_PHD2,
         ];
 
-        foreach ($folders as $key => [$folder, $pattern]) {
+        foreach ($folders as $key => $folder) {
+            $pattern = $folder->filePattern();
             $path = $this->resolver->resolve($session, $folder);
-            if (!is_dir($path)) {
+            if (!$pattern || !is_dir($path)) {
                 $counts[$key] = 0;
                 continue;
             }
@@ -131,9 +132,9 @@ final class SessionController extends AbstractController
     }
 
     #[Route('/api/session/{id<\d+>}/refresh/raws', name: 'api_session_refresh_raws', methods: ['POST'])]
-    public function refreshRaws(Session $session, AstropyClient $astropyClient, EntityManagerInterface $em): JsonResponse
+    public function refreshRaws(Session $session): JsonResponse
     {
-        $processed = $this->refreshService->refreshRaws($session, $astropyClient, $em);
+        $processed = $this->refreshService->refreshRaws($session);
         return new JsonResponse(['processed' => $processed]);
     }
 
@@ -145,16 +146,16 @@ final class SessionController extends AbstractController
     }
 
     #[Route('/api/session/{id<\d+>}/refresh/masters', name: 'api_session_refresh_masters', methods: ['POST'])]
-    public function refreshMasters(Session $session, AstropyClient $astropyClient, EntityManagerInterface $em): JsonResponse
+    public function refreshMasters(Session $session): JsonResponse
     {
-        $processed = $this->refreshService->refreshMasters($session, $astropyClient, $em);
+        $processed = $this->refreshService->refreshMasters($session);
         return new JsonResponse(['processed' => $processed]);
     }
 
     #[Route('/api/session/{id<\d+>}/refresh/exports', name: 'api_session_refresh_exports', methods: ['POST'])]
-    public function refreshExports(Session $session, AstropyClient $astropyClient, EntityManagerInterface $em): JsonResponse
+    public function refreshExports(Session $session): JsonResponse
     {
-        $processed = $this->refreshService->refreshExports($session, $astropyClient, $em);
+        $processed = $this->refreshService->refreshExports($session);
         return new JsonResponse(['processed' => $processed]);
     }
 
