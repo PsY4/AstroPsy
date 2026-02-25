@@ -32,10 +32,10 @@ An interactive framing tool overlays your sensor field of view on real sky image
 
 | Type | Formats |
 |------|---------|
-| Raw frames | FITS (.fits, .fit), Nikon NEF (.nef), XISF (.xisf) |
+| Raw frames | FITS (.fits, .fit), XISF (.xisf), Camera RAW (CR2, CR3, NEF, ARW, ORF, RW2, RAF, DNG, PEF) |
 | Calibration | Dark, Flat, Bias (same formats) |
-| Masters | XISF, FITS |
-| Exports | JPEG, PNG, TIFF |
+| Masters | XISF, FITS, TIFF |
+| Exports | JPEG, PNG, TIFF (with full metadata extraction: bit depth, channels, compression, photometric, software) |
 | Logs | PHD2 guiding & calibration logs |
 
 ---
@@ -92,7 +92,7 @@ AstroPsy runs as a set of Docker containers:
 
 - **app** — PHP 8.3 / Symfony + Nginx (web interface)
 - **db** — TimescaleDB (PostgreSQL 16 with time-series support)
-- **astropy** — Python / FastAPI microservice (FITS/NEF/XISF processing, thumbnails, astronomical calculations)
+- **astropy** — Python / FastAPI microservice (FITS/XISF/TIFF/RAW processing, thumbnails, astronomical calculations)
 - **scheduler** — Ofelia (cron jobs for evening alerts)
 
 Your imaging data stays on your disk — AstroPsy reads it in place via a volume mount.

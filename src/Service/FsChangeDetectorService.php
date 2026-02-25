@@ -119,38 +119,28 @@ class FsChangeDetectorService
     {
         $result = ['new' => [], 'missing' => []];
 
-        $rawFolders = [
-            'LIGHT' => SessionFolder::LIGHT,
-            'DARK'  => SessionFolder::DARK,
-            'BIAS'  => SessionFolder::BIAS,
-            'FLAT'  => SessionFolder::FLAT,
-        ];
+        // Build a set of ALL exposure paths in DB (type-agnostic)
+        $allExposurePaths = [];
+        foreach ($this->em->getRepository(Exposure::class)->findBy(['session' => $session]) as $e) {
+            $allExposurePaths[$e->getPath()] = true;
+        }
 
-        $exposureRepo = $this->em->getRepository(Exposure::class);
-
-        foreach ($rawFolders as $label => $folder) {
+        foreach (SessionFolder::rawFolders() as $folder) {
+            $label = $folder->name;
             $dir = $this->resolver->resolve($session, $folder);
             if (!is_dir($dir)) {
                 continue;
             }
 
             $finder = new Finder();
-            $finder->files()->in($dir)->name('/\.(fit|fits|nef)$/i');
-
-            $dbPaths = [];
-            $exposures = $exposureRepo->findBy(['session' => $session]);
-            foreach ($exposures as $e) {
-                if (strtoupper($e->getType()) === $label || ($label === 'LIGHT' && strtoupper($e->getType()) === 'LIGHT')) {
-                    $dbPaths[$e->getPath()] = true;
-                }
-            }
+            $finder->files()->in($dir)->name($folder->filePattern());
 
             $newCount = 0;
             foreach ($finder as $file) {
                 $absPath = $file->getRealPath();
                 if ($absPath) {
                     $relPath = $this->resolver->toRelativePath($absPath);
-                    if (!isset($dbPaths[$relPath])) {
+                    if (!isset($allExposurePaths[$relPath])) {
                         $newCount++;
                     }
                 }
@@ -165,7 +155,7 @@ class FsChangeDetectorService
         $masterDir = $this->resolver->resolve($session, SessionFolder::MASTER);
         if (is_dir($masterDir)) {
             $finder = new Finder();
-            $finder->files()->in($masterDir)->name('/\.(xisf|fits)$/i');
+            $finder->files()->in($masterDir)->name(SessionFolder::MASTER->filePattern());
 
             $dbPaths = [];
             foreach ($this->em->getRepository(Master::class)->findBy(['session' => $session]) as $m) {
@@ -191,7 +181,7 @@ class FsChangeDetectorService
         $exportDir = $this->resolver->resolve($session, SessionFolder::EXPORT);
         if (is_dir($exportDir)) {
             $finder = new Finder();
-            $finder->files()->in($exportDir)->name('/\.(jpg|jpeg|png|tif)$/i');
+            $finder->files()->in($exportDir)->name(SessionFolder::EXPORT->filePattern());
 
             $dbPaths = [];
             foreach ($this->em->getRepository(Export::class)->findBy(['session' => $session]) as $e) {

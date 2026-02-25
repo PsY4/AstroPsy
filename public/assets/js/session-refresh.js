@@ -1,5 +1,5 @@
 /**
- * session-refresh.js — Async session refresh with progress modal
+ * session-refresh.js — Async session refresh with per-file progress
  *
  * Globals expected: REFRESH_CONFIG = { sessionId, trans }
  */
@@ -68,13 +68,34 @@
         });
     }
 
+    /* ── Helpers ─────────────────────────────────────────── */
+
+    function esc(str) {
+        return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function fetchJson(url, opts) {
+        return fetch(url, opts).then(function (r) {
+            return r.json().then(function (data) {
+                if (!r.ok) {
+                    var err = new Error(data.error || t('error'));
+                    err.serverMessage = data.error || null;
+                    throw err;
+                }
+                return data;
+            });
+        });
+    }
+
+    /* ── Main refresh flow ──────────────────────────────── */
+
     function startRefresh() {
         var steps = [
-            { key: 'purge',   url: baseUrl + '/purge',   method: 'POST', label: t('step_purge') },
-            { key: 'raws',    url: baseUrl + '/raws',    method: 'POST', label: t('step_raws') },
-            { key: 'phd2',    url: baseUrl + '/phd2',    method: 'POST', label: t('step_phd2') },
-            { key: 'masters', url: baseUrl + '/masters', method: 'POST', label: t('step_masters') },
-            { key: 'exports', url: baseUrl + '/exports', method: 'POST', label: t('step_exports') }
+            { key: 'purge',   type: 'batch', label: t('step_purge') },
+            { key: 'raws',    type: 'files', label: t('step_raws') },
+            { key: 'phd2',    type: 'batch', label: t('step_phd2') },
+            { key: 'masters', type: 'files', label: t('step_masters') },
+            { key: 'exports', type: 'files', label: t('step_exports') }
         ];
 
         var html = '<div class="mb-3">';
@@ -85,6 +106,12 @@
             html += '<span class="step-label">' + step.label + '</span>';
             html += '<span class="ms-auto step-status text-muted small"></span>';
             html += '</div>';
+            if (step.type === 'files') {
+                html += '<div class="ms-4 ps-1 d-none" id="step-detail-' + i + '">';
+                html += '<div class="progress mb-1" style="height:3px"><div class="progress-bar bg-info" id="step-progress-' + i + '" style="width:0%"></div></div>';
+                html += '<small class="text-muted text-truncate d-block" style="max-width:350px" id="step-filename-' + i + '"></small>';
+                html += '</div>';
+            }
         });
         html += '</div>';
 
@@ -93,6 +120,46 @@
 
         var progressBar = document.getElementById('refreshProgress');
         var currentStep = 0;
+
+        function updateMainProgress() {
+            progressBar.style.width = Math.round((currentStep / steps.length) * 100) + '%';
+        }
+
+        function showCloseButton() {
+            modalFooter.innerHTML = '<button class="btn btn-primary" id="refreshReloadBtn">' + t('btn_close') + '</button>';
+            document.getElementById('refreshReloadBtn').addEventListener('click', function () {
+                location.reload();
+            });
+        }
+
+        function markStepDone(i, badge) {
+            var stepEl = document.getElementById('step-' + i);
+            stepEl.querySelector('.step-icon').innerHTML = '<i class="fa fa-check-circle text-success"></i>';
+            stepEl.querySelector('.step-status').innerHTML = badge || '<span class="text-success">' + t('done') + '</span>';
+            var detail = document.getElementById('step-detail-' + i);
+            if (detail) detail.classList.add('d-none');
+        }
+
+        function markStepError(i, errorMsg) {
+            var stepEl = document.getElementById('step-' + i);
+            stepEl.querySelector('.step-icon').innerHTML = '<i class="fa fa-times-circle text-danger"></i>';
+            stepEl.querySelector('.step-status').innerHTML = '<span class="text-danger">' + t('error') + '</span>';
+            var detail = document.getElementById('step-detail-' + i);
+            if (detail) detail.classList.add('d-none');
+
+            if (errorMsg) {
+                var errorId = 'refresh-error-' + i;
+                modalBody.insertAdjacentHTML('beforeend',
+                    '<div class="mt-2">' +
+                    '<a class="text-danger small" data-bs-toggle="collapse" href="#' + errorId + '" role="button" aria-expanded="false">' +
+                    '<i class="fa fa-chevron-down me-1"></i>' + t('error_details') + '</a>' +
+                    '<div class="collapse mt-1" id="' + errorId + '">' +
+                    '<pre class="bg-light text-danger p-2 rounded small mb-0" style="white-space:pre-wrap;word-break:break-word;max-height:200px;overflow-y:auto">' +
+                    esc(errorMsg) + '</pre></div></div>'
+                );
+            }
+            showCloseButton();
+        }
 
         function runStep() {
             if (currentStep >= steps.length) {
@@ -108,32 +175,99 @@
 
             var step = steps[currentStep];
             var stepEl = document.getElementById('step-' + currentStep);
-            var iconEl = stepEl.querySelector('.step-icon');
-            var statusEl = stepEl.querySelector('.step-status');
+            stepEl.querySelector('.step-icon').innerHTML = '<i class="fa fa-spinner fa-spin text-primary"></i>';
+            stepEl.querySelector('.step-status').textContent = t('processing');
 
-            iconEl.innerHTML = '<i class="fa fa-spinner fa-spin text-primary"></i>';
-            statusEl.textContent = t('processing');
+            if (step.type === 'batch') {
+                runBatchStep(step);
+            } else {
+                runFileStep(step);
+            }
+        }
 
-            fetch(step.url, { method: step.method })
-                .then(function (r) { return r.json(); })
+        function runBatchStep(step) {
+            var i = currentStep;
+            fetchJson(baseUrl + '/' + step.key, { method: 'POST' })
                 .then(function (data) {
-                    iconEl.innerHTML = '<i class="fa fa-check-circle text-success"></i>';
+                    var badge = null;
                     if (data.processed !== undefined && data.processed > 0) {
-                        statusEl.innerHTML = '<span class="badge bg-primary">' + data.processed + ' ' + t('files') + '</span>';
-                    } else {
-                        statusEl.innerHTML = '<span class="text-success">' + t('done') + '</span>';
+                        badge = '<span class="badge bg-primary">' + data.processed + ' ' + t('files') + '</span>';
                     }
+                    markStepDone(i, badge);
                     currentStep++;
-                    progressBar.style.width = Math.round((currentStep / steps.length) * 100) + '%';
+                    updateMainProgress();
                     runStep();
                 })
-                .catch(function () {
-                    iconEl.innerHTML = '<i class="fa fa-times-circle text-danger"></i>';
-                    statusEl.innerHTML = '<span class="text-danger">' + t('error') + '</span>';
-                    modalFooter.innerHTML = '<button class="btn btn-primary" id="refreshReloadBtn">' + t('btn_close') + '</button>';
-                    document.getElementById('refreshReloadBtn').addEventListener('click', function () {
-                        location.reload();
-                    });
+                .catch(function (err) {
+                    markStepError(i, err.serverMessage || null);
+                });
+        }
+
+        function runFileStep(step) {
+            var i = currentStep;
+            var detailEl = document.getElementById('step-detail-' + i);
+            var subProgressEl = document.getElementById('step-progress-' + i);
+            var filenameEl = document.getElementById('step-filename-' + i);
+            var statusEl = document.getElementById('step-' + i).querySelector('.step-status');
+
+            detailEl.classList.remove('d-none');
+
+            fetchJson(baseUrl + '/' + step.key + '/files')
+                .then(function (files) {
+                    if (files.length === 0) {
+                        markStepDone(i);
+                        currentStep++;
+                        updateMainProgress();
+                        runStep();
+                        return;
+                    }
+
+                    var fileIndex = 0;
+                    var created = 0;
+                    var errors = 0;
+
+                    function processNextFile() {
+                        if (fileIndex >= files.length) {
+                            var badge = '';
+                            if (created > 0) {
+                                badge += '<span class="badge bg-primary">' + created + ' ' + t('files') + '</span>';
+                            }
+                            if (errors > 0) {
+                                badge += ' <span class="badge bg-warning text-dark">' + errors + ' ' + t('errors') + '</span>';
+                            }
+                            markStepDone(i, badge || null);
+                            currentStep++;
+                            updateMainProgress();
+                            runStep();
+                            return;
+                        }
+
+                        var file = files[fileIndex];
+                        filenameEl.textContent = file.name;
+                        statusEl.textContent = (fileIndex + 1) + '/' + files.length;
+                        subProgressEl.style.width = Math.round(((fileIndex + 1) / files.length) * 100) + '%';
+
+                        fetchJson(baseUrl + '/' + step.key + '/file', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ path: file.path, folder: file.folder || null })
+                        })
+                            .then(function (data) {
+                                if (data.status === 'created') created++;
+                                fileIndex++;
+                                processNextFile();
+                            })
+                            .catch(function () {
+                                errors++;
+                                fileIndex++;
+                                processNextFile();
+                            });
+                    }
+
+                    processNextFile();
+                })
+                .catch(function (err) {
+                    markStepError(i, err.serverMessage || null);
                 });
         }
 

@@ -95,18 +95,19 @@ final class SessionController extends AbstractController
     {
         $counts = [];
         $folders = [
-            'lights' => [SessionFolder::LIGHT, '/\.(fit|fits|nef)$/i'],
-            'darks'  => [SessionFolder::DARK,  '/\.(fit|fits|nef)$/i'],
-            'flats'  => [SessionFolder::FLAT,  '/\.(fit|fits|nef)$/i'],
-            'bias'   => [SessionFolder::BIAS,  '/\.(fit|fits|nef)$/i'],
-            'masters'=> [SessionFolder::MASTER,'/\.(xisf|fits)$/i'],
-            'exports'=> [SessionFolder::EXPORT,'/\.(jpg|jpeg|png|tif)$/i'],
-            'phd2'   => [SessionFolder::LOG_PHD2, '/\.(txt)$/i'],
+            'lights' => SessionFolder::LIGHT,
+            'darks'  => SessionFolder::DARK,
+            'flats'  => SessionFolder::FLAT,
+            'bias'   => SessionFolder::BIAS,
+            'masters'=> SessionFolder::MASTER,
+            'exports'=> SessionFolder::EXPORT,
+            'phd2'   => SessionFolder::LOG_PHD2,
         ];
 
-        foreach ($folders as $key => [$folder, $pattern]) {
+        foreach ($folders as $key => $folder) {
+            $pattern = $folder->filePattern();
             $path = $this->resolver->resolve($session, $folder);
-            if (!is_dir($path)) {
+            if (!$pattern || !is_dir($path)) {
                 $counts[$key] = 0;
                 continue;
             }
@@ -121,41 +122,91 @@ final class SessionController extends AbstractController
     #[Route('/api/session/{id<\d+>}/refresh/purge', name: 'api_session_refresh_purge', methods: ['POST'])]
     public function refreshPurge(Session $session, EntityManagerInterface $em): JsonResponse
     {
-        $em->createQuery('DELETE App\Entity\Exposure e WHERE e.session = :s')->execute(['s' => $session]);
-        $em->createQuery('DELETE App\Entity\Master m WHERE m.session = :s')->execute(['s' => $session]);
-        $em->createQuery('DELETE App\Entity\Export e WHERE e.session = :s')->execute(['s' => $session]);
-        $em->createQuery('DELETE App\Entity\Phd2Calibration c WHERE c.session = :s')->execute(['s' => $session]);
-        $em->createQuery('DELETE App\Entity\Phd2Guiding g WHERE g.session = :s')->execute(['s' => $session]);
+        try {
+            $em->createQuery('DELETE App\Entity\Exposure e WHERE e.session = :s')->execute(['s' => $session]);
+            $em->createQuery('DELETE App\Entity\Master m WHERE m.session = :s')->execute(['s' => $session]);
+            $em->createQuery('DELETE App\Entity\Export e WHERE e.session = :s')->execute(['s' => $session]);
+            $em->createQuery('DELETE App\Entity\Phd2Calibration c WHERE c.session = :s')->execute(['s' => $session]);
+            $em->createQuery('DELETE App\Entity\Phd2Guiding g WHERE g.session = :s')->execute(['s' => $session]);
 
-        return new JsonResponse(['ok' => true]);
+            return new JsonResponse(['ok' => true]);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
     }
 
     #[Route('/api/session/{id<\d+>}/refresh/raws', name: 'api_session_refresh_raws', methods: ['POST'])]
-    public function refreshRaws(Session $session, AstropyClient $astropyClient, EntityManagerInterface $em): JsonResponse
+    public function refreshRaws(Session $session): JsonResponse
     {
-        $processed = $this->refreshService->refreshRaws($session, $astropyClient, $em);
-        return new JsonResponse(['processed' => $processed]);
+        try {
+            $processed = $this->refreshService->refreshRaws($session);
+            return new JsonResponse(['processed' => $processed]);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
     }
 
     #[Route('/api/session/{id<\d+>}/refresh/phd2', name: 'api_session_refresh_phd2', methods: ['POST'])]
     public function refreshPhd2(Session $session, EntityManagerInterface $em, PHD2LogsReader $phd2Reader): JsonResponse
     {
-        $processed = $phd2Reader->refreshPHD2Logs($session, $em);
-        return new JsonResponse(['processed' => $processed]);
+        try {
+            $processed = $phd2Reader->refreshPHD2Logs($session, $em);
+            return new JsonResponse(['processed' => $processed]);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
     }
 
     #[Route('/api/session/{id<\d+>}/refresh/masters', name: 'api_session_refresh_masters', methods: ['POST'])]
-    public function refreshMasters(Session $session, AstropyClient $astropyClient, EntityManagerInterface $em): JsonResponse
+    public function refreshMasters(Session $session): JsonResponse
     {
-        $processed = $this->refreshService->refreshMasters($session, $astropyClient, $em);
-        return new JsonResponse(['processed' => $processed]);
+        try {
+            $processed = $this->refreshService->refreshMasters($session);
+            return new JsonResponse(['processed' => $processed]);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
     }
 
     #[Route('/api/session/{id<\d+>}/refresh/exports', name: 'api_session_refresh_exports', methods: ['POST'])]
-    public function refreshExports(Session $session, AstropyClient $astropyClient, EntityManagerInterface $em): JsonResponse
+    public function refreshExports(Session $session): JsonResponse
     {
-        $processed = $this->refreshService->refreshExports($session, $astropyClient, $em);
-        return new JsonResponse(['processed' => $processed]);
+        try {
+            $processed = $this->refreshService->refreshExports($session);
+            return new JsonResponse(['processed' => $processed]);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/api/session/{id<\d+>}/refresh/{step}/files', name: 'api_session_refresh_step_files', methods: ['GET'], requirements: ['step' => 'raws|masters|exports'])]
+    public function listStepFiles(Session $session, string $step): JsonResponse
+    {
+        try {
+            return new JsonResponse($this->refreshService->listFilesForStep($session, $step));
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/api/session/{id<\d+>}/refresh/{step}/file', name: 'api_session_refresh_step_file', methods: ['POST'], requirements: ['step' => 'raws|masters|exports'])]
+    public function processStepFile(Session $session, string $step, Request $request): JsonResponse
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+            $path = $data['path'] ?? '';
+            $folder = $data['folder'] ?? 'light';
+
+            $result = match ($step) {
+                'raws'    => $this->refreshService->processSingleRaw($session, $path, $folder),
+                'masters' => $this->refreshService->processSingleMaster($session, $path),
+                'exports' => $this->refreshService->processSingleExport($session, $path),
+            };
+
+            return new JsonResponse($result);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
     }
 
     #[Route('/session/new/target/{target}', name: 'new_session')]
@@ -209,7 +260,11 @@ final class SessionController extends AbstractController
 
     if ($exposure->getRawHeader() == null)
     {
-        $exposure->setRawHeader($astropy->fitsHeader($this->resolver->toAbsolutePath($exposure->getPath())));
+        $absPath = $this->resolver->toAbsolutePath($exposure->getPath());
+        $headers = $exposure->getFormat() === 'FITS'
+            ? $astropy->fitsHeader($absPath)
+            : $astropy->rawHeader($absPath);
+        $exposure->setRawHeader($headers);
         $entityManager->flush();
     }
 
@@ -228,7 +283,11 @@ final class SessionController extends AbstractController
 
     if ($master->getHeader() == [])
     {
-        $master->setHeader($astropy->xisfHeader($this->resolver->toAbsolutePath($master->getPath())));
+        $absPath = $this->resolver->toAbsolutePath($master->getPath());
+        $headers = $master->getType() === 'XISF'
+            ? $astropy->xisfHeader($absPath)
+            : $astropy->fitsHeader($absPath);
+        $master->setHeader($headers);
         $entityManager->persist($master);
         $entityManager->flush();
     }
@@ -245,8 +304,16 @@ final class SessionController extends AbstractController
 ): Response
 {
 
-    if ($export->getMetadata() == [])
-    {
+    $meta = $export->getMetadata();
+    $needsRefresh = $meta === [] || $meta === null;
+
+    // Re-fetch for TIFF exports missing the enriched tiff_summary
+    if (!$needsRefresh && in_array(strtolower($export->getType()), ['tif', 'tiff'], true)
+        && !isset($meta['tiff_summary'])) {
+        $needsRefresh = true;
+    }
+
+    if ($needsRefresh) {
         $export->setMetadata($astropy->imageHeader($this->resolver->toAbsolutePath($export->getPath())));
         $entityManager->persist($export);
         $entityManager->flush();

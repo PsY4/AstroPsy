@@ -1,6 +1,7 @@
 {% set headers = image.metadata %}
 {% set fits = image.metadata.FITS %}
 {% set tiff = image.metadata.tiff_tags  %}
+{% set ts = image.metadata.tiff_summary ?? {} %}
 <div class="card profile-container">
     <div class="card-header">
         <div class="fa-pull-left">
@@ -13,6 +14,7 @@
             </a>
         </div>
     </div>
+    {# ── Summary banner ── #}
     <div class="card-header person-details mt-0" >
         <div class="details mt-0">
             <div>
@@ -29,7 +31,18 @@
                 <h4 class="text-primary">{{ headers.format }}</h4>
                 <p class="text-secondary">FORMAT</p>
             </div>
-            {% if headers.mode != "" %}
+            {% if ts.bit_depth is defined %}
+                <div>
+                    <h4 class="text-primary">{{ ts.bit_depth }}-bit</h4>
+                    <p class="text-secondary">DEPTH</p>
+                </div>
+            {% endif %}
+            {% if ts.channels_label is defined %}
+                <div>
+                    <h4 class="text-primary">{{ ts.channels_label }}</h4>
+                    <p class="text-secondary">{{ 'image.detail.channels'|trans|upper }}</p>
+                </div>
+            {% elseif headers.mode is defined and headers.mode != "" %}
                 <div>
                     <h4 class="text-primary">{{ headers.mode }}</h4>
                     <p class="text-secondary">MODE</p>
@@ -39,36 +52,92 @@
     </div>
     <div class="card-body">
         <div class="about-list">
-            <h6>DETAILS</h6>
-            <div><span class="fw-medium"><i class="ti ti-database"></i> FILE SIZE</span>
-                <span class="float-end f-s-13 text-secondary">{{ headers.file.size_bytes|default(0)|filesize_format }}</span>
-            </div>
-            {% if headers.file.modified %}<div><span class="fw-medium"><i class="ti ti-calendar"></i> MODIFIED</span>
-                <span class="float-end f-s-13 text-secondary">{{ headers.file.modified }}</span>
+
+            {# ── IMAGE ── #}
+            {% if ts.bit_depth is defined or ts.sample_format is defined or ts.photometric is defined or headers.mode is defined %}
+            <h6>{{ 'image.detail.image_section'|trans }}</h6>
+            {% if ts.bit_depth is defined %}<div><span class="fw-medium"><i class="ti ti-binary-tree"></i> {{ 'image.detail.bit_depth'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ ts.bit_depth }}-bit{% if ts.sample_format is defined %} {{ ts.sample_format }}{% endif %}</span>
             </div>{% endif %}
-            {% if headers.mime %}<div><span class="fw-medium"><i class="ti ti-photo"></i> MIME</span>
-                <span class="float-end f-s-13 text-secondary">{{ headers.mime }}</span>
+            {% if ts.channels_label is defined %}<div><span class="fw-medium"><i class="ti ti-layers-subtract"></i> {{ 'image.detail.channels'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ ts.samples_per_pixel }} ({{ ts.channels_label }})</span>
             </div>{% endif %}
-            {% if headers.mode %}<div><span class="fw-medium"><i class="ti ti-photo"></i> MODE</span>
+            {% if ts.photometric is defined %}<div><span class="fw-medium"><i class="ti ti-palette"></i> {{ 'image.detail.photometric'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ ts.photometric }}</span>
+            </div>{% endif %}
+            {% if headers.mode is defined and headers.mode != '' %}<div><span class="fw-medium"><i class="ti ti-photo"></i> {{ 'image.detail.color_mode'|trans }}</span>
                 <span class="float-end f-s-13 text-secondary">{{ headers.mode }}</span>
             </div>{% endif %}
-            {% if headers.frames is not null and headers.frames != '' %}<div><span class="fw-medium"><i class="ti ti-photo"></i> FRAMES</span>
-                <span class="float-end f-s-13 text-secondary">{{ headers.frames }}</span>
-            </div>{% endif %}
-            {% if headers.info.dpi_x %}<div><span class="fw-medium"><i class="ti ti-photo"></i> DPI</span>
+            {% if headers.info.dpi_x is defined %}<div><span class="fw-medium"><i class="ti ti-ruler"></i> DPI</span>
                 <span class="float-end f-s-13 text-secondary">{{ headers.info.dpi_x }}x{{ headers.info.dpi_y }}</span>
             </div>{% endif %}
-            {% if tiff %}
-                {% if tiff.Software %}<div><span class="fw-medium"><i class="ti ti-mouse"></i> SOFTWARE</span>
-                    <span class="float-end f-s-13 text-secondary">{{ tiff.Software }}</span>
-                </div>{% endif %}
-                {% if tiff.Compression is not null and tiff.Compression != '' %}<div><span class="fw-medium"><i class="ti ti-photo"></i> COMPRESSION</span>
-                    <span class="float-end f-s-13 text-secondary">{{ tiff.Compression }}</span>
-                </div>{% endif %}
-                {% if tiff.Orientation is not null and tiff.Orientation != '' %}<div><span class="fw-medium"><i class="ti ti-photo"></i> ORIENTATION</span>
-                    <span class="float-end f-s-13 text-secondary">{{ tiff.Orientation }}</span>
-                </div>{% endif %}
+            {% if headers.frames is defined and headers.frames > 1 %}<div><span class="fw-medium"><i class="ti ti-stack"></i> {{ 'image.detail.frames'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ headers.frames }}</span>
+            </div>{% endif %}
             {% endif %}
+
+            {# ── COMPRESSION ── #}
+            {% if ts.compression is defined %}
+            <hr>
+            <h6>{{ 'image.detail.compression_section'|trans }}</h6>
+            <div><span class="fw-medium"><i class="ti ti-file-zip"></i> {{ 'image.detail.compression'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ ts.compression }}</span>
+            </div>
+            {% if ts.predictor is defined %}<div><span class="fw-medium"><i class="ti ti-math-function"></i> {{ 'image.detail.predictor'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ ts.predictor }}</span>
+            </div>{% endif %}
+            {% if headers.info.icc_profile is defined and headers.info.icc_profile.present %}<div><span class="fw-medium"><i class="ti ti-color-swatch"></i> {{ 'image.detail.icc_profile'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ 'image.label_true'|trans }} ({{ headers.info.icc_profile.bytes|filesize_format }})</span>
+            </div>{% endif %}
+            {% endif %}
+
+            {# ── SOFTWARE ── #}
+            {% if ts.software is defined %}
+            <hr>
+            <h6>{{ 'image.detail.software_section'|trans }}</h6>
+            <div><span class="fw-medium"><i class="ti ti-app-window"></i> {{ 'image.detail.software'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ ts.software }}</span>
+            </div>
+            {% endif %}
+
+            {# ── DATE ── #}
+            {% if ts.datetime is defined %}
+            <hr>
+            <h6>{{ 'image.detail.date_section'|trans }}</h6>
+            <div><span class="fw-medium"><i class="ti ti-calendar"></i> {{ 'image.detail.datetime'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ ts.datetime }}</span>
+            </div>
+            {% endif %}
+
+            {# ── FILE ── #}
+            <hr>
+            <h6>{{ 'image.detail.file_section'|trans }}</h6>
+            <div><span class="fw-medium"><i class="ti ti-database"></i> {{ 'image.detail.file_size'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ headers.file.size_bytes|default(0)|filesize_format }}</span>
+            </div>
+            {% if headers.file.modified is defined %}<div><span class="fw-medium"><i class="ti ti-calendar-event"></i> {{ 'image.detail.modified'|trans }}</span>
+                <span class="float-end f-s-13 text-secondary">{{ headers.file.modified }}</span>
+            </div>{% endif %}
+            {% if headers.mime is defined %}<div><span class="fw-medium"><i class="ti ti-file-type-jpg"></i> MIME</span>
+                <span class="float-end f-s-13 text-secondary">{{ headers.mime }}</span>
+            </div>{% endif %}
+
+            {# ── ALL TIFF TAGS (collapsible) ── #}
+            {% if tiff is not empty %}
+            <hr>
+            <h6>
+                <a data-bs-toggle="collapse" href="#export-tiff-tags" role="button" aria-expanded="false" class="text-decoration-none">
+                    TIFF Tags <i class="ti ti-chevron-down f-s-13"></i>
+                </a>
+            </h6>
+            <div class="collapse" id="export-tiff-tags">
+                {% for key, value in tiff %}
+                    {% set displayVal = value is iterable ? value|join(', ') : value %}
+                    <div><span class="fw-medium f-s-13">{{ key }}</span> <span class="float-end f-s-13 text-secondary text-truncate" style="max-width: 200px" title="{{ displayVal }}">{{ displayVal }}</span></div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
         </div>
     </div>
 </div>

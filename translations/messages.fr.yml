@@ -380,6 +380,8 @@ session:
     btn_start: "Demarrer"
     btn_close: "Fermer et recharger"
     error: "Une erreur est survenue"
+    errors: "erreurs"
+    error_details: "Voir le detail de l'erreur"
     no_files: "Aucun fichier trouve sur le stockage"
 
 # ── Browse — Find new targets ─────────────────────────────────────────────────
@@ -560,20 +562,74 @@ fits:
 exposure:
   title: "Détails de l'exposition"
   btn_open_local: "Ouvrir le fichier localement"
-  nef_viewer:
+  raw_viewer:
     bp: "Noir"
     wp: "Blanc"
     apply: "Appliquer"
+  detail:
+    camera: "Boîtier"
+    make: "Marque"
+    model: "Modèle"
+    software: "Logiciel"
+    lens: "Optique"
+    lens_model: "Objectif"
+    focal_length: "Focale"
+    aperture: "Ouverture"
+    settings: "Paramètres"
+    exposure_time: "Temps de pose"
+    white_balance: "Balance des blancs"
+    metering: "Mesure"
+    resolution: "Résolution"
+    date: "Date / Heure"
 
 master:
   title: "Détails du master"
   btn_open_local: "Ouvrir le fichier localement"
+  detail:
+    target: "Cible"
+    object: "Objet"
+    exposure: "Exposition"
+    exposure_time: "Temps de pose"
+    filter: "Filtre"
+    settings: "Paramètres"
+    sensor_temp: "Temp. capteur"
+    pixel_size: "Taille pixel"
+    camera: "Caméra"
+    instrument: "Instrument"
+    set_temp: "Temp. consigne"
+    telescope: "Télescope"
+    scope: "Tube"
+    focal_length: "Focale"
+    focal_ratio: "Rapport focal"
+    date: "Date / Heure"
+    image_info: "Image"
+    resolution: "Résolution"
+    data_type: "Type de données"
+    channels: "Canaux"
 
 image:
   title: "Détails de l'export"
   btn_open_local: "Ouvrir le fichier localement"
   label_true: "VRAI"
   label_false: "FAUX"
+  detail:
+    image_section: "Image"
+    bit_depth: "Profondeur"
+    channels: "Canaux"
+    photometric: "Photométrie"
+    color_mode: "Mode couleur"
+    frames: "Frames"
+    compression_section: "Compression"
+    compression: "Compression"
+    predictor: "Prédicteur"
+    icc_profile: "Profil ICC"
+    software_section: "Logiciel"
+    software: "Logiciel"
+    date_section: "Date"
+    datetime: "Créé le"
+    file_section: "Fichier"
+    file_size: "Taille"
+    modified: "Modifié"
 
 # ── PHD2 ─────────────────────────────────────────────────────────────────────
 phd2:

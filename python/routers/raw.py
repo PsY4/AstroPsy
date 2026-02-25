@@ -1,6 +1,7 @@
 import io
 from datetime import datetime, timezone
 from fractions import Fraction
+from pathlib import Path
 
 import exifread
 import numpy as np
@@ -14,9 +15,20 @@ from utils.path_guard import require_safe_path
 
 router = APIRouter()
 
+# Extensions supported by LibRaw (via rawpy)
+RAW_EXTENSIONS = {
+    ".nef", ".cr2", ".cr3", ".arw", ".orf", ".rw2",
+    ".raf", ".dng", ".pef", ".srw", ".nrw",
+}
 
-@router.get("/nef/render")
-def nef_render(path: str, w: int = 1920, stretch: str = "asinh", bp: float = 0.1, wp: float = 99.9):
+
+def _detect_format(p: Path) -> str:
+    """Return a normalised format string from the file extension."""
+    return p.suffix.lstrip(".").upper()
+
+
+@router.get("/raw/render")
+def raw_render(path: str, w: int = 1920, stretch: str = "asinh", bp: float = 0.1, wp: float = 99.9):
     p = require_safe_path(path)
     try:
         with rawpy.imread(str(p)) as raw:
@@ -26,7 +38,7 @@ def nef_render(path: str, w: int = 1920, stretch: str = "asinh", bp: float = 0.1
                 half_size=True, demosaic_algorithm=rawpy.DemosaicAlgorithm.AHD,
             )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to decode NEF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to decode RAW: {str(e)}")
     r = stretch_channel(rgb[:, :, 0].astype(np.float32), stretch, bp, wp)
     g = stretch_channel(rgb[:, :, 1].astype(np.float32), stretch, bp, wp)
     b = stretch_channel(rgb[:, :, 2].astype(np.float32), stretch, bp, wp)
@@ -37,8 +49,8 @@ def nef_render(path: str, w: int = 1920, stretch: str = "asinh", bp: float = 0.1
     return Response(content=buf.getvalue(), media_type="image/png")
 
 
-@router.get("/nef/histogram")
-def nef_histogram(path: str):
+@router.get("/raw/histogram")
+def raw_histogram(path: str):
     p = require_safe_path(path)
     try:
         with rawpy.imread(str(p)) as raw:
@@ -48,7 +60,7 @@ def nef_histogram(path: str):
                 demosaic_algorithm=rawpy.DemosaicAlgorithm.AHD,
             )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to decode NEF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to decode RAW: {str(e)}")
 
     def hist(ch):
         counts, _ = np.histogram(ch.flatten(), bins=256, range=(0, 255))
@@ -57,9 +69,10 @@ def nef_histogram(path: str):
     return JSONResponse({"r": hist(rgb[:, :, 0]), "g": hist(rgb[:, :, 1]), "b": hist(rgb[:, :, 2])})
 
 
-@router.get("/nef/header")
-def nef_header(path: str):
+@router.get("/raw/header")
+def raw_header(path: str):
     p = require_safe_path(path)
+    fmt = _detect_format(p)
     try:
         with open(str(p), "rb") as f:
             tags = exifread.process_file(f, details=False)
@@ -85,26 +98,56 @@ def nef_header(path: str):
             except Exception:
                 exp_s = None
 
+        # Parse FNumber (e.g. "28/10" → "f/2.8")
+        fnumber_raw = get("EXIF FNumber")
+        fnumber = None
+        if fnumber_raw:
+            try:
+                fnumber = f"f/{float(Fraction(fnumber_raw)):.1f}"
+            except Exception:
+                fnumber = fnumber_raw
+
+        # Parse FocalLength (e.g. "105" or "105/1")
+        focal_raw = get("EXIF FocalLength")
+        focal = None
+        if focal_raw:
+            try:
+                focal = f"{float(Fraction(focal_raw)):.0f}mm"
+            except Exception:
+                focal = focal_raw
+
+        # Image dimensions from EXIF
+        width = get("EXIF ExifImageWidth") or get("Image ImageWidth")
+        height = get("EXIF ExifImageLength") or get("Image ImageLength")
+
         payload = {
-            "FORMAT":   "NEF",
-            "IMAGETYP": None,
-            "DATE-OBS": date_iso,
-            "EXPOSURE": exp_s,
-            "FILTER":   None,
-            "CCD-TEMP": None,
-            "ISO":      get("EXIF ISOSpeedRatings"),
-            "CAMERA":   get("Image Model"),
-            "LENS":     get("EXIF LensModel") or get("EXIF LensSpecification"),
-            "EXIF":     {k: str(v) for k, v in tags.items()},
+            "FORMAT":    fmt,
+            "IMAGETYP":  None,
+            "DATE-OBS":  date_iso,
+            "EXPOSURE":  exp_s,
+            "FILTER":    None,
+            "CCD-TEMP":  None,
+            "ISO":       get("EXIF ISOSpeedRatings"),
+            "CAMERA":    get("Image Model"),
+            "MAKE":      get("Image Make"),
+            "LENS":      get("EXIF LensModel") or get("EXIF LensSpecification"),
+            "FNUMBER":   fnumber,
+            "FOCAL":     focal,
+            "WIDTH":     width,
+            "HEIGHT":    height,
+            "WB":        get("EXIF WhiteBalance"),
+            "METERING":  get("EXIF MeteringMode"),
+            "SOFTWARE":  get("Image Software"),
+            "EXIF":      {k: str(v) for k, v in tags.items()},
         }
         return JSONResponse(payload)
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to read NEF EXIF: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to read {fmt} EXIF: {str(e)}")
 
 
-@router.get("/nef/thumbnail")
-def nef_thumbnail(path: str, w: int = 512):
+@router.get("/raw/thumbnail")
+def raw_thumbnail(path: str, w: int = 512):
     p = require_safe_path(path)
     try:
         with rawpy.imread(str(p)) as raw:
@@ -128,7 +171,7 @@ def nef_thumbnail(path: str, w: int = 512):
                 )
                 im = Image.fromarray(rgb)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to decode NEF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to decode RAW: {str(e)}")
 
     try:
         if im.width == 0:

@@ -86,15 +86,15 @@ final class ThumbController extends AbstractController
         );
     }
 
-    #[Route('/nef-histogram/{exposure}', name: 'nef_histogram', methods: ['GET'])]
-    public function nefHistogram(Exposure $exposure): JsonResponse
+    #[Route('/raw-histogram/{exposure}', name: 'raw_histogram', methods: ['GET'])]
+    public function rawHistogram(Exposure $exposure): JsonResponse
     {
         $absPath = $this->resolver->toAbsolutePath($exposure->getPath());
-        return new JsonResponse($this->astropy->nefHistogram($absPath));
+        return new JsonResponse($this->astropy->rawHistogram($absPath));
     }
 
-    #[Route('/nef-render/{exposure}/{w}', name: 'nef_render', methods: ['GET'])]
-    public function nefRender(
+    #[Route('/raw-render/{exposure}/{w}', name: 'raw_render', methods: ['GET'])]
+    public function rawRender(
         Request $request,
         KernelInterface $kernel,
         Exposure $exposure,
@@ -105,11 +105,11 @@ final class ThumbController extends AbstractController
         $bp       = (float) $request->query->get('bp', 0.1);
         $wp       = (float) $request->query->get('wp', 99.9);
         $cacheKey = hash('xxh3', $absPath."|w={$w}|{$stretch}|{$bp}|{$wp}");
-        $cacheDir = $kernel->getCacheDir().'/thumbs/nef-render/';
+        $cacheDir = $kernel->getCacheDir().'/thumbs/raw-render/';
         $cached   = $cacheDir.$cacheKey.'.png';
         if (!file_exists($cached)) {
             @mkdir($cacheDir, 0775, true);
-            file_put_contents($cached, $this->astropy->nefRender($absPath, $w, $stretch, $bp, $wp));
+            file_put_contents($cached, $this->astropy->rawRender($absPath, $w, $stretch, $bp, $wp));
         }
         return new BinaryFileResponse($cached, 200, [
             'Content-Type'  => 'image/png',
@@ -117,13 +117,13 @@ final class ThumbController extends AbstractController
         ]);
     }
 
-    #[Route('/nef-thumbnail/{exposure}/{w}', name: 'nef-thumbnail', methods: ['GET'])]
-    public function nefThumbnail(Request $request, Exposure $exposure, int $w = 512): Response
+    #[Route('/raw-thumbnail/{exposure}/{w}', name: 'raw-thumbnail', methods: ['GET'])]
+    public function rawThumbnail(Request $request, Exposure $exposure, int $w = 512): Response
     {
         $absPath = $this->resolver->toAbsolutePath($exposure->getPath());
         return $this->thumbnailService->getCachedThumbnail(
-            $request, $absPath, $w, 'nef',
-            fn () => $this->astropy->nefThumbnail($absPath, $w),
+            $request, $absPath, $w, 'raw',
+            fn () => $this->astropy->rawThumbnail($absPath, $w),
         );
     }
 }

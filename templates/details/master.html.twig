@@ -1,5 +1,18 @@
 {% set headers = master.header %}
-{% set fits = master.header.metadata.FITS %}
+{% set isXisf = master.type == 'XISF' %}
+
+{# Normalize access: XISF nests under metadata.FITS + aliases, FITS is flat #}
+{% if isXisf %}
+    {% set fits = headers.metadata.FITS ?? {} %}
+    {% set aliases = headers.metadata.aliases ?? {} %}
+    {% set imgW = headers.shape[1] ?? null %}
+    {% set imgH = headers.shape[0] ?? null %}
+{% else %}
+    {% set fits = headers %}
+    {% set aliases = {} %}
+    {% set imgW = fits['NAXIS1'] ?? null %}
+    {% set imgH = fits['NAXIS2'] ?? null %}
+{% endif %}
 
 <div class="card profile-container">
     <div class="card-header">
@@ -13,81 +26,126 @@
             </a>
         </div>
     </div>
-    <div class="card-header person-details mt-0" >
+    {# ── Summary banner ── #}
+    <div class="card-header person-details mt-0">
         <div class="details mt-0">
+            {% if imgW and imgH %}
             <div>
-                <h4 class="text-primary">
-                    <small>{{ headers.shape[1] }}x{{ headers.shape[0] }}</small>
-                </h4>
+                <h4 class="text-primary"><small>{{ imgW }}x{{ imgH }}</small></h4>
                 <p class="text-secondary">SIZE</p>
             </div>
+            {% endif %}
             <div>
-                <h4 class="text-primary"><small>{{ fits['IMAGETYP'] }}</small></h4>
+                <h4 class="text-primary"><small>{{ fits['IMAGETYP'] ?? master.type }}</small></h4>
                 <p class="text-secondary">TYPE</p>
             </div>
+            {% set expo = aliases.exposure_s ?? fits['EXPTIME'] ?? fits['EXPOSURE'] ?? null %}
+            {% if expo is not null %}
             <div>
-                <h4 class="text-primary"><small>{{ fits['EXPTIME']|replace({".000":''}) }}s</small></h4>
+                <h4 class="text-primary"><small>{{ expo|replace({".000":''}) }}s</small></h4>
                 <p class="text-secondary">EXPO</p>
             </div>
-            {% if fits['FILTER'] != "" %}
+            {% endif %}
+            {% set filterVal = aliases.filter ?? fits['FILTER'] ?? null %}
+            {% if filterVal %}
             <div>
-                <h4 class="text-primary"><small>{{ fits['FILTER'] }}</small></h4>
+                <h4 class="text-primary"><small>{{ filterVal }}</small></h4>
                 <p class="text-secondary">FILTER</p>
             </div>
             {% endif %}
         </div>
     </div>
+    {# ── Detail body ── #}
     <div class="card-body">
         <div class="about-list">
-            {% if fits['IMAGETYP'] or fits['EXPTIME'] is not null %}
-            <h6>EXPOSURE</h6>
-            {% if fits['IMAGETYP'] %}<div><span class="fw-medium"><i class="ti ti-photo"></i> IMAGETYP</span> <span class="float-end f-s-13 text-secondary">{{ fits['IMAGETYP'] }}</span></div>{% endif %}
-            {% if fits['EXPTIME'] is not null and fits['EXPTIME'] != '' %}<div><span class="fw-medium"><i class="ti ti-timer"></i> EXPTIME</span> <span class="float-end f-s-13 text-secondary">{{ fits['EXPTIME'] }}</span></div>{% endif %}
+
+            {# OBJECT / TARGET #}
+            {% set objName = aliases.object ?? fits['OBJECT'] ?? null %}
+            {% if objName or fits['RA'] is defined and fits['RA'] is not null or fits['DEC'] is defined and fits['DEC'] is not null or fits['OBJCTRA'] is defined and fits['OBJCTRA'] or fits['OBJCTDEC'] is defined and fits['OBJCTDEC'] %}
+            <h6>{{ 'master.detail.target'|trans }}</h6>
+            {% if objName %}<div><span class="fw-medium"><i class="ti ti-star"></i> {{ 'master.detail.object'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ objName }}</span></div>{% endif %}
+            {% if fits['RA'] is defined and fits['RA'] is not null and fits['RA'] != '' %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> RA</span> <span class="float-end f-s-13 text-secondary">{{ fits['RA'] }}</span></div>{% endif %}
+            {% if fits['DEC'] is defined and fits['DEC'] is not null and fits['DEC'] != '' %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> DEC</span> <span class="float-end f-s-13 text-secondary">{{ fits['DEC'] }}</span></div>{% endif %}
+            {% if fits['OBJCTRA'] is defined and fits['OBJCTRA'] %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> OBJCTRA</span> <span class="float-end f-s-13 text-secondary">{{ fits['OBJCTRA'] }}</span></div>{% endif %}
+            {% if fits['OBJCTDEC'] is defined and fits['OBJCTDEC'] %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> OBJCTDEC</span> <span class="float-end f-s-13 text-secondary">{{ fits['OBJCTDEC'] }}</span></div>{% endif %}
             {% endif %}
 
-            {% if fits['DATE-OBS'] %}
+            {# EXPOSURE #}
+            {% if fits['IMAGETYP'] is defined and fits['IMAGETYP'] or expo is not null %}
             <hr>
-            <h6>DATE / TIME</h6>
-            <div><span class="fw-medium"><i class="ti ti-calendar"></i> DATE-OBS</span> <span class="float-end f-s-13 text-secondary">{{ fits['DATE-OBS'] }}</span></div>
+            <h6>{{ 'master.detail.exposure'|trans }}</h6>
+            {% if fits['IMAGETYP'] is defined and fits['IMAGETYP'] %}<div><span class="fw-medium"><i class="ti ti-photo"></i> IMAGETYP</span> <span class="float-end f-s-13 text-secondary">{{ fits['IMAGETYP'] }}</span></div>{% endif %}
+            {% if expo is not null %}<div><span class="fw-medium"><i class="ti ti-timer"></i> {{ 'master.detail.exposure_time'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ expo }}s</span></div>{% endif %}
+            {% if filterVal %}<div><span class="fw-medium"><i class="ti ti-filter"></i> {{ 'master.detail.filter'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ filterVal }}</span></div>{% endif %}
             {% endif %}
 
-            {% if fits['XBINNING'] is not null or fits['YBINNING'] is not null or fits['EGAIN'] is not null or fits['XPIXSZ'] is not null or fits['YPIXSZ'] is not null %}
+            {# SETTINGS (gain, offset, binning, pixel size, e-gain) #}
+            {% set gain = aliases.gain ?? fits['GAIN'] ?? null %}
+            {% set offset = aliases.offset ?? fits['OFFSET'] ?? null %}
+            {% set sensorTemp = aliases.sensor_temp_c ?? fits['CCD-TEMP'] ?? null %}
+            {% set eGain = aliases.e_gain ?? fits['EGAIN'] ?? null %}
+            {% if gain is not null or offset is not null or eGain is not null or sensorTemp is not null or (fits['XBINNING'] is defined and fits['XBINNING'] is not null) or (fits['XPIXSZ'] is defined and fits['XPIXSZ'] is not null) %}
             <hr>
-            <h6>SETTINGS</h6>
-            {% if fits['XBINNING'] is not null and fits['XBINNING'] != '' %}<div><span class="fw-medium"><i class="ti ti-columns"></i> XBINNING</span> <span class="float-end f-s-13 text-secondary">{{ fits['XBINNING'] }}</span></div>{% endif %}
-            {% if fits['YBINNING'] is not null and fits['YBINNING'] != '' %}<div><span class="fw-medium"><i class="ti ti-columns"></i> YBINNING</span> <span class="float-end f-s-13 text-secondary">{{ fits['YBINNING'] }}</span></div>{% endif %}
-            {% if fits['EGAIN'] is not null and fits['EGAIN'] != '' %}<div><span class="fw-medium"><i class="ti ti-graph"></i> EGAIN</span> <span class="float-end f-s-13 text-secondary">{{ fits['EGAIN'] }}</span></div>{% endif %}
-            {% if fits['XPIXSZ'] is not null and fits['XPIXSZ'] != '' %}<div><span class="fw-medium"><i class="ti ti-arrows-horizontal"></i> XPIXSZ</span> <span class="float-end f-s-13 text-secondary">{{ fits['XPIXSZ'] }}</span></div>{% endif %}
-            {% if fits['YPIXSZ'] is not null and fits['YPIXSZ'] != '' %}<div><span class="fw-medium"><i class="ti ti-arrows-vertical"></i> YPIXSZ</span> <span class="float-end f-s-13 text-secondary">{{ fits['YPIXSZ'] }}</span></div>{% endif %}
+            <h6>{{ 'master.detail.settings'|trans }}</h6>
+            {% if gain is not null %}<div><span class="fw-medium"><i class="ti ti-adjustments"></i> Gain</span> <span class="float-end f-s-13 text-secondary">{{ gain }}</span></div>{% endif %}
+            {% if offset is not null %}<div><span class="fw-medium"><i class="ti ti-adjustments"></i> Offset</span> <span class="float-end f-s-13 text-secondary">{{ offset }}</span></div>{% endif %}
+            {% if eGain is not null %}<div><span class="fw-medium"><i class="ti ti-graph"></i> e-Gain</span> <span class="float-end f-s-13 text-secondary">{{ eGain }}</span></div>{% endif %}
+            {% if sensorTemp is not null %}<div><span class="fw-medium"><i class="ti ti-temperature"></i> {{ 'master.detail.sensor_temp'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ sensorTemp }}°C</span></div>{% endif %}
+            {% if fits['XBINNING'] is defined and fits['XBINNING'] is not null and fits['XBINNING'] != '' %}<div><span class="fw-medium"><i class="ti ti-columns"></i> Binning</span> <span class="float-end f-s-13 text-secondary">{{ fits['XBINNING'] }}x{{ fits['YBINNING'] ?? fits['XBINNING'] }}</span></div>{% endif %}
+            {% if fits['XPIXSZ'] is defined and fits['XPIXSZ'] is not null and fits['XPIXSZ'] != '' %}<div><span class="fw-medium"><i class="ti ti-arrows-horizontal"></i> {{ 'master.detail.pixel_size'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ fits['XPIXSZ'] }}µm</span></div>{% endif %}
             {% endif %}
 
-            {% if fits['INSTRUME'] %}
+            {# CAMERA #}
+            {% if fits['INSTRUME'] is defined and fits['INSTRUME'] or (fits['SET-TEMP'] is defined and fits['SET-TEMP'] is not null) %}
             <hr>
-            <h6>CAMERA</h6>
-            <div><span class="fw-medium"><i class="ti ti-camera"></i> INSTRUME</span> <span class="float-end f-s-13 text-secondary">{{ fits['INSTRUME'] }}</span></div>
+            <h6>{{ 'master.detail.camera'|trans }}</h6>
+            {% if fits['INSTRUME'] is defined and fits['INSTRUME'] %}<div><span class="fw-medium"><i class="ti ti-camera"></i> {{ 'master.detail.instrument'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ fits['INSTRUME'] }}</span></div>{% endif %}
+            {% if fits['SET-TEMP'] is defined and fits['SET-TEMP'] is not null and fits['SET-TEMP'] != '' %}<div><span class="fw-medium"><i class="ti ti-temperature"></i> {{ 'master.detail.set_temp'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ fits['SET-TEMP'] }}°C</span></div>{% endif %}
             {% endif %}
 
-            {% if fits['TELESCOP'] or fits['FOCALLEN'] is not null %}
+            {# TELESCOPE #}
+            {% if fits['TELESCOP'] is defined and fits['TELESCOP'] or (fits['FOCALLEN'] is defined and fits['FOCALLEN'] is not null) or (fits['FOCRATIO'] is defined and fits['FOCRATIO'] is not null) %}
             <hr>
-            <h6>TELESCOPE</h6>
-            {% if fits['TELESCOP'] %}<div><span class="fw-medium"><i class="ti ti-briefcase"></i> TELESCOP</span> <span class="float-end f-s-13 text-secondary">{{ fits['TELESCOP'] }}</span></div>{% endif %}
-            {% if fits['FOCALLEN'] is not null and fits['FOCALLEN'] != '' %}<div><span class="fw-medium"><i class="ti ti-focus"></i> FOCALLEN</span> <span class="float-end f-s-13 text-secondary">{{ fits['FOCALLEN'] }}</span></div>{% endif %}
+            <h6>{{ 'master.detail.telescope'|trans }}</h6>
+            {% if fits['TELESCOP'] is defined and fits['TELESCOP'] %}<div><span class="fw-medium"><i class="ti ti-briefcase"></i> {{ 'master.detail.scope'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ fits['TELESCOP'] }}</span></div>{% endif %}
+            {% if fits['FOCALLEN'] is defined and fits['FOCALLEN'] is not null and fits['FOCALLEN'] != '' %}<div><span class="fw-medium"><i class="ti ti-focus"></i> {{ 'master.detail.focal_length'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ fits['FOCALLEN'] }}mm</span></div>{% endif %}
+            {% if fits['FOCRATIO'] is defined and fits['FOCRATIO'] is not null and fits['FOCRATIO'] != '' %}<div><span class="fw-medium"><i class="ti ti-focus"></i> {{ 'master.detail.focal_ratio'|trans }}</span> <span class="float-end f-s-13 text-secondary">f/{{ fits['FOCRATIO'] }}</span></div>{% endif %}
             {% endif %}
 
-            {% if fits['RA'] is not null or fits['DEC'] is not null or fits['OBJCTRA'] or fits['OBJCTDEC'] %}
+            {# DATE #}
+            {% set dateObs = aliases.date_obs ?? fits['DATE-OBS'] ?? null %}
+            {% if dateObs %}
             <hr>
-            <h6>TARGET</h6>
-            {% if fits['RA'] is not null and fits['RA'] != '' %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> RA</span> <span class="float-end f-s-13 text-secondary">{{ fits['RA'] }}</span></div>{% endif %}
-            {% if fits['DEC'] is not null and fits['DEC'] != '' %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> DEC</span> <span class="float-end f-s-13 text-secondary">{{ fits['DEC'] }}</span></div>{% endif %}
-            {% if fits['OBJCTRA'] %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> OBJCTRA</span> <span class="float-end f-s-13 text-secondary">{{ fits['OBJCTRA'] }}</span></div>{% endif %}
-            {% if fits['OBJCTDEC'] %}<div><span class="fw-medium"><i class="ti ti-navigation"></i> OBJCTDEC</span> <span class="float-end f-s-13 text-secondary">{{ fits['OBJCTDEC'] }}</span></div>{% endif %}
+            <h6>{{ 'master.detail.date'|trans }}</h6>
+            <div><span class="fw-medium"><i class="ti ti-calendar"></i> DATE-OBS</span> <span class="float-end f-s-13 text-secondary">{{ dateObs }}</span></div>
             {% endif %}
 
-            {% if fits['FILTER'] %}
-            <hr>
-            <h6>FILTER WHEEL</h6>
-            <div><span class="fw-medium"><i class="ti ti-filter"></i> FILTER</span> <span class="float-end f-s-13 text-secondary">{{ fits['FILTER'] }}</span></div>
+            {# IMAGE INFO (XISF-specific) #}
+            {% if isXisf %}
+                {% if headers.dtype is defined or headers.channels is defined or headers.kind is defined %}
+                <hr>
+                <h6>{{ 'master.detail.image_info'|trans }}</h6>
+                {% if imgW and imgH %}<div><span class="fw-medium"><i class="ti ti-dimensions"></i> {{ 'master.detail.resolution'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ imgW }} x {{ imgH }}</span></div>{% endif %}
+                {% if headers.dtype is defined %}<div><span class="fw-medium"><i class="ti ti-binary-tree"></i> {{ 'master.detail.data_type'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers.dtype }}</span></div>{% endif %}
+                {% if headers.channels is defined %}<div><span class="fw-medium"><i class="ti ti-layers-subtract"></i> {{ 'master.detail.channels'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers.channels }} ({{ headers.kind ?? '' }})</span></div>{% endif %}
+                {% endif %}
+
+                {# FITS keywords — collapsible #}
+                {% if fits is not empty %}
+                <hr>
+                <h6>
+                    <a data-bs-toggle="collapse" href="#master-fits-tags" role="button" aria-expanded="false" class="text-decoration-none">
+                        FITS Keywords <i class="ti ti-chevron-down f-s-13"></i>
+                    </a>
+                </h6>
+                <div class="collapse" id="master-fits-tags">
+                    {% for key, value in fits %}
+                        <div><span class="fw-medium f-s-13">{{ key }}</span> <span class="float-end f-s-13 text-secondary text-truncate" style="max-width: 200px" title="{{ value }}">{{ value }}</span></div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             {% endif %}
+
         </div>
     </div>
 </div>

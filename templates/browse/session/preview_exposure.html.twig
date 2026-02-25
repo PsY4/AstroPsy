@@ -17,42 +17,42 @@
             <div class="JS9" data-width="100%" data-height="600px"></div>
             <div class="JS9Statusbar"></div>
         </div>
-        <div class="card-body lights-viewer-nef d-none p-0">
+        <div class="card-body lights-viewer-raw d-none p-0">
             <!-- Toolbar stretch/zoom -->
             <div class="d-flex gap-2 align-items-center px-2 py-2 flex-wrap border-bottom">
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-secondary" id="nef-zoom-out"><i class="ti ti-zoom-out"></i></button>
-                    <button class="btn btn-outline-secondary" id="nef-zoom-reset">1:1</button>
-                    <button class="btn btn-outline-secondary" id="nef-zoom-in"><i class="ti ti-zoom-in"></i></button>
-                    <button class="btn btn-outline-secondary" id="nef-zoom-fit"><i class="ti ti-arrows-maximize"></i></button>
+                    <button class="btn btn-outline-secondary" id="raw-zoom-out"><i class="ti ti-zoom-out"></i></button>
+                    <button class="btn btn-outline-secondary" id="raw-zoom-reset">1:1</button>
+                    <button class="btn btn-outline-secondary" id="raw-zoom-in"><i class="ti ti-zoom-in"></i></button>
+                    <button class="btn btn-outline-secondary" id="raw-zoom-fit"><i class="ti ti-arrows-maximize"></i></button>
                 </div>
-                <select id="nef-stretch" class="form-select form-select-sm" style="width:auto">
+                <select id="raw-stretch" class="form-select form-select-sm" style="width:auto">
                     <option value="asinh">Asinh</option>
                     <option value="log">Log</option>
                     <option value="sqrt">Sqrt</option>
                     <option value="linear">Linéaire</option>
                 </select>
                 <div class="d-flex align-items-center gap-1">
-                    <small class="text-muted">{{ 'exposure.nef_viewer.bp'|trans }}</small>
-                    <input type="range" id="nef-bp" min="0" max="40" value="1" step="0.5" style="width:80px">
-                    <small id="nef-bp-val" class="text-muted">1%</small>
+                    <small class="text-muted">{{ 'exposure.raw_viewer.bp'|trans }}</small>
+                    <input type="range" id="raw-bp" min="0" max="40" value="1" step="0.5" style="width:80px">
+                    <small id="raw-bp-val" class="text-muted">1%</small>
                 </div>
                 <div class="d-flex align-items-center gap-1">
-                    <small class="text-muted">{{ 'exposure.nef_viewer.wp'|trans }}</small>
-                    <input type="range" id="nef-wp" min="60" max="100" value="99" step="0.5" style="width:80px">
-                    <small id="nef-wp-val" class="text-muted">99%</small>
+                    <small class="text-muted">{{ 'exposure.raw_viewer.wp'|trans }}</small>
+                    <input type="range" id="raw-wp" min="60" max="100" value="99" step="0.5" style="width:80px">
+                    <small id="raw-wp-val" class="text-muted">99%</small>
                 </div>
-                <button id="nef-apply" class="btn btn-sm btn-primary">{{ 'exposure.nef_viewer.apply'|trans }}</button>
-                <div id="nef-spinner" class="spinner-border spinner-border-sm text-secondary d-none ms-1"></div>
+                <button id="raw-apply" class="btn btn-sm btn-primary">{{ 'exposure.raw_viewer.apply'|trans }}</button>
+                <div id="raw-spinner" class="spinner-border spinner-border-sm text-secondary d-none ms-1"></div>
             </div>
             <!-- Zone image (zoom/pan) -->
-            <div id="nef-viewport" style="overflow:hidden; cursor:grab; height:580px; background:#111; position:relative; touch-action:none">
+            <div id="raw-viewport" style="overflow:hidden; cursor:grab; height:580px; background:#111; position:relative; touch-action:none">
                 <img id="lights-viewer-preview" src="" alt="" draggable="false"
                      style="position:absolute; top:0; left:0; max-width:none; user-select:none; display:block">
             </div>
             <!-- Histogramme R/G/B -->
             <div class="px-2 pt-1" style="height:90px">
-                <canvas id="nef-histogram-canvas"></canvas>
+                <canvas id="raw-histogram-canvas"></canvas>
             </div>
         </div>
     </div>
@@ -63,7 +63,7 @@
     let isDragging = false, dragX0, dragY0, ox0, oy0;
     let histChart = null;
 
-    const viewport = () => document.getElementById('nef-viewport');
+    const viewport = () => document.getElementById('raw-viewport');
     const img      = () => document.getElementById('lights-viewer-preview');
 
     function applyTransform() {
@@ -95,13 +95,13 @@
     }
 
     document.addEventListener('wheel', e => {
-        if (!e.target.closest('#nef-viewport')) return;
+        if (!e.target.closest('#raw-viewport')) return;
         e.preventDefault();
         zoomAt(e.deltaY < 0 ? 1.15 : 0.87, e.clientX, e.clientY);
     }, { passive: false });
 
     document.addEventListener('mousedown', e => {
-        if (!e.target.closest('#nef-viewport')) return;
+        if (!e.target.closest('#raw-viewport')) return;
         isDragging = true; dragX0 = e.clientX; dragY0 = e.clientY; ox0 = ox; oy0 = oy;
         viewport().style.cursor = 'grabbing';
     });
@@ -116,30 +116,30 @@
         const vp = viewport(); if (vp) vp.style.cursor = 'grab';
     });
 
-    document.getElementById('nef-zoom-in')?.addEventListener('click',  () => zoomAt(1.25));
-    document.getElementById('nef-zoom-out')?.addEventListener('click', () => zoomAt(0.80));
-    document.getElementById('nef-zoom-reset')?.addEventListener('click', () => { scale=1; ox=0; oy=0; applyTransform(); });
-    document.getElementById('nef-zoom-fit')?.addEventListener('click', fitToView);
+    document.getElementById('raw-zoom-in')?.addEventListener('click',  () => zoomAt(1.25));
+    document.getElementById('raw-zoom-out')?.addEventListener('click', () => zoomAt(0.80));
+    document.getElementById('raw-zoom-reset')?.addEventListener('click', () => { scale=1; ox=0; oy=0; applyTransform(); });
+    document.getElementById('raw-zoom-fit')?.addEventListener('click', fitToView);
 
-    ['nef-bp','nef-wp'].forEach(id => {
+    ['raw-bp','raw-wp'].forEach(id => {
         document.getElementById(id)?.addEventListener('input', function() {
             document.getElementById(id+'-val').textContent = this.value + '%';
         });
     });
 
-    document.getElementById('nef-apply')?.addEventListener('click', () => {
+    document.getElementById('raw-apply')?.addEventListener('click', () => {
         const base = img().dataset.baseUrl; if (!base) return;
         const url  = base
-            + '&stretch=' + document.getElementById('nef-stretch').value
-            + '&bp='      + document.getElementById('nef-bp').value
-            + '&wp='      + document.getElementById('nef-wp').value;
-        const spinner = document.getElementById('nef-spinner');
+            + '&stretch=' + document.getElementById('raw-stretch').value
+            + '&bp='      + document.getElementById('raw-bp').value
+            + '&wp='      + document.getElementById('raw-wp').value;
+        const spinner = document.getElementById('raw-spinner');
         spinner?.classList.remove('d-none');
         const el = img(); el.onload = () => spinner?.classList.add('d-none'); el.src = url;
     });
 
     function renderHistogram(data) {
-        const canvas = document.getElementById('nef-histogram-canvas'); if (!canvas) return;
+        const canvas = document.getElementById('raw-histogram-canvas'); if (!canvas) return;
         if (histChart) histChart.destroy();
         histChart = new Chart(canvas, {
             type: 'bar',
@@ -159,11 +159,11 @@
         });
     }
 
-    window.initNefViewer = function(renderBaseUrl, histogramUrl) {
+    window.initRawViewer = function(renderBaseUrl, histogramUrl) {
         scale = 1; ox = 0; oy = 0;
         const el = img();
         el.dataset.baseUrl = renderBaseUrl;
-        const spinner = document.getElementById('nef-spinner');
+        const spinner = document.getElementById('raw-spinner');
         spinner?.classList.remove('d-none');
         el.onload = () => { spinner?.classList.add('d-none'); fitToView(); };
         el.src = renderBaseUrl;

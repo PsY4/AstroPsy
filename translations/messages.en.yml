@@ -380,6 +380,8 @@ session:
     btn_start: "Start Refresh"
     btn_close: "Close and Reload"
     error: "An error occurred"
+    errors: "errors"
+    error_details: "Show error details"
     no_files: "No files found on storage"
 
 # ── Browse — Find new targets ─────────────────────────────────────────────────
@@ -560,20 +562,74 @@ fits:
 exposure:
   title: "Exposure Details"
   btn_open_local: "Open file locally"
-  nef_viewer:
+  raw_viewer:
     bp: "Black"
     wp: "White"
     apply: "Apply"
+  detail:
+    camera: "Camera"
+    make: "Make"
+    model: "Model"
+    software: "Software"
+    lens: "Optics"
+    lens_model: "Lens"
+    focal_length: "Focal length"
+    aperture: "Aperture"
+    settings: "Settings"
+    exposure_time: "Exposure time"
+    white_balance: "White balance"
+    metering: "Metering"
+    resolution: "Resolution"
+    date: "Date / Time"
 
 master:
   title: "Master Details"
   btn_open_local: "Open file locally"
+  detail:
+    target: "Target"
+    object: "Object"
+    exposure: "Exposure"
+    exposure_time: "Exposure time"
+    filter: "Filter"
+    settings: "Settings"
+    sensor_temp: "Sensor temp."
+    pixel_size: "Pixel size"
+    camera: "Camera"
+    instrument: "Instrument"
+    set_temp: "Set temp."
+    telescope: "Telescope"
+    scope: "Scope"
+    focal_length: "Focal length"
+    focal_ratio: "Focal ratio"
+    date: "Date / Time"
+    image_info: "Image"
+    resolution: "Resolution"
+    data_type: "Data type"
+    channels: "Channels"
 
 image:
   title: "Export Details"
   btn_open_local: "Open file locally"
   label_true: "TRUE"
   label_false: "FALSE"
+  detail:
+    image_section: "Image"
+    bit_depth: "Bit depth"
+    channels: "Channels"
+    photometric: "Photometric"
+    color_mode: "Color mode"
+    frames: "Frames"
+    compression_section: "Compression"
+    compression: "Compression"
+    predictor: "Predictor"
+    icc_profile: "ICC Profile"
+    software_section: "Software"
+    software: "Software"
+    date_section: "Date"
+    datetime: "Created"
+    file_section: "File"
+    file_size: "File size"
+    modified: "Modified"
 
 # ── PHD2 ─────────────────────────────────────────────────────────────────────
 phd2:

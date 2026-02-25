@@ -4,9 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Session;
 use App\Entity\Target;
-use App\Service\AstropyClient;
 use App\Service\FsChangeDetectorService;
-use App\Service\PHD2LogsReader;
 use App\Service\SessionRefreshService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -82,17 +80,15 @@ final class ScanController extends AbstractController
         int $sessionId,
         EntityManagerInterface $em,
         SessionRefreshService $refreshService,
-        AstropyClient $astropyClient,
-        PHD2LogsReader $phd2Reader,
     ): JsonResponse {
         $session = $em->getRepository(Session::class)->find($sessionId);
         if (!$session) {
             return $this->json(['error' => 'Session not found'], 404);
         }
 
-        $refreshService->refreshRaws($session, $astropyClient, $em);
-        $refreshService->refreshExports($session, $astropyClient, $em);
-        $refreshService->refreshMasters($session, $astropyClient, $em);
+        $refreshService->refreshRaws($session);
+        $refreshService->refreshExports($session);
+        $refreshService->refreshMasters($session);
 
         return $this->json(['ok' => true]);
     }
