@@ -198,6 +198,171 @@ class SessionRefreshService
     }
 
     /**
+     * List all files on disk for a given step.
+     *
+     * @return list<array{path: string, name: string, folder: string}>
+     */
+    public function listFilesForStep(Session $session, string $step): array
+    {
+        $folders = match ($step) {
+            'raws'    => SessionFolder::rawFolders(),
+            'masters' => [SessionFolder::MASTER],
+            'exports' => [SessionFolder::EXPORT],
+            default   => throw new \InvalidArgumentException("Unknown step: $step"),
+        };
+
+        $files = [];
+        foreach ($folders as $folder) {
+            $dir = $this->resolver->resolve($session, $folder);
+            if (!is_dir($dir)) {
+                continue;
+            }
+            $finder = new Finder();
+            $finder->files()->in($dir)->name($folder->filePattern());
+            foreach ($finder as $file) {
+                $absPath = $file->getRealPath();
+                if (!$absPath) {
+                    continue;
+                }
+                $files[] = [
+                    'path'   => $this->resolver->toRelativePath($absPath),
+                    'name'   => $file->getFilename(),
+                    'folder' => strtolower($folder->name),
+                ];
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * Process a single raw file (FITS or camera RAW).
+     *
+     * @return array{status: string}
+     */
+    public function processSingleRaw(Session $session, string $relPath, string $folderHint = 'light'): array
+    {
+        $absPath = $this->resolver->toAbsolutePath($relPath);
+        $hash = $this->computeHash($absPath);
+
+        $existing = $this->em->getRepository(Exposure::class)
+            ->findOneBy(['path' => $relPath, 'session' => $session]);
+
+        if ($existing) {
+            $existing->setHash($hash);
+            $this->em->flush();
+            return ['status' => 'updated'];
+        }
+
+        $ext = strtolower(pathinfo($absPath, PATHINFO_EXTENSION));
+        $headers = $this->extractRawHeaders($absPath, $ext);
+
+        $imageTyp = $headers['IMAGETYP'] ?? strtoupper($folderHint);
+        $dateTaken = $this->parseDateObs($headers['DATE-OBS'] ?? null, $absPath);
+        $exposureS = isset($headers['EXPOSURE']) && is_numeric($headers['EXPOSURE'])
+            ? (float) $headers['EXPOSURE']
+            : null;
+        $format = in_array($ext, self::FITS_EXTENSIONS, true) ? 'FITS' : strtoupper($ext);
+
+        $exposure = new Exposure();
+        $exposure->setSession($session)
+            ->setType($imageTyp)
+            ->setHash($hash)
+            ->setPath($relPath)
+            ->setRawHeader($headers)
+            ->setDateTaken($dateTaken)
+            ->setFilterName($headers['FILTER'] ?? null)
+            ->setExposureS($exposureS)
+            ->setSensorTemp($headers['CCD-TEMP'] ?? null)
+            ->setFormat($format);
+
+        $this->em->persist($exposure);
+        $this->em->flush();
+
+        return ['status' => 'created'];
+    }
+
+    /**
+     * Process a single master file (XISF or FITS).
+     *
+     * @return array{status: string}
+     */
+    public function processSingleMaster(Session $session, string $relPath): array
+    {
+        $absPath = $this->resolver->toAbsolutePath($relPath);
+        $hash = $this->computeHash($absPath);
+        $ext = strtolower(pathinfo($absPath, PATHINFO_EXTENSION));
+
+        $existing = $this->em->getRepository(Master::class)
+            ->findOneBy(['path' => $relPath, 'session' => $session]);
+
+        if ($existing) {
+            if ($existing->getHeader() == []) {
+                try {
+                    $existing->setHeader($this->extractMasterHeaders($absPath, $ext));
+                } catch (\Throwable $e) {
+                    $this->logger->warning('Scan: failed to parse master {path}: {error}', [
+                        'path' => $relPath, 'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+            $this->em->flush();
+            return ['status' => 'updated'];
+        }
+
+        $headers = [];
+        try {
+            $headers = $this->extractMasterHeaders($absPath, $ext);
+        } catch (\Throwable $e) {
+            $this->logger->warning('Scan: failed to parse master {path}: {error}', [
+                'path' => $relPath, 'error' => $e->getMessage(),
+            ]);
+        }
+
+        $master = new Master();
+        $master->setSession($session)
+            ->setHeader($headers)
+            ->setHash($hash)
+            ->setType(strtoupper($ext))
+            ->setPath($relPath);
+        $this->em->persist($master);
+        $this->em->flush();
+
+        return ['status' => 'created'];
+    }
+
+    /**
+     * Process a single export file.
+     *
+     * @return array{status: string}
+     */
+    public function processSingleExport(Session $session, string $relPath): array
+    {
+        $absPath = $this->resolver->toAbsolutePath($relPath);
+        $hash = $this->computeHash($absPath);
+        $ext = strtoupper(pathinfo($absPath, PATHINFO_EXTENSION));
+
+        $existing = $this->em->getRepository(Export::class)
+            ->findOneBy(['path' => $relPath, 'session' => $session]);
+
+        if ($existing) {
+            $existing->setHash($hash)->setType($ext);
+            $this->em->flush();
+            return ['status' => 'updated'];
+        }
+
+        $export = new Export();
+        $export->setSession($session)
+            ->setHash($hash)
+            ->setType($ext)
+            ->setPath($relPath);
+        $this->em->persist($export);
+        $this->em->flush();
+
+        return ['status' => 'created'];
+    }
+
+    /**
      * Compute a stable hash for deduplication based on file size and path.
      */
     private function computeHash(string $absPath): string

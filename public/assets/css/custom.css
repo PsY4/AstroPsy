@@ -401,3 +401,33 @@ nav.semi-nav:not(:hover) .sidebar-footer {
 .scan-spinner {
     padding: 4px 0;
 }
+
+/* ── Detail panel banner (exposure/master/export/phd2) ──── */
+.card.profile-container .card-header.person-details .details {
+    flex-wrap: wrap !important;
+    gap: 2px 0 !important;
+    justify-content: center;
+    padding: 6px 4px;
+}
+.card.profile-container .card-header.person-details .details > div {
+    flex: 1 1 45% !important;
+    min-width: 0;
+    text-align: center;
+    padding: 2px 4px;
+}
+.card.profile-container .card-header.person-details .details h4 {
+    font-size: 0.82rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+.card.profile-container .card-header.person-details .details h4 small {
+    font-size: 0.85em;
+}
+.card.profile-container .card-header.person-details .details p {
+    font-size: 0.6rem !important;
+    margin-bottom: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}

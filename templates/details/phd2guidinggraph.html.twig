@@ -54,10 +54,10 @@
 </div>
 
 <script>
-const PHD2_RAW            = {{ samples|json_encode(constant('JSON_UNESCAPED_UNICODE'))|raw }};
-const PHD2_PX_TO_ARCSEC   = {{ px_scale is not null ? px_scale : 1 }};
-const PHD2_STARTED_AT_ISO = '{{ started_at|date('c') }}';
-const PHD2_TRANS = {
+var PHD2_RAW            = {{ samples|json_encode(constant('JSON_UNESCAPED_UNICODE'))|raw }};
+var PHD2_PX_TO_ARCSEC   = {{ px_scale is not null ? px_scale : 1 }};
+var PHD2_STARTED_AT_ISO = '{{ started_at|date('c') }}';
+var PHD2_TRANS = {
     axisRaError:     '{{ 'phd2.guiding.axis_ra_error'|trans|e('js') }}',
     axisDecError:    '{{ 'phd2.guiding.axis_dec_error'|trans|e('js') }}',
     axisRaCorr:      '{{ 'phd2.guiding.axis_ra_correction'|trans|e('js') }}',
@@ -68,4 +68,4 @@ const PHD2_TRANS = {
     labelAmplitude:  '{{ 'phd2.guiding.label_amplitude'|trans|e('js') }}',
 };
 </script>
-<script src=”{{ asset('assets/js/phd2-guiding-graph.js') }}”></script>
+<script src="{{ asset('assets/js/phd2-guiding-graph.js') }}"></script>

@@ -380,6 +380,8 @@ session:
     btn_start: "Demarrer"
     btn_close: "Fermer et recharger"
     error: "Une erreur est survenue"
+    errors: "erreurs"
+    error_details: "Voir le detail de l'erreur"
     no_files: "Aucun fichier trouve sur le stockage"
 
 # ── Browse — Find new targets ─────────────────────────────────────────────────
@@ -610,6 +612,24 @@ image:
   btn_open_local: "Ouvrir le fichier localement"
   label_true: "VRAI"
   label_false: "FAUX"
+  detail:
+    image_section: "Image"
+    bit_depth: "Profondeur"
+    channels: "Canaux"
+    photometric: "Photométrie"
+    color_mode: "Mode couleur"
+    frames: "Frames"
+    compression_section: "Compression"
+    compression: "Compression"
+    predictor: "Prédicteur"
+    icc_profile: "Profil ICC"
+    software_section: "Logiciel"
+    software: "Logiciel"
+    date_section: "Date"
+    datetime: "Créé le"
+    file_section: "Fichier"
+    file_size: "Taille"
+    modified: "Modifié"
 
 # ── PHD2 ─────────────────────────────────────────────────────────────────────
 phd2:

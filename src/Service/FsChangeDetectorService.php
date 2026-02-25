@@ -119,7 +119,11 @@ class FsChangeDetectorService
     {
         $result = ['new' => [], 'missing' => []];
 
-        $exposureRepo = $this->em->getRepository(Exposure::class);
+        // Build a set of ALL exposure paths in DB (type-agnostic)
+        $allExposurePaths = [];
+        foreach ($this->em->getRepository(Exposure::class)->findBy(['session' => $session]) as $e) {
+            $allExposurePaths[$e->getPath()] = true;
+        }
 
         foreach (SessionFolder::rawFolders() as $folder) {
             $label = $folder->name;
@@ -131,20 +135,12 @@ class FsChangeDetectorService
             $finder = new Finder();
             $finder->files()->in($dir)->name($folder->filePattern());
 
-            $dbPaths = [];
-            $exposures = $exposureRepo->findBy(['session' => $session]);
-            foreach ($exposures as $e) {
-                if (strtoupper($e->getType()) === $label || ($label === 'LIGHT' && strtoupper($e->getType()) === 'LIGHT')) {
-                    $dbPaths[$e->getPath()] = true;
-                }
-            }
-
             $newCount = 0;
             foreach ($finder as $file) {
                 $absPath = $file->getRealPath();
                 if ($absPath) {
                     $relPath = $this->resolver->toRelativePath($absPath);
-                    if (!isset($dbPaths[$relPath])) {
+                    if (!isset($allExposurePaths[$relPath])) {
                         $newCount++;
                     }
                 }

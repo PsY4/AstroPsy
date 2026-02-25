@@ -4,7 +4,13 @@
     <small style="font-size: 12px">
         {{ 'session.unit_master'|trans }}
     </small><br>
-    <strong>{{ m.header.metadata.FITS.IMAGETYP|replace({"Master":""})|upper }}</strong><br>
+    {% set imagetyp = m.header.metadata.FITS.IMAGETYP|default('')|replace({"Master":""})|trim|upper %}
+    {% if imagetyp == 'LIGHT' %}
+        {% set filterName = m.header.metadata.aliases.filter ?? m.header.metadata.FITS.FILTER ?? null %}
+        <strong>{{ filterName ? filterName : 'LIGHT' }}</strong><br>
+    {% else %}
+        <strong>{{ imagetyp }}</strong><br>
+    {% endif %}
     <small style="font-size: 12px">
         {{ m.type }}
     </small><br>

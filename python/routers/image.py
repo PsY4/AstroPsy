@@ -6,7 +6,7 @@ from datetime import datetime
 import tifffile as tiff
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse, Response
-from PIL import Image, ExifTags, TiffImagePlugin, ImageFile
+from PIL import Image, ExifTags, TiffImagePlugin, TiffTags, ImageFile
 
 from services.stretch import to_rgb_image, resize_keep_ratio
 from services.tiff_service import open_tiff_as_image, _sniff_tiff_magic
@@ -15,9 +15,109 @@ from utils.path_guard import require_safe_path
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
 
+from fractions import Fraction
+from numbers import Number
+
 router = APIRouter()
 
 ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
+
+
+def _sanitize_tag_value(value):
+    """Make a TIFF tag value JSON-serializable."""
+    if isinstance(value, (int, float, bool, str)):
+        return value
+    if isinstance(value, (bytes, bytearray)):
+        if len(value) > 256:
+            return f"<{len(value)} bytes>"
+        try:
+            return value.decode(errors="replace")
+        except Exception:
+            return f"<{len(value)} bytes>"
+    if isinstance(value, Fraction):
+        return float(value)
+    if hasattr(value, 'numerator') and hasattr(value, 'denominator'):
+        # IFDRational and similar fraction-like objects
+        try:
+            return float(value)
+        except (ValueError, ZeroDivisionError):
+            return str(value)
+    if isinstance(value, (tuple, list)):
+        return [_sanitize_tag_value(v) for v in value]
+    if isinstance(value, dict):
+        return {str(k): _sanitize_tag_value(v) for k, v in value.items()}
+    if isinstance(value, Number):
+        return float(value)
+    return str(value)
+
+# ── Human-readable TIFF enums ──────────────────────────────────────────────
+_COMPRESSION_NAMES = {
+    1: "Uncompressed", 2: "CCITT RLE", 3: "CCITT Group 3", 4: "CCITT Group 4",
+    5: "LZW", 6: "JPEG (old)", 7: "JPEG", 8: "Deflate (ZIP)",
+    32773: "PackBits", 34712: "JPEG 2000", 50000: "ZSTD", 50001: "WebP",
+}
+_SAMPLE_FORMAT_NAMES = {1: "uint", 2: "int", 3: "float", 4: "void"}
+_PHOTOMETRIC_NAMES = {
+    0: "MinIsWhite", 1: "MinIsBlack", 2: "RGB", 3: "Palette",
+    4: "Transparency Mask", 5: "CMYK", 6: "YCbCr", 8: "CIELab",
+}
+_PREDICTOR_NAMES = {1: "None", 2: "Horizontal differencing", 3: "Floating point"}
+
+# Tags to exclude from the raw tiff_tags dump (noisy, no value for users)
+_TIFF_TAGS_EXCLUDE = {
+    "StripOffsets", "StripByteCounts", "TileOffsets", "TileByteCounts",
+    "FreeOffsets", "FreeByteCounts", "ICCProfile", "IptcNaaInfo",
+    "XMP", "ExifIFD", "InterColorProfile", "JPEGTables",
+}
+
+
+def _build_tiff_summary(tiff_tags: dict) -> dict:
+    """Extract a human-readable summary from raw TIFF tags."""
+    summary = {}
+
+    bps = tiff_tags.get("BitsPerSample")
+    if bps is not None:
+        if isinstance(bps, (tuple, list)):
+            summary["bit_depth"] = bps[0] if len(set(bps)) == 1 else "×".join(str(b) for b in bps)
+        else:
+            summary["bit_depth"] = bps
+
+    spp = tiff_tags.get("SamplesPerPixel")
+    if spp is not None:
+        summary["samples_per_pixel"] = spp
+        channel_names = {1: "Mono", 3: "RGB", 4: "RGBA"}
+        summary["channels_label"] = channel_names.get(spp, f"{spp} channels")
+
+    sf = tiff_tags.get("SampleFormat")
+    if sf is not None:
+        val = sf[0] if isinstance(sf, (tuple, list)) else sf
+        summary["sample_format"] = _SAMPLE_FORMAT_NAMES.get(val, str(val))
+
+    pi = tiff_tags.get("PhotometricInterpretation")
+    if pi is not None:
+        summary["photometric"] = _PHOTOMETRIC_NAMES.get(pi, str(pi))
+
+    comp = tiff_tags.get("Compression")
+    if comp is not None:
+        summary["compression"] = _COMPRESSION_NAMES.get(comp, str(comp))
+
+    pred = tiff_tags.get("Predictor")
+    if pred is not None and pred != 1:
+        summary["predictor"] = _PREDICTOR_NAMES.get(pred, str(pred))
+
+    sw = tiff_tags.get("Software")
+    if sw is not None:
+        summary["software"] = str(sw).strip()
+
+    dt = tiff_tags.get("DateTime")
+    if dt is not None:
+        summary["datetime"] = str(dt).strip()
+
+    orient = tiff_tags.get("Orientation")
+    if orient is not None:
+        summary["orientation"] = orient
+
+    return summary
 
 
 @router.get("/image/thumbnail")
@@ -90,9 +190,9 @@ def image_header(path: str):
             if "dpi" in im.info:
                 dpi = im.info["dpi"]
                 if isinstance(dpi, (tuple, list)) and len(dpi) == 2:
-                    info["dpi_x"], info["dpi_y"] = dpi
+                    info["dpi_x"], info["dpi_y"] = _sanitize_tag_value(dpi[0]), _sanitize_tag_value(dpi[1])
                 else:
-                    info["dpi"] = dpi
+                    info["dpi"] = _sanitize_tag_value(dpi)
             if "icc_profile" in im.info:
                 icc = im.info["icc_profile"]
                 info["icc_profile"] = {"present": True, "bytes": len(icc) if isinstance(icc, (bytes, bytearray)) else 0}
@@ -107,12 +207,7 @@ def image_header(path: str):
                 if exif:
                     for tag_id, value in exif.items():
                         tag = ExifTags.TAGS.get(tag_id, str(tag_id))
-                        if isinstance(value, bytes):
-                            try:
-                                value = value.decode(errors="replace")
-                            except Exception:
-                                value = str(value)
-                        exif_map[tag] = value
+                        exif_map[tag] = _sanitize_tag_value(value)
             except Exception:
                 pass
             if exif_map:
@@ -120,12 +215,17 @@ def image_header(path: str):
 
             if isinstance(im, TiffImagePlugin.TiffImageFile):
                 try:
-                    tiff_tags = {}
+                    raw_tags = {}
                     for tag, value in im.tag_v2.items():
-                        tag_name = TiffImagePlugin.TAGS_V2.get(tag, str(tag))
-                        tiff_tags[tag_name] = value
-                    if tiff_tags:
-                        payload["tiff_tags"] = tiff_tags
+                        tag_info = TiffTags.TAGS_V2.get(tag)
+                        tag_name = tag_info.name if tag_info else str(tag)
+                        raw_tags[tag_name] = _sanitize_tag_value(value)
+                    if raw_tags:
+                        payload["tiff_summary"] = _build_tiff_summary(raw_tags)
+                        payload["tiff_tags"] = {
+                            k: v for k, v in raw_tags.items()
+                            if k not in _TIFF_TAGS_EXCLUDE
+                        }
                 except Exception:
                     pass
 
@@ -176,15 +276,15 @@ def image_header(path: str):
                     if res:
                         payload["resolution"] = res
 
-                    tiff_tags = {}
+                    raw_tags = {}
                     for tag in page.tags.values():
-                        val = tag.value
-                        if isinstance(val, (bytes, bytearray)) and len(val) > 256:
-                            tiff_tags[tag.name] = f"<{len(val)} bytes>"
-                        else:
-                            tiff_tags[tag.name] = val
-                    if tiff_tags:
-                        payload["tiff_tags"] = tiff_tags
+                        raw_tags[tag.name] = _sanitize_tag_value(tag.value)
+                    if raw_tags:
+                        payload["tiff_summary"] = _build_tiff_summary(raw_tags)
+                        payload["tiff_tags"] = {
+                            k: v for k, v in raw_tags.items()
+                            if k not in _TIFF_TAGS_EXCLUDE
+                        }
 
                 try:
                     st = os.stat(str(p))
