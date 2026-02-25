@@ -4,8 +4,8 @@
             <h5>{{ 'phd2.guiding.title'|trans }}</h5>
         </div>
         <div class="fa-pull-right">
-            <a href="openfolder:{{ local_folder_base }}/{{ guiding.sourcePath }}"
-               class="btn btn-primary icon-btn b-r-4" title="{{ 'phd2.guiding.btn_open_local'|trans }}">
+            <a href="openfolder:{{ guiding.sourcePath }}"
+               class="btn btn-primary icon-btn b-r-4 js-openfolder" title="{{ 'phd2.guiding.btn_open_local'|trans }}">
                 <i class="fa primary fa-arrow-right-to-file"></i>
             </a>
             <a href="{{ path('phd2guiding_hide', {'id': guiding.id, 'hidden': true}) }}"

@@ -10,8 +10,8 @@
                 data-bs-toggle="modal"
                 type="button"><i class="ti ti-edit"></i>
         </button>
-        <a href="openfolder:{{ local_folder_base }}/{{ session.path|default('') }}"
-           class="btn btn-primary icon-btn">
+        <a href="openfolder:{{ session.path|default('') }}"
+           class="btn btn-primary icon-btn js-openfolder">
             <i class="fa primary fa-folder-open"></i>
         </a>
         <button type="button" onclick="openRefreshModal({{ session.id }})"

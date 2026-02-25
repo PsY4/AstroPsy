@@ -125,6 +125,16 @@
     localStorage.setItem('ki-admin-theme-mode', '{{ appConfig.theme }}');
     localStorage.setItem('ki-admin-layout-option', 'ltr {{ appConfig.theme }}');
   </script>
+  <script>
+    // OpenFolder: redirect to settings if handler not acknowledged
+    document.addEventListener('click', function (e) {
+      var link = e.target.closest('.js-openfolder');
+      if (!link) return;
+      if (localStorage.getItem('openfolder_installed') === '1') return;
+      e.preventDefault();
+      window.location.href = '{{ path('settings') }}#openfolder';
+    });
+  </script>
   <script src="{{ asset('assets/js/customizer.js') }}"></script>
   <script src="{{ asset('assets/js/script.js') }}"></script>
   <script src="{{ asset('assets/vendor/apexcharts/apexcharts.min.js') }}"></script>

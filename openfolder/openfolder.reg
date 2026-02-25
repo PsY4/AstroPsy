@@ -1,8 +1,11 @@
+; openfolder.reg -- Manual fallback (prefer install.cmd)
+; This file is for reference only. The install.cmd script handles registration automatically.
+; Replace %APPDATA% with your actual path (e.g. C:\Users\YourName\AppData\Roaming).
 Windows Registry Editor Version 5.00
 
-[HKEY_CLASSES_ROOT\openfolder]
+[HKEY_CURRENT_USER\Software\Classes\openfolder]
 @="Open Folder Protocol"
 "URL Protocol"=""
 
-[HKEY_CLASSES_ROOT\openfolder\shell\open\command]
-@="\"C:\\Tools\\OpenFolder\\openfolder.exe\" \"%1\""
+[HKEY_CURRENT_USER\Software\Classes\openfolder\shell\open\command]
+@="powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"%APPDATA%\\OpenFolder\\openfolder.ps1\" \"%1\""

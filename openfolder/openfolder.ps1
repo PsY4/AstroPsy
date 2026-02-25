@@ -1,5 +1,20 @@
-# openfolder.ps1
+# openfolder.ps1 -- AstroPsy OpenFolder Protocol Handler
+# Reads local base path from openfolder.conf, prefixes the relative path received
 param([string]$arg)
+
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$confFile  = Join-Path $scriptDir 'openfolder.conf'
+
+function Get-LocalBase {
+    if (-not (Test-Path $confFile)) {
+        throw "openfolder.conf not found in $scriptDir -- please run install.ps1 again."
+    }
+    $base = (Get-Content $confFile -Raw).Trim()
+    if ([string]::IsNullOrWhiteSpace($base)) {
+        throw "openfolder.conf is empty -- please run install.ps1 again."
+    }
+    return $base
+}
 
 function Normalize-OpenFolderArg {
     if (-not $arg) { throw "No argument" }
@@ -10,20 +25,15 @@ function Normalize-OpenFolderArg {
     # URL-decode
     $decoded = [System.Uri]::UnescapeDataString($raw)
 
-    # If looks like server/share/... without leading \\ add them
-    if ($decoded -match '^[^:\\/]+[\\/][^\\/]+') {
-        # UNC path missing leading backslashes
-        $decoded = '\\' + $decoded.TrimStart('\','/')
-    }
+    # Trim leading/trailing slashes and whitespace
+    $decoded = $decoded.Trim().Trim('/', '\')
 
-    # Trim leading slashes before drive path forms like /C:/...
-    $decoded = $decoded -replace '^[\\/]+(?=[A-Za-z]:[\\/])', ''
+    # Prefix with local base path
+    $base = Get-LocalBase
+    $full = Join-Path $base $decoded
 
-    # Normalize slashes
-    $winPath = $decoded -replace '/', '\'
-
-    # If it's a bare drive like "C:" add trailing backslash
-    if ($winPath -match '^[A-Za-z]:$') { $winPath = "$winPath\" }
+    # Normalize slashes for Windows
+    $winPath = $full -replace '/', '\'
 
     return $winPath
 }
@@ -33,7 +43,6 @@ try {
 
     # First try as directory
     if (Test-Path -LiteralPath $path -PathType Container) {
-        # Prefer COM to surface an Explorer window, then force new window
         try {
             $shell = New-Object -ComObject Shell.Application
             $shell.Open($path)
@@ -43,31 +52,27 @@ try {
         exit 0
     }
 
-    # Then as file
+    # Then as file -- open with default app
     if (Test-Path -LiteralPath $path -PathType Leaf) {
         try {
-            # Open with default associated application
             Start-Process -FilePath $path -Verb Open
             exit 0
         } catch {
-            # Fallback: show the file in Explorer
             Start-Process explorer.exe -ArgumentList @("/select,`"$path`"") -WindowStyle Hidden
             exit 0
         }
     }
 
-    # Not found: try opening parent folder if it exists
+    # Not found: try opening parent folder
     $parent = Split-Path -Parent $path
     if ($parent -and (Test-Path -LiteralPath $parent -PathType Container)) {
         Start-Process explorer.exe -ArgumentList @('/n,', "`"$parent`"") -WindowStyle Hidden
         exit 2
     }
 
-    # Nothing worked
     throw "Path not found: $path"
 }
 catch {
-    # Optional: write a tiny log for troubleshooting
     try {
         $msg = "$(Get-Date -Format o) ERROR: $($_.Exception.Message) | arg='$arg'"
         $msg | Out-File -FilePath "$env:TEMP\openfolder.log" -Append -Encoding UTF8
