@@ -98,17 +98,47 @@ def raw_header(path: str):
             except Exception:
                 exp_s = None
 
+        # Parse FNumber (e.g. "28/10" → "f/2.8")
+        fnumber_raw = get("EXIF FNumber")
+        fnumber = None
+        if fnumber_raw:
+            try:
+                fnumber = f"f/{float(Fraction(fnumber_raw)):.1f}"
+            except Exception:
+                fnumber = fnumber_raw
+
+        # Parse FocalLength (e.g. "105" or "105/1")
+        focal_raw = get("EXIF FocalLength")
+        focal = None
+        if focal_raw:
+            try:
+                focal = f"{float(Fraction(focal_raw)):.0f}mm"
+            except Exception:
+                focal = focal_raw
+
+        # Image dimensions from EXIF
+        width = get("EXIF ExifImageWidth") or get("Image ImageWidth")
+        height = get("EXIF ExifImageLength") or get("Image ImageLength")
+
         payload = {
-            "FORMAT":   fmt,
-            "IMAGETYP": None,
-            "DATE-OBS": date_iso,
-            "EXPOSURE": exp_s,
-            "FILTER":   None,
-            "CCD-TEMP": None,
-            "ISO":      get("EXIF ISOSpeedRatings"),
-            "CAMERA":   get("Image Model"),
-            "LENS":     get("EXIF LensModel") or get("EXIF LensSpecification"),
-            "EXIF":     {k: str(v) for k, v in tags.items()},
+            "FORMAT":    fmt,
+            "IMAGETYP":  None,
+            "DATE-OBS":  date_iso,
+            "EXPOSURE":  exp_s,
+            "FILTER":    None,
+            "CCD-TEMP":  None,
+            "ISO":       get("EXIF ISOSpeedRatings"),
+            "CAMERA":    get("Image Model"),
+            "MAKE":      get("Image Make"),
+            "LENS":      get("EXIF LensModel") or get("EXIF LensSpecification"),
+            "FNUMBER":   fnumber,
+            "FOCAL":     focal,
+            "WIDTH":     width,
+            "HEIGHT":    height,
+            "WB":        get("EXIF WhiteBalance"),
+            "METERING":  get("EXIF MeteringMode"),
+            "SOFTWARE":  get("Image Software"),
+            "EXIF":      {k: str(v) for k, v in tags.items()},
         }
         return JSONResponse(payload)
 

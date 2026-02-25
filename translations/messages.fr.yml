@@ -564,6 +564,21 @@ exposure:
     bp: "Noir"
     wp: "Blanc"
     apply: "Appliquer"
+  detail:
+    camera: "Boîtier"
+    make: "Marque"
+    model: "Modèle"
+    software: "Logiciel"
+    lens: "Optique"
+    lens_model: "Objectif"
+    focal_length: "Focale"
+    aperture: "Ouverture"
+    settings: "Paramètres"
+    exposure_time: "Temps de pose"
+    white_balance: "Balance des blancs"
+    metering: "Mesure"
+    resolution: "Résolution"
+    date: "Date / Heure"
 
 master:
   title: "Détails du master"

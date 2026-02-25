@@ -564,6 +564,21 @@ exposure:
     bp: "Black"
     wp: "White"
     apply: "Apply"
+  detail:
+    camera: "Camera"
+    make: "Make"
+    model: "Model"
+    software: "Software"
+    lens: "Optics"
+    lens_model: "Lens"
+    focal_length: "Focal length"
+    aperture: "Aperture"
+    settings: "Settings"
+    exposure_time: "Exposure time"
+    white_balance: "White balance"
+    metering: "Metering"
+    resolution: "Resolution"
+    date: "Date / Time"
 
 master:
   title: "Master Details"

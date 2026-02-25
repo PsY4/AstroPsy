@@ -1,12 +1,12 @@
 {% set headers = exposure.rawHeader %}
-{% if exposure.format == "FITS" %}
+{% set isFits = exposure.format == "FITS" %}
+{% if isFits %}
     <script>
         $('.lights-viewer-fits').removeClass('d-none');
         $('.lights-viewer-raw').addClass('d-none');
         JS9.Load("{{ path('fits_stream_js9safe', { id: exposure.id }) }}", {scale:"log"});
     </script>
-{% endif %}
-{% if exposure.format != "FITS" %}
+{% else %}
     <script>
         $('.lights-viewer-fits').addClass('d-none');
         $('.lights-viewer-raw').removeClass('d-none');
@@ -28,30 +28,51 @@
             </a>
         </div>
     </div>
-    <div class="card-header person-details mt-0" >
+    {# ── Summary banner ── #}
+    <div class="card-header person-details mt-0">
         <div class="details mt-0">
-            <div>
-                <h4 class="text-primary">
-                    {{ headers['NAXIS1'] }}x{{ headers['NAXIS2'] }}
-                </h4>
-                <p class="text-secondary">SIZE</p>
-            </div>
-            <div>
-                <h4 class="text-primary">{{ headers['IMAGETYP'] }}</h4>
-                <p class="text-secondary">TYPE</p>
-            </div>
-            <div>
-                <h4 class="text-primary">{{ headers['EXPTIME'] }}s</h4>
-                <p class="text-secondary">EXPO</p>
-            </div>
-            <div>
-                <h4 class="text-primary">{{ headers['FILTER'] }}</h4>
-                <p class="text-secondary">FILTER</p>
-            </div>
+            {% if isFits %}
+                <div>
+                    <h4 class="text-primary">{{ headers['NAXIS1'] }}x{{ headers['NAXIS2'] }}</h4>
+                    <p class="text-secondary">SIZE</p>
+                </div>
+                <div>
+                    <h4 class="text-primary">{{ headers['IMAGETYP'] }}</h4>
+                    <p class="text-secondary">TYPE</p>
+                </div>
+                <div>
+                    <h4 class="text-primary">{{ headers['EXPTIME'] }}s</h4>
+                    <p class="text-secondary">EXPO</p>
+                </div>
+                <div>
+                    <h4 class="text-primary">{{ headers['FILTER'] }}</h4>
+                    <p class="text-secondary">FILTER</p>
+                </div>
+            {% else %}
+                <div>
+                    <h4 class="text-primary">{{ headers['FORMAT'] }}</h4>
+                    <p class="text-secondary">FORMAT</p>
+                </div>
+                <div>
+                    <h4 class="text-primary">{{ headers['EXPOSURE'] ? headers['EXPOSURE'] ~ 's' : '-' }}</h4>
+                    <p class="text-secondary">EXPO</p>
+                </div>
+                <div>
+                    <h4 class="text-primary">{{ headers['ISO'] ?? '-' }}</h4>
+                    <p class="text-secondary">ISO</p>
+                </div>
+                <div>
+                    <h4 class="text-primary">{{ headers['FNUMBER'] ?? '-' }}</h4>
+                    <p class="text-secondary">APERTURE</p>
+                </div>
+            {% endif %}
         </div>
     </div>
+    {# ── Detail body ── #}
     <div class="card-body">
         <div class="about-list">
+        {% if isFits %}
+            {# ═══════════════ FITS sections ═══════════════ #}
             {% if headers['SIMPLE'] or headers['BITPIX'] or headers['NAXIS'] or headers['NAXIS1'] or headers['NAXIS2'] or headers['BZERO'] or headers['EXTEND'] or headers['ROWORDER'] or headers['EQUINOX'] or headers['SWCREATE'] %}
             <h6>IMAGE</h6>
             {% if headers['SIMPLE'] %}<div><span class="fw-medium"><i class="ti ti-file-description"></i> SIMPLE</span> <span class="float-end f-s-13 text-secondary">{{ headers['SIMPLE'] }}</span></div>{% endif %}
@@ -165,6 +186,68 @@
             {% if headers['WINDGUST'] is not null and headers['WINDGUST'] != '' %}<div><span class="fw-medium"><i class="ti ti-wind"></i> WINDGUST</span> <span class="float-end f-s-13 text-secondary">{{ headers['WINDGUST'] }}</span></div>{% endif %}
             {% if headers['WINDSPD'] is not null and headers['WINDSPD'] != '' %}<div><span class="fw-medium"><i class="ti ti-wind"></i> WINDSPD</span> <span class="float-end f-s-13 text-secondary">{{ headers['WINDSPD'] }}</span></div>{% endif %}
             {% endif %}
+
+        {% else %}
+            {# ═══════════════ Camera RAW sections ═══════════════ #}
+
+            {# CAMERA #}
+            {% if headers['CAMERA'] or headers['MAKE'] %}
+            <h6>{{ 'exposure.detail.camera'|trans }}</h6>
+            {% if headers['MAKE'] %}<div><span class="fw-medium"><i class="ti ti-building"></i> {{ 'exposure.detail.make'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['MAKE'] }}</span></div>{% endif %}
+            {% if headers['CAMERA'] %}<div><span class="fw-medium"><i class="ti ti-camera"></i> {{ 'exposure.detail.model'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['CAMERA'] }}</span></div>{% endif %}
+            {% if headers['SOFTWARE'] %}<div><span class="fw-medium"><i class="ti ti-code"></i> {{ 'exposure.detail.software'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['SOFTWARE'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {# LENS / OPTICS #}
+            {% if headers['LENS'] or headers['FOCAL'] %}
+            <hr>
+            <h6>{{ 'exposure.detail.lens'|trans }}</h6>
+            {% if headers['LENS'] %}<div><span class="fw-medium"><i class="ti ti-lens"></i> {{ 'exposure.detail.lens_model'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['LENS'] }}</span></div>{% endif %}
+            {% if headers['FOCAL'] %}<div><span class="fw-medium"><i class="ti ti-focus"></i> {{ 'exposure.detail.focal_length'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['FOCAL'] }}</span></div>{% endif %}
+            {% if headers['FNUMBER'] %}<div><span class="fw-medium"><i class="ti ti-aperture"></i> {{ 'exposure.detail.aperture'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['FNUMBER'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {# EXPOSURE SETTINGS #}
+            {% if headers['EXPOSURE'] is not null or headers['ISO'] %}
+            <hr>
+            <h6>{{ 'exposure.detail.settings'|trans }}</h6>
+            {% if headers['EXPOSURE'] is not null %}<div><span class="fw-medium"><i class="ti ti-timer"></i> {{ 'exposure.detail.exposure_time'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['EXPOSURE'] }}s</span></div>{% endif %}
+            {% if headers['ISO'] %}<div><span class="fw-medium"><i class="ti ti-adjustments"></i> ISO</span> <span class="float-end f-s-13 text-secondary">{{ headers['ISO'] }}</span></div>{% endif %}
+            {% if headers['WB'] %}<div><span class="fw-medium"><i class="ti ti-color-swatch"></i> {{ 'exposure.detail.white_balance'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['WB'] }}</span></div>{% endif %}
+            {% if headers['METERING'] %}<div><span class="fw-medium"><i class="ti ti-eye"></i> {{ 'exposure.detail.metering'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['METERING'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {# IMAGE #}
+            {% if headers['WIDTH'] or headers['HEIGHT'] %}
+            <hr>
+            <h6>IMAGE</h6>
+            <div><span class="fw-medium"><i class="ti ti-dimensions"></i> {{ 'exposure.detail.resolution'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['WIDTH'] }} x {{ headers['HEIGHT'] }}</span></div>
+            {% if headers['FORMAT'] %}<div><span class="fw-medium"><i class="ti ti-file"></i> Format</span> <span class="float-end f-s-13 text-secondary">{{ headers['FORMAT'] }}</span></div>{% endif %}
+            {% endif %}
+
+            {# DATE #}
+            {% if headers['DATE-OBS'] %}
+            <hr>
+            <h6>{{ 'exposure.detail.date'|trans }}</h6>
+            <div><span class="fw-medium"><i class="ti ti-calendar"></i> DATE-OBS</span> <span class="float-end f-s-13 text-secondary">{{ headers['DATE-OBS'] }}</span></div>
+            {% endif %}
+
+            {# EXIF RAW TAGS — collapsible #}
+            {% if headers['EXIF'] is defined and headers['EXIF'] is not empty %}
+            <hr>
+            <h6>
+                <a data-bs-toggle="collapse" href="#exif-raw-tags" role="button" aria-expanded="false" class="text-decoration-none">
+                    EXIF <i class="ti ti-chevron-down f-s-13"></i>
+                </a>
+            </h6>
+            <div class="collapse" id="exif-raw-tags">
+                {% for key, value in headers['EXIF'] %}
+                    <div><span class="fw-medium f-s-13">{{ key }}</span> <span class="float-end f-s-13 text-secondary text-truncate" style="max-width: 200px" title="{{ value }}">{{ value }}</span></div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        {% endif %}
         </div>
     </div>
 </div>
