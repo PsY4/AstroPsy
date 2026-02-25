@@ -456,6 +456,7 @@ observatory:
   btn_update: "Mettre à jour"
   label_authors: "👥 Auteurs :"
   label_setups: "🔭 Configurations :"
+  toggle_favorite: "Définir comme observatoire favori"
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 setup:

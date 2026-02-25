@@ -456,6 +456,7 @@ observatory:
   btn_create: "Create observatory"
   label_authors: "👥 Authors:"
   label_setups: "🔭 Setups:"
+  toggle_favorite: "Set as favorite observatory"
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 setup:
