@@ -25,7 +25,7 @@ class SettingsController extends AbstractController
     ) {}
 
     #[Route('/settings', name: 'settings', methods: ['GET'])]
-    public function index(AppConfig $config, StoragePathResolver $resolver): Response
+    public function index(AppConfig $config): Response
     {
         $roles = array_map(fn(SessionFolder $f) => $f->value, SessionFolder::cases());
 
@@ -34,39 +34,6 @@ class SettingsController extends AbstractController
             'filters'          => $config->getFilters(),
             'template_tree'    => $config->getSessionTemplate(),
             'roles'            => $roles,
-            'sessions_root'    => $resolver->getSessionsRoot(),
-            'sessions_root_is_custom' => $config->getSessionsRoot() !== null,
-        ]);
-    }
-
-    #[Route('/api/browse-dirs', name: 'api_browse_dirs', methods: ['GET'])]
-    public function browseDirs(Request $request, StoragePathResolver $resolver): JsonResponse
-    {
-        $path = $request->query->get('path', $resolver->getSessionsRoot());
-
-        $real = realpath($path);
-        if ($real === false || !is_dir($real)) {
-            return new JsonResponse(['error' => 'Directory not found'], 404);
-        }
-
-        $dirs = [];
-        $items = @scandir($real);
-        if ($items !== false) {
-            foreach ($items as $item) {
-                if ($item === '.' || $item === '..' || str_starts_with($item, '.')) {
-                    continue;
-                }
-                if (is_dir($real . '/' . $item)) {
-                    $dirs[] = $item;
-                }
-            }
-            sort($dirs);
-        }
-
-        return new JsonResponse([
-            'current' => $real,
-            'parent'  => dirname($real),
-            'dirs'    => $dirs,
         ]);
     }
 
@@ -77,7 +44,6 @@ class SettingsController extends AbstractController
             'notifications'    => $this->saveNotifications($request, $config),
             'filters'          => $this->saveFilters($request, $config),
             'session_template' => $this->saveSessionTemplate($request, $config, $resolver, $translator),
-            'sessions_root'    => $this->saveSessionsRoot($request, $config, $translator),
             default            => null,
         };
 
@@ -251,22 +217,6 @@ class SettingsController extends AbstractController
             'min_useful_hours'   => (float) $request->request->get('min_useful_hours', 2),
             'min_moon_sep'       => (int) $request->request->get('min_moon_sep', 30),
         ]);
-    }
-
-    private function saveSessionsRoot(Request $request, AppConfig $config, TranslatorInterface $translator): void
-    {
-        $path = trim($request->request->get('sessions_root', ''));
-        if ($path === '') {
-            $config->setSessionsRoot(null);
-            return;
-        }
-
-        if (!is_dir($path)) {
-            $this->addFlash('danger', $translator->trans('settings.sessions_root.not_found'));
-            return;
-        }
-
-        $config->setSessionsRoot($path);
     }
 
     private function buildRoleMapFromTree(array $nodes, string $prefix, array &$map): void

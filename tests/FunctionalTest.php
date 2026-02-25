@@ -188,22 +188,6 @@ class FunctionalTest extends WebTestCase
         self::assertResponseRedirects();
     }
 
-    public function testSettingsSaveSessionsRoot(): void
-    {
-        $this->client->request('POST', '/settings/section/sessions_root', [
-            'sessions_root' => '/tmp',
-        ]);
-        self::assertResponseRedirects();
-    }
-
-    public function testSettingsSaveSessionsRootReset(): void
-    {
-        $this->client->request('POST', '/settings/section/sessions_root', [
-            'sessions_root' => '',
-        ]);
-        self::assertResponseRedirects();
-    }
-
     public function testApiNotificationsReadAll(): void
     {
         $this->client->request('POST', '/api/notifications/read-all');

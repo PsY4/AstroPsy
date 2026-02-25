@@ -653,7 +653,13 @@ framing:
     label: "Filters to use (NINA export)"
     all: "All"
     no_setup: "Select a setup to choose filters"
+  survey:
+    dss2_color: "DSS2 Color (HiPS)"
+    dss2_red: "DSS2 Red (SkyView)"
+    sdss: "SDSS (SkyView)"
 
+header:
+  search_placeholder: "Search..."
 
 settings:
   title: "Settings"
@@ -684,18 +690,15 @@ settings:
     migrate_confirm: "This will move files in existing sessions to match the new template. Continue?"
     migrate_dispatched: "Migration started. You will receive a notification when complete."
     dry_run_btn: "Preview changes"
-  sessions_root:
-    title: "Sessions Root Directory"
-    help: "Root directory containing all astrophotography targets and sessions."
-    current_path: "Current path"
-    browse: "Browse"
-    select: "Select this directory"
-    go_up: "Parent directory"
-    reset_env: "Reset (env variable)"
-    using_env: "Environment variable"
-    using_custom: "Custom"
-    not_found: "This directory does not exist on the server."
-    empty_dir: "No subdirectories."
+    dry_run_no_changes: "No changes needed. All sessions match the current template."
+    dry_run_sessions_affected: "session(s) affected"
+    dry_run_file_moves: "file move(s)"
+    folder_name: "Folder name"
+    add_child: "Add child"
+    remove: "Remove"
+  language:
+    title: "Language"
+    help: "Choose the display language for the interface."
   openfolder:
     title: "Open Locally (OpenFolder)"
     description: "The OpenFolder protocol lets you open your session files and folders directly from AstroPsy in your PC's file explorer."
