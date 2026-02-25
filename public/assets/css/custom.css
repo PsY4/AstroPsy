@@ -59,8 +59,26 @@ nav.semi-nav:not(:hover) .sidebar-footer {
     justify-content: center;
     align-items: center;
 }
-nav.semi-nav:not(:hover) .sidebar-footer .locale-switcher {
-    display: none;
+/* Locale switcher buttons */
+.locale-btn {
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
+    padding: 0;
+    border: none !important;
+    border-radius: 50%;
+    font-size: .65rem;
+    font-weight: 700;
+    background: #0d6efd !important;
+    color: #fff !important;
+    cursor: pointer;
+    opacity: .5;
+}
+.locale-btn.active {
+    opacity: 1;
+}
+.locale-btn:hover {
+    opacity: .85;
 }
 /* Suppression du header : padding minimal en haut du contenu */
 .app-content main {
