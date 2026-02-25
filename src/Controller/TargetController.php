@@ -9,6 +9,7 @@ use App\Entity\Session;
 use App\Entity\Target;
 use App\Entity\TargetGoal;
 use App\Form\TargetType;
+use App\Repository\DocRepository;
 use App\Repository\ObservatoryRepository;
 use App\Service\AstrobinAPIService;
 use App\Service\FilterNormalizer;
@@ -36,7 +37,7 @@ final class TargetController extends AbstractController
     public function __construct(private FilterNormalizer $normalizer, private ProgressTrackingService $progress, private StoragePathResolver $resolver) {}
 
     #[Route('/target/{id<\d+>}', name: 'browse_target')]
-    public function browseTarget(int $id, Request $request, EntityManagerInterface $em, AstrobinAPIService $astrobin, ObservatoryRepository $obsRepo): Response
+    public function browseTarget(int $id, Request $request, EntityManagerInterface $em, AstrobinAPIService $astrobin, ObservatoryRepository $obsRepo, DocRepository $docsRepo): Response
     {
         $target = $em->getRepository(Target::class)->find($id);
         if (!$target) {
@@ -90,6 +91,7 @@ final class TargetController extends AbstractController
             'canonicalFilters' => $this->normalizer->getCanonical(),
             'filterColorMap'   => $this->normalizer->getColorMap(),
             'filtersJsConfig'  => $this->normalizer->getJsConfig(),
+            'docsRepo'         => $docsRepo,
         ]);
     }
 
