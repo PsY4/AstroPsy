@@ -115,19 +115,10 @@
             fetch(newTheme === 'dark' ? this.dataset.urlDark : this.dataset.urlLight, { method: 'POST' });
         });
         </script>
-        <div class="locale-switcher d-flex gap-1">
-            {% set locale = app.request.locale %}
-            <form method="post" action="{{ path('settings_locale', {locale: 'fr'}) }}">
-                <button type="submit" class="btn p-1 border-0 rounded-circle{% if locale == 'fr' %} opacity-100{% else %} opacity-50{% endif %}" title="Français">
-                    <span class="flag-icon flag-icon-fr" style="font-size:1.1rem;"></span>
-                </button>
-            </form>
-            <form method="post" action="{{ path('settings_locale', {locale: 'en'}) }}">
-                <button type="submit" class="btn p-1 border-0 rounded-circle{% if locale == 'en' %} opacity-100{% else %} opacity-50{% endif %}" title="English">
-                    <span class="flag-icon flag-icon-gb" style="font-size:1.1rem;"></span>
-                </button>
-            </form>
-        </div>
+        {% set locale = app.request.locale %}
+        <form method="post" action="{{ path('settings_locale', {locale: locale == 'fr' ? 'en' : 'fr'}) }}" class="locale-switcher">
+            <button type="submit" class="locale-btn" title="{{ locale == 'fr' ? 'English' : 'Français' }}">{{ locale == 'fr' ? 'EN' : 'FR' }}</button>
+        </form>
     </div>
 
 </nav>
