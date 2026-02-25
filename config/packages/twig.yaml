@@ -2,7 +2,6 @@ twig:
   default_path: '%kernel.project_dir%/templates'
   strict_variables: false
   globals:
-    local_folder_base: '%env(LOCAL_FOLDER_BASE)%'
     google_maps_api_key: '%env(GOOGLE_MAPS_API_KEY)%'
     appConfig: '@App\Service\AppConfig'
     targetRepo: '@App\Repository\TargetRepository'

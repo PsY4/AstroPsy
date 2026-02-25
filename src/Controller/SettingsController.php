@@ -9,9 +9,11 @@ use App\Service\AppConfig;
 use App\Service\StoragePathResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -99,6 +101,16 @@ class SettingsController extends AbstractController
             $config->setTheme($theme);
         }
         return new JsonResponse(['theme' => $config->getTheme()]);
+    }
+
+    #[Route('/settings/openfolder/install.cmd', name: 'openfolder_download', methods: ['GET'])]
+    public function openfolderDownload(): BinaryFileResponse
+    {
+        $path = $this->getParameter('kernel.project_dir') . '/openfolder/install.cmd';
+        $response = new BinaryFileResponse($path);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'install.cmd');
+
+        return $response;
     }
 
     #[Route('/settings/template/dry-run', name: 'settings_template_dry_run', methods: ['POST'])]

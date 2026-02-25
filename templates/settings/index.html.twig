@@ -8,7 +8,7 @@
     {# ============================================================
        SECTION : Dossier racine des sessions
     ============================================================ #}
-    <div class="col-12">
+    <div class="col-lg-6">
         <div class="card mb-4">
             <div class="card-header d-flex align-items-center gap-2">
                 <i class="fa fa-fw fa-hard-drive text-primary"></i>
@@ -59,6 +59,61 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    {# ============================================================
+       SECTION : OpenFolder Protocol
+    ============================================================ #}
+    <div class="col-lg-6" id="openfolder">
+        <div class="card mb-4" id="openfolder-card">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="fa fa-fw fa-folder-open text-primary"></i>
+                <h5 class="mb-0">{{ 'settings.openfolder.title'|trans }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">{{ 'settings.openfolder.description'|trans }}</p>
+
+                {# Installation guide — hidden when ack'd #}
+                <div id="openfolder-setup">
+                    <div class="alert alert-warning py-2 mb-3">
+                        <i class="fa fa-triangle-exclamation me-1"></i>
+                        <strong>{{ 'settings.openfolder.not_installed_title'|trans }}</strong>
+                        <div class="mt-1 small">{{ 'settings.openfolder.not_installed_body'|trans }}</div>
+                    </div>
+
+                    <ol class="small mb-3">
+                        <li>{{ 'settings.openfolder.step1'|trans }}
+                            <a href="{{ path('openfolder_download') }}" class="btn btn-sm btn-outline-primary ms-2">
+                                <i class="fa fa-download me-1"></i>{{ 'settings.openfolder.btn_download'|trans }}
+                            </a>
+                        </li>
+                        <li class="mt-2">{{ 'settings.openfolder.step2'|trans }}</li>
+                        <li class="mt-1">{{ 'settings.openfolder.step3'|trans }}</li>
+                        <li class="mt-1">{{ 'settings.openfolder.step4'|trans }}</li>
+                    </ol>
+                </div>
+
+                {# Success state — shown when ack'd #}
+                <div id="openfolder-done" class="d-none">
+                    <div class="alert alert-success py-2 mb-3">
+                        <i class="fa fa-check-circle me-1"></i>
+                        {{ 'settings.openfolder.ack_done'|trans }}
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 align-items-center">
+                    <a href="openfolder:/" class="btn btn-sm btn-outline-info">
+                        <i class="fa fa-play me-1"></i>{{ 'settings.openfolder.btn_test'|trans }}
+                    </a>
+                    <span class="text-muted small">{{ 'settings.openfolder.test_help'|trans }}</span>
+                </div>
+                <div class="mt-2" id="openfolder-ack-wrapper">
+                    <button type="button" id="openfolder-ack-btn" class="btn btn-sm btn-success">
+                        <i class="fa fa-check me-1"></i>{{ 'settings.openfolder.btn_ack'|trans }}
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -272,6 +327,39 @@
         </div>
     </div>
 
+<script>
+(function () {
+    var setup = document.getElementById('openfolder-setup');
+    var done = document.getElementById('openfolder-done');
+    var ackWrapper = document.getElementById('openfolder-ack-wrapper');
+    var ackBtn = document.getElementById('openfolder-ack-btn');
+
+    function updateState() {
+        if (localStorage.getItem('openfolder_installed') === '1') {
+            setup.classList.add('d-none');
+            done.classList.remove('d-none');
+            ackWrapper.classList.add('d-none');
+        } else {
+            setup.classList.remove('d-none');
+            done.classList.add('d-none');
+            ackWrapper.classList.remove('d-none');
+        }
+    }
+
+    ackBtn.addEventListener('click', function () {
+        localStorage.setItem('openfolder_installed', '1');
+        updateState();
+    });
+
+    // Allow re-showing setup by clicking the success alert
+    done.addEventListener('click', function () {
+        localStorage.removeItem('openfolder_installed');
+        updateState();
+    });
+
+    updateState();
+})();
+</script>
 <script>
 (function () {
     var input = document.getElementById('sessions-root-input');
