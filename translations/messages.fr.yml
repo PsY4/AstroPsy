@@ -149,11 +149,12 @@ parts:
 
 # ── Navigation ───────────────────────────────────────────────────────────────
 nav:
+  dashboard: "Tableau de bord"
   objects: "Objets"
   management: "Gestion"
   targets: "Cibles"
   sessions: "Sessions"
-  night_planner: "Night Planner"
+  night_planner: "Planificateur de nuit"
   settings: "Paramètres"
   authors: "Auteurs"
   observatories: "Observatoires"

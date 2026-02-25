@@ -149,6 +149,7 @@ parts:
 
 # ── Navigation ───────────────────────────────────────────────────────────────
 nav:
+  dashboard: "Dashboard"
   objects: "Objects"
   management: "Management"
   targets: "Targets"
