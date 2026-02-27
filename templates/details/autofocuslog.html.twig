@@ -88,62 +88,52 @@
             var minPos = Math.min.apply(null, positions);
             var maxPos = Math.max.apply(null, positions);
             var range = maxPos - minPos;
+            var pad = range * 0.05;
             var curvePoints = [];
 
-            // Try to reconstruct fitting from intersections or known equation
-            // For now generate a smooth interpolation through data
-            var leftPoints = points.filter(function(p) { return p.position <= calcPos; }).sort(function(a,b) { return a.position - b.position; });
-            var rightPoints = points.filter(function(p) { return p.position >= calcPos; }).sort(function(a,b) { return a.position - b.position; });
-
-            if (calcPos !== null && calcHfr !== null) {
-                // Simple V-curve: descending left, ascending right
-                for (var i = minPos - range * 0.05; i <= maxPos + range * 0.05; i += range / 100) {
-                    // Hyperbolic: HFR = sqrt(a*(pos - c)^2 + b^2)
-                    // Estimate from data
-                    var dist = Math.abs(i - calcPos);
-                    // Use quadratic fit approximation
-                    var hfr = calcHfr + (dist * dist) * 0.00001;
-                    curvePoints.push({ x: i, y: Math.min(hfr, Math.max.apply(null, points.map(function(p){return p.value;})) * 1.2) });
+            // Parse NINA/Hocus Focus hyperbolic formula:
+            // y = min(max(0, (C - x) / T), 1) * A/B1 * √((x - C)² + B1²)
+            //   + (1 - min(max(0, (C - x) / T), 1)) * A/B2 * √((x - C)² + B2²) + offset
+            function parseHyperbolic(str) {
+                if (!str || typeof str !== 'string') return null;
+                // Extract C from "(C - x)"
+                var mC = str.match(/\(([-\d.]+)\s*-\s*x\)/);
+                if (!mC) return null;
+                var c = parseFloat(mC[1]);
+                // Extract transition width T from "/ T), 1)"
+                var mT = str.match(/\/\s*([\d.]+)\),\s*1\)/);
+                var t = mT ? parseFloat(mT[1]) : 25;
+                // Extract A/B1 and A/B2 ratios
+                var ratios = [];
+                var re = /([-\d.]+)\/([-\d.]+)\s*\*/g;
+                var match;
+                while ((match = re.exec(str)) !== null) {
+                    ratios.push({ a: parseFloat(match[1]), b: parseFloat(match[2]) });
                 }
+                if (ratios.length < 2) return null;
+                // Extract offset from "+ offset" at end
+                var mOff = str.match(/\+\s*([-\d.]+)\s*$/);
+                var offset = mOff ? parseFloat(mOff[1]) : 0;
+                return { c: c, t: t, a: ratios[0].a, b1: ratios[0].b, b2: ratios[1].b, offset: offset };
             }
 
-            // If we have actual fitting equations, try to use them
-            if (fittingsData) {
-                var leftEq = null;
-                var rightEq = null;
+            function evalHyperbolic(p, x) {
+                var w = Math.min(Math.max(0, (p.c - x) / p.t), 1);
+                var left = (p.a / p.b1) * Math.sqrt(Math.pow(x - p.c, 2) + Math.pow(p.b1, 2));
+                var right = (p.a / p.b2) * Math.sqrt(Math.pow(x - p.c, 2) + Math.pow(p.b2, 2));
+                return w * left + (1 - w) * right + p.offset;
+            }
 
-                // Hocus Focus / NINA format: fittings may contain left/right equations
-                if (typeof fittingsData === 'object') {
-                    if (fittingsData.LeftTrend || fittingsData.Left) {
-                        leftEq = fittingsData.LeftTrend || fittingsData.Left;
-                    }
-                    if (fittingsData.RightTrend || fittingsData.Right) {
-                        rightEq = fittingsData.RightTrend || fittingsData.Right;
-                    }
-                    // Hyperbolic fitting: y = sqrt(a*(x-c)^2 + b^2)
-                    if (fittingsData.A !== undefined && fittingsData.B !== undefined && fittingsData.C !== undefined) {
-                        curvePoints = [];
-                        var a = fittingsData.A, b = fittingsData.B, c = fittingsData.C;
-                        for (var x = minPos - range * 0.05; x <= maxPos + range * 0.05; x += range / 200) {
-                            curvePoints.push({ x: x, y: Math.sqrt(a * Math.pow(x - c, 2) + b * b) });
-                        }
-                    }
-                    // Quadratic: y = a*x^2 + b*x + c
-                    if (fittingsData.Quadratic) {
-                        var q = fittingsData.Quadratic;
-                        if (q.A !== undefined) {
-                            curvePoints = [];
-                            for (var x = minPos - range * 0.05; x <= maxPos + range * 0.05; x += range / 200) {
-                                curvePoints.push({ x: x, y: q.A * x * x + q.B * x + q.C });
-                            }
-                        }
-                    }
+            var hyp = parseHyperbolic(fittingsData.Hyperbolic || '');
+            if (hyp) {
+                for (var x = minPos - pad; x <= maxPos + pad; x += range / 200) {
+                    curvePoints.push({ x: x, y: evalHyperbolic(hyp, x) });
                 }
             }
 
             if (curvePoints.length > 0) {
                 datasets.push({
-                    label: 'Fitting',
+                    label: 'Hyperbolic',
                     data: curvePoints,
                     borderColor: 'rgba(255, 159, 64, 0.8)',
                     borderWidth: 2,

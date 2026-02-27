@@ -1,0 +1,290 @@
+{# ── Phase Planification : Altitude chart + Weather timeline ── #}
+
+{% if target.ra != "" %}
+<div class="row mb-3">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <h5 class="mb-0">{{ 'session.transit_title'|trans }}</h5>
+                {% if nightDates|length > 1 %}
+                <select id="transitDaySelector" class="form-select form-select-sm w-auto" style="font-size:.78rem">
+                    {% for d in nightDates %}
+                        <option value="{{ d }}">{{ d }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
+            <div class="card-body text-center pt-2">
+                <canvas id="altChart"></canvas>
+                <div id="meta" style="width: 100%; text-align: center; font-size:.72rem">—</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <h5 class="mb-0">{{ 'session.weather_title'|trans }}</h5>
+                <select id="weatherDaySelector" class="d-none form-select form-select-sm w-auto"></select>
+            </div>
+            <div class="card-body">
+                <canvas id="weatherChart" height="320"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <h5 class="mb-0">{{ 'session.weather_title'|trans }}</h5>
+                <select id="weatherDaySelector" class="d-none form-select form-select-sm w-auto"></select>
+            </div>
+            <div class="card-body">
+                <canvas id="weatherChart" height="320"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function(event) {
+    (() => {
+        var rawSamples = [
+            {% for e in lights %}
+            {{ e.rawHeader|json_encode|raw }},
+            {% endfor %}
+        ];
+
+        var toPoint = function(h) {
+            if (!h) return null;
+            var t = h['DATE-OBS'] || h['DATE-LOC'] || h['DATE-AVG'];
+            if (!t) return null;
+            return {
+                t: t,
+                cloud: (h.CLOUDCVR !== undefined ? h.CLOUDCVR : null),
+                dew: (h.DEWPOINT !== undefined ? h.DEWPOINT : null),
+                hum: (h.HUMIDITY !== undefined ? h.HUMIDITY : null),
+                press: (h.PRESSURE !== undefined ? h.PRESSURE : null),
+                amb: (h.AMBTEMP !== undefined ? h.AMBTEMP : null),
+                wdir: (h.WINDDIR !== undefined ? h.WINDDIR : null),
+                wgust: (h.WINDGUST !== undefined ? h.WINDGUST : null),
+                wspd: (h.WINDSPD !== undefined ? h.WINDSPD : null),
+                airmass: (h.AIRMASS !== undefined ? h.AIRMASS : null)
+            };
+        };
+
+        var weather = rawSamples.map(function(h) {
+            try {
+                return toPoint(typeof h === 'string' ? JSON.parse(h) : h);
+            } catch(e) {
+                return null;
+            }
+        })
+        .filter(Boolean)
+        .sort(function(a, b) { return new Date(a.t) - new Date(b.t); });
+
+        if (!weather.length) return;
+
+        var toEpochMs = function(s) {
+            if (!s) return null;
+            var msSafe = s.replace(/(\.\d{3})\d+/, '$1');
+            return new Date(msSafe).getTime();
+        };
+
+        var dayOf = function(isoStr) { return isoStr.substring(0, 10); };
+
+        var asXY = function(key, src) {
+            return (src || weather)
+                .filter(function(p) { return p[key] !== null && p[key] !== undefined; })
+                .map(function(p) { return { x: toEpochMs(p.t), y: p[key] }; });
+        };
+
+        var buildExpPoints = function(day) {
+            var localMap = {};
+            var localNextY = 0.2;
+            var pts = rawSamples.map(function(h) {
+                var H;
+                try { H = (typeof h === 'string') ? JSON.parse(h) : h; } catch(e) { return null; }
+                var t = H['DATE-OBS'] || H['DATE-LOC'] || H['DATE-AVG'];
+                if (!t) return null;
+                if (day && dayOf(t) !== day) return null;
+                return {
+                    x: toEpochMs(t),
+                    y: 1,
+                    _exp: H.EXPOSURE || H.EXPTIME,
+                    _filter: H.FILTER || null,
+                    _airmass: H.AIRMASS || null
+                };
+            }).filter(Boolean);
+            pts.forEach(function(p) {
+                var f = (p._filter || 'Unknown').toUpperCase();
+                if (!(f in localMap)) {
+                    localMap[f] = localNextY;
+                    localNextY += 0.2;
+                }
+                p.y = localMap[f];
+            });
+            return pts;
+        };
+
+        var allExpPoints = buildExpPoints(null);
+        var days = [...new Set(weather.map(function(p) { return dayOf(p.t); }))].sort();
+        var isMultiDay = days.length > 1;
+
+        var ctx = document.getElementById('weatherChart').getContext('2d');
+        var weatherChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: '{{ "session.weather_ambient"|trans }}',
+                        data: asXY('amb'),
+                        yAxisID: 'yTemp',
+                        tension: 0.2, borderWidth: 2.5, pointRadius: 0,
+                        borderColor: '#256f77', fill: false
+                    },
+                    {
+                        label: '{{ "session.weather_dewpoint"|trans }}',
+                        data: asXY('dew'),
+                        yAxisID: 'yTemp',
+                        borderDash: [4, 3], tension: 0.2, pointRadius: 0,
+                        borderColor: '#9a0303'
+                    },
+                    {
+                        label: '{{ "session.weather_humidity"|trans }}',
+                        data: asXY('hum'),
+                        yAxisID: 'yPct',
+                        tension: 0.2, pointRadius: 0, borderColor: '#5693e8'
+                    },
+                    {
+                        label: '{{ "session.weather_cloud"|trans }}',
+                        data: asXY('cloud'),
+                        yAxisID: 'yPct',
+                        borderDash: [2, 2], tension: 0.2, pointRadius: 0,
+                        borderColor: '#1973ea'
+                    },
+                    {
+                        label: '{{ "session.weather_pressure"|trans }}',
+                        data: asXY('press'),
+                        yAxisID: 'yPress',
+                        tension: 0.2, pointRadius: 0, borderColor: '#b5b5b5'
+                    },
+                    {
+                        label: '{{ "session.weather_wind"|trans }}',
+                        data: asXY('wspd'),
+                        yAxisID: 'yWind',
+                        tension: 0.2, pointRadius: 0, borderColor: '#ffd879'
+                    },
+                    {
+                        label: '{{ "session.weather_gust"|trans }}',
+                        data: asXY('wgust'),
+                        yAxisID: 'yWind',
+                        borderDash: [6, 3], tension: 0.2, pointRadius: 0,
+                        borderColor: '#eaa819'
+                    },
+                    {
+                        label: '{{ "session.weather_airmass"|trans }}',
+                        data: asXY('airmass'),
+                        yAxisID: 'yAirmass',
+                        tension: 0.2, pointRadius: 0, borderColor: '#ffffff'
+                    },
+                    {
+                        label: '{{ "session.weather_light_frames"|trans }}',
+                        type: 'scatter',
+                        data: allExpPoints,
+                        yAxisID: 'yMarks',
+                        showLine: false, pointRadius: 4, pointHoverRadius: 7,
+                        pointBackgroundColor: '#ffffff', pointBorderColor: '#4f46e5',
+                        pointBorderWidth: 2, hitRadius: 10, order: 0,
+                        grid: { drawOnChartArea: false }, clip: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'nearest', intersect: false },
+                parsing: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        min: toEpochMs(weather[0].t),
+                        max: toEpochMs(weather[weather.length - 1].t),
+                        time: {
+                            tooltipFormat: "yyyy-MM-dd HH:mm:ss",
+                            displayFormats: { minute: 'HH:mm', hour: 'HH:mm' }
+                        },
+                        title: { display: false }
+                    },
+                    yTemp:    { position: 'left',  display: false, title: { display: true, text: '°C' }, grid: { drawOnChartArea: true } },
+                    yPct:     { position: 'right', display: false, title: { display: true, text: '% (Humidity / Clouds)' }, min: 0, max: 100, grid: { drawOnChartArea: false } },
+                    yPress:   { position: 'left',  display: false, title: { display: true, text: 'hPa' }, grid: { drawOnChartArea: false }, offset: true },
+                    yWind:    { position: 'right', display: false, title: { display: true, text: 'm/s (Wind/Gust)' }, grid: { drawOnChartArea: false }, offset: true },
+                    yAirmass: { position: 'right', display: false, title: { display: true, text: '' }, grid: { drawOnChartArea: false }, offset: true },
+                    yMarks:   { position: 'right', display: false, min: 0, max: 1, grid: { drawOnChartArea: false } }
+                },
+                plugins: {
+                    legend: { display: true },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                var key = ctx.dataset.label || '';
+                                var v = ctx.parsed.y;
+                                if (key === '{{ "session.weather_light_frames"|trans }}') {
+                                    var d = ctx.raw;
+                                    var tt = new Date(ctx.parsed.x).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+                                    var parts = [
+                                        'Light @ ' + tt,
+                                        d._exp ? d._exp + 's' : null,
+                                        d._filter ? 'Filter: ' + d._filter : null,
+                                        d._airmass ? 'Airmass: ' + d._airmass.toFixed(2) : null
+                                    ].filter(Boolean);
+                                    return parts.join(' \u2022 ');
+                                }
+                                if (key.includes('Pressure') || key.includes('Pression')) return key + ': ' + v.toFixed(1) + ' hPa';
+                                if (key.includes('Wind') || key.includes('Gust') || key.includes('Vent') || key.includes('Rafales')) return key + ': ' + v.toFixed(2) + ' m/s';
+                                if (key.includes('%')) return key + ': ' + v.toFixed(0) + ' %';
+                                return key + ': ' + v.toFixed(2) + ' °C';
+                            }
+                        }
+                    }
+                },
+                elements: { line: { borderWidth: 2 } }
+            }
+        });
+
+        if (isMultiDay) {
+            var selector = document.getElementById('weatherDaySelector');
+            selector.classList.remove('d-none');
+            days.forEach(function(day) {
+                var opt = document.createElement('option');
+                opt.value = day;
+                opt.textContent = day;
+                selector.appendChild(opt);
+            });
+            var applyDay = function(day) {
+                var w = day ? weather.filter(function(p) { return dayOf(p.t) === day; }) : weather;
+                var ep = buildExpPoints(day || null);
+                weatherChart.data.datasets[0].data = asXY('amb', w);
+                weatherChart.data.datasets[1].data = asXY('dew', w);
+                weatherChart.data.datasets[2].data = asXY('hum', w);
+                weatherChart.data.datasets[3].data = asXY('cloud', w);
+                weatherChart.data.datasets[4].data = asXY('press', w);
+                weatherChart.data.datasets[5].data = asXY('wspd', w);
+                weatherChart.data.datasets[6].data = asXY('wgust', w);
+                weatherChart.data.datasets[7].data = asXY('airmass', w);
+                weatherChart.data.datasets[8].data = ep;
+                if (w.length) {
+                    weatherChart.options.scales.x.min = toEpochMs(w[0].t);
+                    weatherChart.options.scales.x.max = toEpochMs(w[w.length - 1].t);
+                }
+                weatherChart.update();
+            };
+            selector.addEventListener('change', function() { applyDay(selector.value); });
+            applyDay(days[0]);
+        }
+    })();
+});
+</script>

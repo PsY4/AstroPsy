@@ -1,32 +1,6 @@
 {% set pageTitle = target.name ~ " - " ~ session.startedAt|date("Y-m-d") %}
-{% set previousCrumb = "<li class='active'><a class='f-s-14 f-w-400' href='"~path('browse_target', {'id': target.id})~"'>"~target.name~"</a></li>" %}
+{% set hideBreadcrumb = true %}
 {% extends 'base.html.twig' %}
-{% block breadbuttons %}
-    <div class="input-group input-group-sm fa-pull-right" style="width: auto">
-        <button class="btn btn-primary icon-btn b-r-left" id="btn-toggle-overview" title="Toggle overview">
-            <i class="ti ti-layout-sidebar-left-collapse"></i>
-        </button>
-        <button class="btn btn-primary icon-btn" data-bs-target="#editModal"
-                data-bs-toggle="modal"
-                type="button"><i class="ti ti-edit"></i>
-        </button>
-        <a href="openfolder:{{ session.path|default('') }}"
-           class="btn btn-primary icon-btn js-openfolder">
-            <i class="fa primary fa-folder-open"></i>
-        </a>
-        <button type="button" onclick="openRefreshModal({{ session.id }})"
-                title="{{ 'session.refresh.title'|trans }}"
-                class="btn btn-primary icon-btn">
-            <i class="fa primary fa-refresh"></i>
-        </button>
-        <form method="post" action="{{ path('delete_session', {'id': session.id}) }}" style="display:inline" onsubmit="return confirm('{{ 'session.confirm_delete'|trans }}')"
-            <input type="hidden" name="_token" value="{{ csrf_token('delete_session_' ~ session.id) }}">
-            <button type="submit" class="btn btn-outline-primary icon-btn b-r-right" title="Delete session">
-                <i class="fa primary fa-trash"></i>
-            </button>
-        </form>
-    </div>
-{% endblock %}
 {% block body %}
     <div id="fs-scan-container"
          data-scan-url="{{ path('api_scan_files', {sessionId: session.id}) }}"
@@ -56,6 +30,7 @@
     </div>
     {% endif %}
     {% set lights = session.exposures|filter(e => e.type == "LIGHT") %}
+
     {# ############## MODAL - EDIT ############## #}
     {% form_theme editForm 'bootstrap_4_layout.html.twig' %}
     <div aria-hidden="true" aria-labelledby="editModalLabel" class="modal fade"
@@ -82,277 +57,324 @@
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-xxl-3 order-xxl-1" id="session-overview-col">
-            <div class="card">
-                <div class="card-body">
-                    <div class="profile-container">
 
-                        <ul class="avatar-group float-end breadcrumb-start ">
+    {# ############## HERO CARD ############## #}
+    {# ── Precompute stats ── #}
+    {% set filters = [] %}
+    {% set hasFilters = false %}
+    {% set totalIntegrationS = 0 %}
+    {% set durations = [] %}
+    {% for e in lights %}
+        {% set totalIntegrationS = totalIntegrationS + e.exposureS %}
+        {% if e.exposureS not in durations %}
+            {% set durations = durations|merge([e.exposureS]) %}
+        {% endif %}
+        {% if e.filterName not in filters %}
+            {% set filters = filters|merge([e.filterName]) %}
+            {% if e.filterName is not null %}
+                {% set hasFilters = true %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    {% if hasFilters %}
+        {% set filterOrder = ['L','R','G','B','S','H','O'] %}
+        {% set filtersSorted = [] %}
+        {% for letter in filterOrder %}
+            {% for f in filters %}
+                {% if f|first|upper == letter %}
+                    {% set filtersSorted = filtersSorted|merge([f]) %}
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+        {% for f in filters %}
+            {% if f|first|upper not in filterOrder %}
+                {% set filtersSorted = filtersSorted|merge([f]) %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    {% set totalH = (totalIntegrationS / 3600)|round(0, 'floor') %}
+    {% set totalM = ((totalIntegrationS % 3600) / 60)|round(0, 'floor') %}
+    {% set masters_list = session.masters %}
+    {% set exports_list = session.exports %}
+
+    {# Compute distinct observation nights from LIGHT exposures.
+       Use "astronomical night" grouping: subtract 12h so that images after midnight
+       belong to the previous evening's date. #}
+    {% set nightDates = [] %}
+    {% for e in lights %}
+        {% if e.dateTaken %}
+            {% set d = e.dateTaken|date_modify("-12 hours")|date("Y-m-d") %}
+            {% if d not in nightDates %}
+                {% set nightDates = nightDates|merge([d]) %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    {% set nightDates = nightDates|sort %}
+
+    <div class="card mb-3" id="session-hero">
+        <div class="card-header d-flex align-items-center py-2 px-3">
+            <h5 class="mb-0 f-w-600">{{ pageTitle }}</h5>
+            <div class="input-group input-group-sm ms-auto" style="width: auto">
+                {% if target.ra != "" %}
+                    <a href="{{ target.telescopiusUrl }}" target="_blank"
+                       class="btn btn-primary icon-btn b-r-left" title="Telescopius">
+                        <i class="fa primary fa-crosshairs"></i>
+                    </a>
+                {% endif %}
+                {% if session.astrobin != "" %}
+                    <a href="{{ session.astrobin }}" target="_blank"
+                       class="btn btn-primary icon-btn{{ target.ra == '' ? ' b-r-left' : '' }}" title="Astrobin">
+                        <i class="fa primary fa-star"></i>
+                    </a>
+                {% endif %}
+                <button class="btn btn-primary icon-btn" id="btn-toggle-hero" title="Toggle hero">
+                    <i class="ti ti-layout-sidebar-left-collapse"></i>
+                </button>
+                <button class="btn btn-primary icon-btn" data-bs-target="#editModal"
+                        data-bs-toggle="modal"
+                        type="button"><i class="ti ti-edit"></i>
+                </button>
+                <a href="openfolder:{{ session.path|default('') }}"
+                   class="btn btn-primary icon-btn js-openfolder">
+                    <i class="fa primary fa-folder-open"></i>
+                </a>
+                <button type="button" onclick="openRefreshModal({{ session.id }})"
+                        title="{{ 'session.refresh.title'|trans }}"
+                        class="btn btn-primary icon-btn">
+                    <i class="fa primary fa-refresh"></i>
+                </button>
+                <form method="post" action="{{ path('delete_session', {'id': session.id}) }}" style="display:inline" onsubmit="return confirm('{{ 'session.confirm_delete'|trans }}')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_session_' ~ session.id) }}">
+                    <button type="submit" class="btn btn-outline-primary icon-btn b-r-right" title="Delete session">
+                        <i class="fa primary fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="card-body py-3">
+            <div class="row g-4">
+                {# ── Col 1 : Identity ── #}
+                <div class="col-lg-3 d-flex flex-column hero-identity">
+                    <div class="d-flex align-items-center mb-3">
+                        <ul class="avatar-group breadcrumb-start mb-0 me-3">
                             {% for author in session.authors %}
-                                <li class="h-30 w-30 d-flex-center b-r-50 position-relative" data-bs-title="{{ author.name }}" data-bs-toggle="tooltip">
+                                <li class="h-35 w-35 d-flex-center b-r-50 position-relative" data-bs-title="{{ author.name }}" data-bs-toggle="tooltip">
                                     <img alt="{{ author.name }}" class="img-fluid b-r-50 overflow-hidden" src="{{ author.logo }}">
                                 </li>
                             {% endfor %}
                         </ul>
-                        <div class="person-details" style="margin-top: 0">
-                            <h5 class="f-w-600">{{ target.name }}</h5>
+                        <div>
+                            <div class="f-w-600 f-s-16">
+                                {% if nightDates|length > 1 %}
+                                    {{ nightDates|first }} → {{ nightDates|last }}
+                                    <span class="text-muted" style="font-size:.7rem">({{ nightDates|length }} {{ 'session.nights'|trans }})</span>
+                                {% else %}
+                                    {{ session.startedAt|date("F jS Y") }}
+                                {% endif %}
+                            </div>
                             {% if session.setup %}
-                                <h6 class="text-secondary mb-1"><i class="fa fa-fw fa-binoculars"></i> {{ session.setup.name }}</h6>
+                                <div class="text-secondary f-s-13"><i class="fa fa-fw fa-binoculars"></i> {{ session.setup.name }}</div>
                             {% endif %}
-                            <h5 class="f-w-600 text-light-primary bg-transparent">{{ session.startedAt|date(("F jS Y")) }}</h5>
-                            {% if target.ra != "" %}
-                                <canvas id="altChart"></canvas>
-                                <div id="meta" style="width: 100%; text-align: center">—</div>
-                                <div class="my-2">
-                                    <a href="{{ target.telescopiusUrl }}" target="_blank" class="btn btn-primary b-r-22" id="followButton" type="button">
-                                        <i class="fa fa-fw fa-solid fa-globe"></i>
-                                        <strong>Telescopius™</strong>
-                                    </a>
-                                </div>
+                            {% if session.observatory %}
+                                <div class="text-secondary f-s-13"><i class="fa fa-fw fa-map-marker-alt"></i> {{ session.observatory.name }}</div>
                             {% endif %}
                         </div>
-                        <div class="person-details mt-2">
-                            <div class="details mt-0">
-                                {% set lights = session.exposures|filter(e => e.type == "LIGHT") %}
-                                <div>
-                                    <h4 class="text-primary">{{ lights|length }}</h4>
-                                    <p class="text-secondary">{{ 'session.stat_lights'|trans }}</p>
-                                </div>
-                                {% set filters = [] %}
-                                {% set hasFilters = false %}
-                                {% for e in session.exposures|filter(e => e.type == "LIGHT") %}
-                                    {% if e.filterName not in filters %}
-                                        {% set filters = filters|merge([e.filterName]) %}
-                                        {% if e.filterName is not null %}
-                                            {% set hasFilters = true %}
-                                        {% endif %}
-                                    {% endif %}
-                                {% endfor %}
-                                {% if hasFilters %}
-                                    {# Tri LRGBSHO : on reconstruit filters dans l'ordre de référence #}
-                                    {% set filterOrder = ['L','R','G','B','S','H','O'] %}
-                                    {% set filtersSorted = [] %}
-                                    {% for letter in filterOrder %}
-                                        {% for f in filters %}
-                                            {% if f|first|upper == letter %}
-                                                {% set filtersSorted = filtersSorted|merge([f]) %}
-                                            {% endif %}
-                                        {% endfor %}
-                                    {% endfor %}
-                                    {% for f in filters %}
-                                        {% if f|first|upper not in filterOrder %}
-                                            {% set filtersSorted = filtersSorted|merge([f]) %}
-                                        {% endif %}
-                                    {% endfor %}
-                                    <div>
-                                        <h4 class="text-primary">{{ filtersSorted|default(["N/A"])|map(f => f|first)|join('')|raw }}</h4>
-                                        <p class="text-secondary">{{ 'session.stat_filters'|trans }}</p>
-                                    </div>
-                                {% endif %}
-                                {% set durations = [] %}
-                                {% for e in session.exposures|filter(e => e.type == "LIGHT") %}
-                                    {% if e.exposureS not in durations %}
-                                        {% set durations = durations|merge([e.exposureS]) %}
-                                    {% endif %}
-                                {% endfor %}
-                                <div>
-                                    <h4 class="text-primary">{{ durations|default(["??"])|join('s,') }}s</h4>
-                                    <p class="text-secondary">{{ 'session.stat_duration'|trans }}</p>
-                                </div>
-                            </div>
-                            <div class="details mt-0">
-                                {% set masters = session.masters %}
-                                <div>
-                                    <h4 class="text-primary">{{ masters|length}}</h4>
-                                    <p class="text-secondary">{{ 'session.stat_masters'|trans }}</p>
-                                </div>
-                                {% set exports = session.exports %}
-                                {%  if exports|length >  0%}
-                                    <div>
-                                        <h4 class="text-primary">{{ exports|length}}</h4>
-                                        <p class="text-secondary">{{ 'session.stat_exports'|trans }}</p>
-                                    </div>
-                                {% endif %}
+                    </div>
 
-                            </div>
-                            <div class="details mt-0 mb-2">
-                                {% if session.astrobin != "" %}
-                                    <div>
-                                        <h4 class="text-primary">{{ session.astrobinViews }}</h4>
-                                        <p class="text-secondary">{{ 'session.stat_views'|trans }}</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-primary">{{ session.astrobinLikes }}</h4>
-                                        <p class="text-secondary">{{ 'session.stat_likes'|trans }}</p>
-                                    </div>
-                                    {% if session.astrobinBookmarks > 0  %}
-                                        <div>
-                                            <h4 class="text-primary">{{ session.astrobinBookmarks }}</h4>
-                                            <p class="text-secondary">{{ 'session.stat_bookmarks'|trans }}</p>
-                                        </div>
-                                    {% endif %}
-                                    {% if session.astrobinComments > 0  %}
-                                        <div>
-                                            <h4 class="text-primary">{{ session.astrobinComments }}</h4>
-                                            <p class="text-secondary">{{ 'session.stat_comments'|trans }}</p>
-                                        </div>
-                                    {% endif %}
-                                {% endif %}
+                    {# Astrobin stats (inline) #}
+                    {% if session.astrobin != "" %}
+                    <div class="hero-astrobin-inline mb-2">
+                        <i class="fa fa-fw fa-eye"></i> {{ session.astrobinViews }}
+                        <i class="fa fa-fw fa-heart ms-2"></i> {{ session.astrobinLikes }}
+                        {% if session.astrobinBookmarks > 0 %}
+                            <i class="fa fa-fw fa-bookmark ms-2"></i> {{ session.astrobinBookmarks }}
+                        {% endif %}
+                        {% if session.astrobinComments > 0 %}
+                            <i class="fa fa-fw fa-comment ms-2"></i> {{ session.astrobinComments }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
 
-                            </div>
-                            {% if session.astrobin != "" %}
-                            <a href="{{ session.astrobin }}" target="_blank" class="btn btn-primary b-r-22" id="followButton" type="button">
-                                <i class="fa fa-fw fa-solid fa-globe"></i>
-                                <strong>Astrobin™</strong>
+                    {# Notes (collapsible) #}
+                    <div class="mt-auto">
+                        <div class="d-flex align-items-center mb-1">
+                            <a class="text-decoration-none small fw-semibold" data-bs-toggle="collapse" href="#hero-notes-collapse" role="button" aria-expanded="false">
+                                <i class="fa fa-fw fa-sticky-note me-1"></i>{{ 'session.notes_title'|trans }}
+                                <i class="ti ti-chevron-down ms-1" style="font-size: .7rem"></i>
                             </a>
+                            <button class="btn btn-sm btn-outline-secondary p-0 px-1 ms-2" data-bs-toggle="modal" data-bs-target="#notesModal" title="{{ 'session.notes_title'|trans }}">
+                                <i class="ti ti-edit" style="font-size: .7rem"></i>
+                            </button>
+                        </div>
+                        <div class="collapse hero-notes-body" id="hero-notes-collapse">
+                            {% if session.notes %}
+                                <div id="notes-viewer"></div>
+                            {% else %}
+                                <p class="text-muted fst-italic small mb-0" id="notes-empty-msg">{{ 'session.notes_placeholder'|trans }}</p>
                             {% endif %}
-                            {% include 'browse/session/filters_repartition.html.twig' %}
                         </div>
                     </div>
                 </div>
-                <div class="card-body session-content">
-                    <ul class="nav nav-tabs tab-light-primary" id="Light" role="tablist">
-                        {% if exposures|filter(e => e.type == "LIGHT")|length %}
-                        <li class="nav-item" role="presentation">
-                            <button aria-controls="description-tab-pane" aria-selected="true" class="nav-link active" data-bs-target="#exposures-tab-pane" data-bs-toggle="tab" id="exposures-tab" role="tab" type="button">
-                                {{ 'session.tab_lights'|trans }}
-                            </button>
-                        </li>
-                        {% endif %}
-                        {% if exposures|filter(e => e.type != "LIGHT")|length %}
-                        <li class="nav-item" role="presentation">
-                            <button aria-controls="description-tab-pane" aria-selected="true" class="nav-link" data-bs-target="#dofs-tab-pane" data-bs-toggle="tab" id="dofs-tab" role="tab" type="button">
-                                {{ 'session.tab_dofs'|trans }}
-                            </button>
-                        </li>
-                        {% endif %}
-                        {% if (session.phd2Calibrations|length>0) or (session.phd2Guidings|length>0) or (session.wbppLogs|length>0) or (session.autofocusLogs|length>0) %}
-                        <li class="nav-item" role="presentation">
-                            <button aria-controls="howowrk-tab-pane" aria-selected="false" class="nav-link" data-bs-target="#logs-tab-pane" data-bs-toggle="tab" id="logs-tab" role="tab" type="button" tabindex="-1">
-                                {{ 'session.tab_logs'|trans }}
-                            </button>
-                        </li>
-                        {% endif %}
-                        {% if masters|length %}
-                        <li class="nav-item" role="presentation">
-                            <button aria-controls="drawbacks-tab-pane" aria-selected="false" class="nav-link" data-bs-target="#master-tab-pane" data-bs-toggle="tab" id="master-tab" role="tab" type="button" tabindex="-1">
-                                {{ 'session.tab_masters'|trans }}
-                            </button>
-                        </li>
-                        {% endif %}
-                        {% if exports|length %}
-                        <li class="nav-item" role="presentation">
-                            <button aria-controls="drawbacks-tab-pane" aria-selected="false" class="nav-link" data-bs-target="#exports-tab-pane" data-bs-toggle="tab" id="exports-tab" role="tab" type="button" tabindex="-1">
-                                {{ 'session.tab_exports'|trans }}
-                            </button>
-                        </li>
-                        {% endif %}
 
-                    </ul>
-                    <div class="tab-content" id="LightContent">
-                        {% if exposures|filter(e => e.type == "LIGHT")|length %}
-                        <div aria-labelledby="exposures-tab" class="tab-pane fade show active exposures" id="exposures-tab-pane" role="tabpanel" tabindex="0">
-                            {% for e in exposures|filter(e => e.type == "LIGHT") %}
-                                {% include "browse/session/unit_exposure.html.twig" with {"e": e} %}
-                            {% endfor %}
+                {# ── Col 2 : Stats ── #}
+                <div class="col-lg-5">
+                    <div class="hero-stats-grid">
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">{{ lights|length }}</div>
+                            <div class="hero-stat-label">{{ 'session.stat_lights'|trans }}</div>
+                        </div>
+                        {% if hasFilters %}
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">{{ filtersSorted|default(["N/A"])|map(f => f|first)|join('') }}</div>
+                            <div class="hero-stat-label">{{ 'session.stat_filters'|trans }}</div>
                         </div>
                         {% endif %}
-                        {% if exposures|filter(e => e.type != "LIGHT")|length %}
-                        <div aria-labelledby="exposures-tab" class="tab-pane fade exposures" id="dofs-tab-pane" role="tabpanel" tabindex="0">
-                            {% for e in exposures|filter(e => e.type != "LIGHT") %}
-                                {% include "browse/session/unit_exposure.html.twig" with {"e": e} %}
-                            {% endfor %}
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">{{ durations|default(["??"])|join('/',) }}s</div>
+                            <div class="hero-stat-label">{{ 'session.stat_duration'|trans }}</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">{{ totalH > 0 ? totalH ~ 'h' : '' }}{{ totalM }}m</div>
+                            <div class="hero-stat-label">{{ 'session.stat_integration'|trans }}</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">{{ masters_list|length }}</div>
+                            <div class="hero-stat-label">{{ 'session.stat_masters'|trans }}</div>
+                        </div>
+                        {% if exports_list|length > 0 %}
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">{{ exports_list|length }}</div>
+                            <div class="hero-stat-label">{{ 'session.stat_exports'|trans }}</div>
                         </div>
                         {% endif %}
-
-                        {% if (session.phd2Calibrations|length) + (session.phd2Guidings|length) + (session.wbppLogs|length) + (session.autofocusLogs|length) %}
-                        <div aria-labelledby="logs-tab" class="tab-pane fade phd2logs" id="logs-tab-pane" role="tabpanel" tabindex="0">
-                            {% for e in session.phd2Calibrations %}
-                                {% include "browse/session/unit_phd2log_calib.html.twig" with {"e": e} %}
-                            {% endfor %}
-                            {% for e in session.phd2Guidings %}
-                                {% include "browse/session/unit_phd2log_guide.html.twig" with {"e": e} %}
-                            {% endfor %}
-                            {% for e in session.wbppLogs %}
-                                {% include "browse/session/unit_wbpplog.html.twig" with {"e": e} %}
-                            {% endfor %}
-                            {% for e in session.autofocusLogs %}
-                                {% include "browse/session/unit_autofocuslog.html.twig" with {"e": e} %}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                        {% if masters|length %}
-                        <div aria-labelledby="master-tab" class="tab-pane fade masters" id="master-tab-pane" role="tabpanel" tabindex="0">
-                            {% for m in masters %}
-                                {% include "browse/session/unit_master.html.twig" with {"e": e} %}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                        {% if exports|length %}
-                        <div aria-labelledby="exports-tab" class="tab-pane fade exports" id="exports-tab-pane" role="tabpanel" tabindex="0">
-                            {% for e in exports %}
-                                {% include "browse/session/unit_export.html.twig" with {"e": e} %}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
                     </div>
-                </div>
-            </div>
 
-            {# ---- NOTES ---- #}
-            <div class="card mb-2" id="notes-card">
-                <div class="card-header d-flex justify-content-between align-items-center py-2">
-                    <h6 class="mb-0"><i class="fa fa-fw fa-sticky-note me-1"></i>{{ 'session.notes_title'|trans }}</h6>
-                    <button class="btn btn-sm btn-outline-secondary p-1" data-bs-toggle="modal" data-bs-target="#notesModal" title="{{ 'session.notes_title'|trans }}">
-                        <i class="ti ti-edit"></i>
-                    </button>
-                </div>
-                <div class="card-body p-2" id="notes-card-body">
-                    {% if session.notes %}
-                        <div id="notes-viewer"></div>
-                    {% else %}
-                        <p class="text-muted fst-italic small mb-0" id="notes-empty-msg">{{ 'session.notes_placeholder'|trans }}</p>
+                    {# ── Phase tabs (inside hero) ── #}
+                    {% set hasAcquisition = (exposures|length > 0) or (session.phd2Calibrations|length > 0) or (session.phd2Guidings|length > 0) or (session.autofocusLogs|length > 0) %}
+                    {% set hasTraitement = (session.wbppLogs|length > 0) or (masters|length > 0) or (exports|length > 0) %}
+                    <div class="hero-stats-grid mt-2" id="session-phase-tabs" role="tablist">
+                        <button class="btn btn-sm btn-outline-primary phase-tab-btn" data-bs-target="#phase-planification" data-bs-toggle="tab" role="tab" type="button" id="phase-planification-tab">
+                            <i class="fa fa-fw fa-cloud-moon me-1"></i>{{ 'session.phase_planification'|trans }}
+                        </button>
+                        {% if hasAcquisition %}
+                        <button class="btn btn-sm btn-outline-primary phase-tab-btn active" data-bs-target="#phase-acquisition" data-bs-toggle="tab" role="tab" type="button" id="phase-acquisition-tab">
+                            <i class="fa fa-fw fa-camera me-1"></i>{{ 'session.phase_acquisition'|trans }}
+                        </button>
+                        {% endif %}
+                        {% if hasTraitement %}
+                        <button class="btn btn-sm btn-outline-primary phase-tab-btn" data-bs-target="#phase-traitement" data-bs-toggle="tab" role="tab" type="button" id="phase-traitement-tab">
+                            <i class="fa fa-fw fa-gears me-1"></i>{{ 'session.phase_traitement'|trans }}
+                        </button>
+                        {% endif %}
+                    </div>
+
+                    {# ── Sub-tabs for Acquisition (visible when Acquisition phase is active) ── #}
+                    {% if hasAcquisition %}
+                    {% set acqLights = session.exposures|filter(e => e.type == "LIGHT") %}
+                    {% set acqDofs = session.exposures|filter(e => e.type != "LIGHT") %}
+                    {% set acqHasPhd2 = (session.phd2Calibrations|length > 0) or (session.phd2Guidings|length > 0) %}
+                    {% set acqHasAutofocus = session.autofocusLogs|length > 0 %}
+                    <div class="d-flex flex-wrap gap-1 mt-2 phase-sub-tab-row justify-content-center" id="acq-sub-tabs-hero">
+                        {% if acqLights|length %}
+                        <button class="btn btn-sm btn-outline-primary phase-sub-btn active" data-sub-target="#acq-lights-pane" data-sub-content="#acq-sub-content" type="button">
+                            {{ 'session.tab_lights'|trans }} <span class="badge bg-secondary ms-1">{{ acqLights|length }}</span>
+                        </button>
+                        {% endif %}
+                        {% if acqDofs|length %}
+                        <button class="btn btn-sm btn-outline-primary phase-sub-btn{{ acqLights|length == 0 ? ' active' : '' }}" data-sub-target="#acq-dofs-pane" data-sub-content="#acq-sub-content" type="button">
+                            {{ 'session.tab_dofs'|trans }} <span class="badge bg-secondary ms-1">{{ acqDofs|length }}</span>
+                        </button>
+                        {% endif %}
+                        {% if acqHasPhd2 %}
+                        <button class="btn btn-sm btn-outline-primary phase-sub-btn" data-sub-target="#acq-phd2-pane" data-sub-content="#acq-sub-content" type="button">
+                            PHD2 <span class="badge bg-secondary ms-1">{{ session.phd2Calibrations|length + session.phd2Guidings|length }}</span>
+                        </button>
+                        {% endif %}
+                        {% if acqHasAutofocus %}
+                        <button class="btn btn-sm btn-outline-primary phase-sub-btn" data-sub-target="#acq-autofocus-pane" data-sub-content="#acq-sub-content" type="button">
+                            AutoFocus <span class="badge bg-secondary ms-1">{{ session.autofocusLogs|length }}</span>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {# ── Sub-tabs for Traitement (hidden until Traitement phase is active) ── #}
+                    {% if hasTraitement %}
+                    {% set procHasWbpp = session.wbppLogs|length > 0 %}
+                    {% set procHasMasters = masters|length > 0 %}
+                    {% set procHasExports = exports|length > 0 %}
+                    <div class="d-flex flex-wrap gap-1 mt-2 phase-sub-tab-row justify-content-end d-none" id="proc-sub-tabs-hero">
+                        {% if procHasWbpp %}
+                        <button class="btn btn-sm btn-outline-primary phase-sub-btn active" data-sub-target="#proc-wbpp-pane" data-sub-content="#proc-sub-content" type="button">
+                            WBPP <span class="badge bg-secondary ms-1">{{ session.wbppLogs|length }}</span>
+                        </button>
+                        {% endif %}
+                        {% if procHasMasters %}
+                        <button class="btn btn-sm btn-outline-primary phase-sub-btn{{ not procHasWbpp ? ' active' : '' }}" data-sub-target="#proc-masters-pane" data-sub-content="#proc-sub-content" type="button">
+                            {{ 'session.tab_masters'|trans }} <span class="badge bg-secondary ms-1">{{ masters|length }}</span>
+                        </button>
+                        {% endif %}
+                        {% if procHasExports %}
+                        <button class="btn btn-sm btn-outline-primary phase-sub-btn{{ not procHasWbpp and not procHasMasters ? ' active' : '' }}" data-sub-target="#proc-exports-pane" data-sub-content="#proc-sub-content" type="button">
+                            {{ 'session.tab_exports'|trans }} <span class="badge bg-secondary ms-1">{{ exports|length }}</span>
+                        </button>
+                        {% endif %}
+                    </div>
                     {% endif %}
                 </div>
-            </div>
 
-            {# ---- NOTES MODAL ---- #}
-            <div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-xl">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="notesModalLabel">
-                                <i class="fa fa-fw fa-sticky-note me-1"></i>{{ 'session.notes_title'|trans }}
-                            </h5>
-                            <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
-                        </div>
-                        <div class="modal-body p-2">
-                            <div id="notes-editor-el"></div>
-                        </div>
-                        <div class="modal-footer">
-                            <span id="notes-save-spinner" class="spinner-border spinner-border-sm d-none me-2"></span>
-                            <button id="notes-save-btn" class="btn btn-primary">{{ 'session.notes_save'|trans }}</button>
-                        </div>
-                    </div>
+                {# ── Col 3 : Donut chart ── #}
+                <div class="col-lg-4 d-flex align-items-center justify-content-center">
+                    {% include 'browse/session/filters_repartition.html.twig' %}
                 </div>
-            </div>
-
-        </div>
-        <div class="col-xxl-9 order-xxl-2" id="session-previews-col">
-            <div class="row">
-                {% include 'browse/session/preview_exposure.html.twig' %}
-                {% include 'browse/session/preview_export.html.twig' %}
-                {% include 'browse/session/preview_master.html.twig' %}
-                {% include 'browse/session/preview_phd2log.html.twig' %}
             </div>
         </div>
     </div>
 
-    {# ---- REFRESH MODAL ---- #}
+    {# ############## PHASE CONTENT ############## #}
+    <div class="tab-content phase-content" id="session-phase-content">
+        {# ── Planification ── #}
+        <div class="tab-pane fade" id="phase-planification" role="tabpanel">
+            {% include 'browse/session/phase_planification.html.twig' %}
+        </div>
+
+        {# ── Acquisition ── #}
+        {% if hasAcquisition %}
+        <div class="tab-pane fade show active" id="phase-acquisition" role="tabpanel">
+            {% include 'browse/session/phase_acquisition.html.twig' %}
+        </div>
+        {% endif %}
+
+        {# ── Traitement ── #}
+        {% if hasTraitement %}
+        <div class="tab-pane fade" id="phase-traitement" role="tabpanel">
+            {% include 'browse/session/phase_traitement.html.twig' %}
+        </div>
+        {% endif %}
+    </div>
+
+    {# ############## NOTES MODAL ############## #}
+    <div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notesModalLabel">
+                        <i class="fa fa-fw fa-sticky-note me-1"></i>{{ 'session.notes_title'|trans }}
+                    </h5>
+                    <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body p-2">
+                    <div id="notes-editor-el"></div>
+                </div>
+                <div class="modal-footer">
+                    <span id="notes-save-spinner" class="spinner-border spinner-border-sm d-none me-2"></span>
+                    <button id="notes-save-btn" class="btn btn-primary">{{ 'session.notes_save'|trans }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ############## REFRESH MODAL ############## #}
     <div class="modal fade" id="refreshModal" tabindex="-1" aria-labelledby="refreshModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -367,18 +389,6 @@
             </div>
         </div>
     </div>
-
-    <style>
-        .session-content span { cursor: pointer }
-        .session-content span.active {
-            background-color: rgba(var(--primary), 1);
-            color: #fff;
-        }
-        #LightContent > div {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-    </style>
 
 {% endblock %}
 
@@ -409,9 +419,122 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
 
     <script src="{{ asset('assets/js/astronomy-helpers.js') }}"></script>
-    <script src="{{ asset('assets/js/altitude-chart.js') }}"></script>
+    <script src="{{ asset('assets/js/altitude-chart.js') }}?v=2"></script>
+
     <script>
-    initAltitudeChart({
+    // Toggle hero card
+    $('#btn-toggle-hero').on('click', function () {
+        var $hero = $('#session-hero');
+        var isCollapsed = $hero.hasClass('d-none');
+        if (isCollapsed) {
+            $hero.removeClass('d-none');
+            $(this).find('i').removeClass('ti-layout-sidebar-left-expand').addClass('ti-layout-sidebar-left-collapse');
+        } else {
+            $hero.addClass('d-none');
+            $(this).find('i').removeClass('ti-layout-sidebar-left-collapse').addClass('ti-layout-sidebar-left-expand');
+        }
+    });
+
+    // Toggle details column in preview cards
+    $(document).on('click', '.btn-toggle-details', function () {
+        var $btn = $(this);
+        var $detailsCol = $($btn.data('details'));
+        var $previewCol = $btn.closest('[id$="-preview-col"]');
+        var isCollapsed = $detailsCol.hasClass('d-none');
+        if (isCollapsed) {
+            $detailsCol.removeClass('d-none');
+            $previewCol.removeClass('col-xxl-12').addClass('col-xxl-9');
+            $btn.find('i').removeClass('ti-layout-sidebar-right-expand').addClass('ti-layout-sidebar-right-collapse');
+        } else {
+            $detailsCol.addClass('d-none');
+            $previewCol.removeClass('col-xxl-9').addClass('col-xxl-12');
+            $btn.find('i').removeClass('ti-layout-sidebar-right-collapse').addClass('ti-layout-sidebar-right-expand');
+        }
+    });
+    </script>
+
+    {# ── Phase tab persistence + Chart.js resize ── #}
+    <script>
+    var PHASE_KEY = 'session-active-phase';
+
+    // Sub-tab rows mapping: phase target → sub-tab row id
+    var subTabMap = {
+        '#phase-acquisition': 'acq-sub-tabs-hero',
+        '#phase-traitement': 'proc-sub-tabs-hero'
+    };
+
+    function syncSubTabs(phaseTarget) {
+        Object.keys(subTabMap).forEach(function(key) {
+            var el = document.getElementById(subTabMap[key]);
+            if (!el) return;
+            if (key === phaseTarget) {
+                el.classList.remove('d-none');
+            } else {
+                el.classList.add('d-none');
+            }
+        });
+    }
+
+    var savedPhase = localStorage.getItem(PHASE_KEY);
+    if (savedPhase) {
+        var phaseTab = document.querySelector('#session-phase-tabs button[data-bs-target="' + savedPhase + '"]');
+        if (phaseTab) new bootstrap.Tab(phaseTab).show();
+        syncSubTabs(savedPhase);
+    } else {
+        // Default: show acquisition sub-tabs if present
+        syncSubTabs('#phase-acquisition');
+    }
+
+    document.querySelectorAll('#session-phase-tabs button').forEach(function(btn) {
+        btn.addEventListener('shown.bs.tab', function() {
+            var target = btn.getAttribute('data-bs-target');
+            localStorage.setItem(PHASE_KEY, target);
+            syncSubTabs(target);
+            // Resize charts in newly visible tab
+            if (typeof Chart !== 'undefined') {
+                Chart.helpers.each(Chart.instances, function(c) { c.resize(); });
+            }
+        });
+    });
+
+    // Manual sub-tab switching (buttons are in hero, panes are in phase content)
+    document.querySelectorAll('.phase-sub-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var targetPane = btn.getAttribute('data-sub-target');
+            var contentId = btn.getAttribute('data-sub-content');
+            var container = document.querySelector(contentId);
+            if (!container) return;
+
+            // Deactivate sibling buttons
+            btn.parentElement.querySelectorAll('.phase-sub-btn').forEach(function(b) {
+                b.classList.remove('active');
+            });
+            btn.classList.add('active');
+
+            // Hide all panes in this content, show the target
+            container.querySelectorAll(':scope > .tab-pane').forEach(function(pane) {
+                pane.classList.remove('show', 'active');
+            });
+            var target = document.querySelector(targetPane);
+            if (target) {
+                target.classList.add('show', 'active');
+            }
+
+            // Resize charts after tab switch
+            if (typeof Chart !== 'undefined') {
+                setTimeout(function() {
+                    Chart.helpers.each(Chart.instances, function(c) { c.resize(); });
+                }, 50);
+            }
+        });
+    });
+    </script>
+
+    {# ── Altitude chart init (deferred — may be in hidden tab) ── #}
+    {% if target.ra != "" %}
+    <script>
+    var altChartInitDone = false;
+    var altChartCfg = {
         canvasId: 'altChart',
         metaId:   'meta',
         name:     '{{ target.name|e('js') }}',
@@ -419,46 +542,38 @@
         decD:     {{ target.dec }},
         lat:      {{ session.observatory.lat }},
         lon:      {{ session.observatory.lon }},
-        dateStr:  '{{ session.startedAt|date("Y-m-d") }}'
+        dateStr:  '{{ nightDates|first|default(session.startedAt|date("Y-m-d")) }}'
+    };
+    function initAltChartIfNeeded() {
+        if (altChartInitDone) return;
+        var canvas = document.getElementById('altChart');
+        if (!canvas || canvas.offsetWidth === 0) return;
+        altChartInitDone = true;
+        initAltitudeChart(altChartCfg);
+    }
+    function reloadAltChart(dateStr) {
+        altChartCfg.dateStr = dateStr;
+        altChartInitDone = false;
+        initAltitudeChart(altChartCfg);
+    }
+    // Try immediately (in case Planification is active tab)
+    document.addEventListener('DOMContentLoaded', function() {
+        initAltChartIfNeeded();
+        var transitSel = document.getElementById('transitDaySelector');
+        if (transitSel) {
+            transitSel.addEventListener('change', function() {
+                reloadAltChart(transitSel.value);
+            });
+        }
+    });
+    // Retry on tab show
+    document.querySelectorAll('#session-phase-tabs button').forEach(function(btn) {
+        btn.addEventListener('shown.bs.tab', function() {
+            setTimeout(initAltChartIfNeeded, 50);
+        });
     });
     </script>
-
-    <script>
-        // Toggle overview (left) column
-        $('#btn-toggle-overview').on('click', function () {
-            const $overview = $('#session-overview-col');
-            const $previews = $('#session-previews-col');
-            const isCollapsed = $overview.hasClass('d-none');
-
-            if (isCollapsed) {
-                $overview.removeClass('d-none');
-                $previews.removeClass('col-xxl-12').addClass('col-xxl-9');
-                $(this).find('i').removeClass('ti-layout-sidebar-left-expand').addClass('ti-layout-sidebar-left-collapse');
-            } else {
-                $overview.addClass('d-none');
-                $previews.removeClass('col-xxl-9').addClass('col-xxl-12');
-                $(this).find('i').removeClass('ti-layout-sidebar-left-collapse').addClass('ti-layout-sidebar-left-expand');
-            }
-        });
-
-        // Toggle details column in preview cards
-        $(document).on('click', '.btn-toggle-details', function () {
-            const $btn = $(this);
-            const $detailsCol = $($btn.data('details'));
-            const $previewCol = $btn.closest('[id$="-preview-col"]');
-            const isCollapsed = $detailsCol.hasClass('d-none');
-
-            if (isCollapsed) {
-                $detailsCol.removeClass('d-none');
-                $previewCol.removeClass('col-xxl-12').addClass('col-xxl-9');
-                $btn.find('i').removeClass('ti-layout-sidebar-right-expand').addClass('ti-layout-sidebar-right-collapse');
-            } else {
-                $detailsCol.addClass('d-none');
-                $previewCol.removeClass('col-xxl-9').addClass('col-xxl-12');
-                $btn.find('i').removeClass('ti-layout-sidebar-right-collapse').addClass('ti-layout-sidebar-right-expand');
-            }
-        });
-    </script>
+    {% endif %}
 
     {# ---- Toast UI Editor (Notes) ---- #}
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">

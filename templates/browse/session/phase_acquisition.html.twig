@@ -1,0 +1,349 @@
+{# ── Phase Acquisition : Lights / DOFs / PHD2 / AutoFocus ── #}
+
+{% set lights = session.exposures|filter(e => e.type == "LIGHT") %}
+{% set dofs = session.exposures|filter(e => e.type != "LIGHT") %}
+{% set hasPhd2 = (session.phd2Calibrations|length > 0) or (session.phd2Guidings|length > 0) %}
+{% set hasAutofocus = session.autofocusLogs|length > 0 %}
+
+{# ── Sub-tab content (sub-tabs are in the hero) ── #}
+<div class="tab-content" id="acq-sub-content">
+
+    {# ── LIGHTS ── #}
+    {% if lights|length %}
+    <div class="tab-pane fade show active" id="acq-lights-pane" role="tabpanel">
+        <div class="card mb-3">
+            <div class="card-body session-content py-2">
+                <div class="exposures" style="max-height: 300px; overflow-y: auto;">
+                    {% for e in exposures|filter(e => e.type == "LIGHT") %}
+                        {% include "browse/session/unit_exposure.html.twig" with {"e": e} %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {# Preview zone — hidden until a light is clicked (visibility not display:none so JS9 can measure width) #}
+        <div class="row" id="lights-preview-row" style="visibility:hidden;height:0;overflow:hidden">
+            <div class="col-xxl-9" id="lights-preview-col">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center py-2">
+                        <h5 class="mb-0">{{ 'session.exposure_preview'|trans }}</h5>
+                        <button class="btn btn-primary icon-btn ms-auto btn-toggle-details"
+                                data-details="#lights-details-col" title="Toggle details">
+                            <i class="ti ti-layout-sidebar-right-collapse"></i>
+                        </button>
+                    </div>
+                    <div class="card-body lights-viewer-fits">
+                        <div class="JS9Menubar" data-width="100%"></div>
+                        <div class="JS9Toolbar" data-width="100%"></div>
+                        <div class="JS9" data-width="100%" data-height="600px"></div>
+                        <div class="JS9Statusbar"></div>
+                    </div>
+                    <div class="card-body lights-viewer-raw d-none p-0">
+                        <div class="d-flex gap-2 align-items-center px-2 py-2 flex-wrap border-bottom">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary" id="raw-zoom-out"><i class="ti ti-zoom-out"></i></button>
+                                <button class="btn btn-outline-secondary" id="raw-zoom-reset">1:1</button>
+                                <button class="btn btn-outline-secondary" id="raw-zoom-in"><i class="ti ti-zoom-in"></i></button>
+                                <button class="btn btn-outline-secondary" id="raw-zoom-fit"><i class="ti ti-arrows-maximize"></i></button>
+                            </div>
+                            <select id="raw-stretch" class="form-select form-select-sm" style="width:auto">
+                                <option value="asinh">Asinh</option>
+                                <option value="log">Log</option>
+                                <option value="sqrt">Sqrt</option>
+                                <option value="linear">Linéaire</option>
+                            </select>
+                            <div class="d-flex align-items-center gap-1">
+                                <small class="text-muted">{{ 'exposure.raw_viewer.bp'|trans }}</small>
+                                <input type="range" id="raw-bp" min="0" max="40" value="1" step="0.5" style="width:80px">
+                                <small id="raw-bp-val" class="text-muted">1%</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <small class="text-muted">{{ 'exposure.raw_viewer.wp'|trans }}</small>
+                                <input type="range" id="raw-wp" min="60" max="100" value="99" step="0.5" style="width:80px">
+                                <small id="raw-wp-val" class="text-muted">99%</small>
+                            </div>
+                            <button id="raw-apply" class="btn btn-sm btn-primary">{{ 'exposure.raw_viewer.apply'|trans }}</button>
+                            <div id="raw-spinner" class="spinner-border spinner-border-sm text-secondary d-none ms-1"></div>
+                        </div>
+                        <div id="raw-viewport" style="overflow:hidden; cursor:grab; height:580px; background:#111; position:relative; touch-action:none">
+                            <img id="lights-viewer-preview" src="" alt="" draggable="false"
+                                 style="position:absolute; top:0; left:0; max-width:none; user-select:none; display:block">
+                        </div>
+                        <div class="px-2 pt-1" style="height:90px">
+                            <canvas id="raw-histogram-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-3" id="lights-details-col">
+                <div id="exposure-details"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── DOFs ── #}
+    {% if dofs|length %}
+    <div class="tab-pane fade{{ lights|length == 0 ? ' show active' : '' }}" id="acq-dofs-pane" role="tabpanel">
+        <div class="card mb-3">
+            <div class="card-body session-content py-2">
+                <div class="exposures" style="max-height: 300px; overflow-y: auto;">
+                    {% for e in exposures|filter(e => e.type != "LIGHT") %}
+                        {% include "browse/session/unit_exposure.html.twig" with {"e": e} %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {# DOFs share the same preview as Lights #}
+    </div>
+    {% endif %}
+
+    {# ── PHD2 ── #}
+    {% if hasPhd2 %}
+    <div class="tab-pane fade" id="acq-phd2-pane" role="tabpanel">
+        <div class="card mb-3">
+            <div class="card-body session-content py-2">
+                <div class="phd2logs" style="max-height: 300px; overflow-y: auto;">
+                    {% for e in session.phd2Calibrations %}
+                        {% include "browse/session/unit_phd2log_calib.html.twig" with {"e": e} %}
+                    {% endfor %}
+                    {% for e in session.phd2Guidings %}
+                        {% include "browse/session/unit_phd2log_guide.html.twig" with {"e": e} %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {# Preview zone — hidden until a log is clicked #}
+        <div class="row d-none" id="phd2-preview-row">
+            <div class="col-xxl-9" id="phd2-preview-col">
+                <div id="phd2log-preview"></div>
+            </div>
+            <div class="col-xxl-3" id="phd2-details-col">
+                <div id="phd2-calibration-details"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── AutoFocus ── #}
+    {% if hasAutofocus %}
+    <div class="tab-pane fade" id="acq-autofocus-pane" role="tabpanel">
+        <div class="card mb-3">
+            <div class="card-body session-content py-2">
+                <div class="autofocuslogs" style="max-height: 300px; overflow-y: auto;">
+                    {% for e in session.autofocusLogs %}
+                        {% include "browse/session/unit_autofocuslog.html.twig" with {"e": e} %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {# Preview zone — hidden until a log is clicked #}
+        <div class="row d-none" id="autofocus-preview-row">
+            <div class="col-xxl-9" id="autofocus-preview-col">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center py-2">
+                        <h5 class="mb-0">AutoFocus</h5>
+                        <button class="btn btn-primary icon-btn ms-auto btn-toggle-details"
+                                data-details="#autofocus-details-col" title="Toggle details">
+                            <i class="ti ti-layout-sidebar-right-collapse"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-0" id="autofocus-preview"></div>
+                </div>
+            </div>
+            <div class="col-xxl-3" id="autofocus-details-col">
+                <div id="autofocus-details"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{# ── JS: Exposure click handler ── #}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // RAW viewer (zoom/pan/histogram)
+    (function () {
+        var scale = 1, ox = 0, oy = 0;
+        var isDragging = false, dragX0, dragY0, ox0, oy0;
+        var histChart = null;
+
+        var viewport = function() { return document.getElementById('raw-viewport'); };
+        var img      = function() { return document.getElementById('lights-viewer-preview'); };
+
+        function applyTransform() {
+            var el = img();
+            el.style.transform = 'translate(' + ox + 'px,' + oy + 'px) scale(' + scale + ')';
+            el.style.transformOrigin = '0 0';
+        }
+
+        function zoomAt(factor, cx, cy) {
+            var vp = viewport(), rect = vp.getBoundingClientRect();
+            var px = cx !== undefined ? cx - rect.left : rect.width / 2;
+            var py = cy !== undefined ? cy - rect.top  : rect.height / 2;
+            var newScale = Math.max(0.1, Math.min(20, scale * factor));
+            var ratio = newScale / scale;
+            ox = px - ratio * (px - ox);
+            oy = py - ratio * (py - oy);
+            scale = newScale;
+            applyTransform();
+        }
+
+        function fitToView() {
+            var el = img(), vp = viewport();
+            if (!el.naturalWidth) return;
+            var sf = Math.min(vp.clientWidth / el.naturalWidth, vp.clientHeight / el.naturalHeight);
+            scale = sf;
+            ox = (vp.clientWidth  - el.naturalWidth  * sf) / 2;
+            oy = (vp.clientHeight - el.naturalHeight * sf) / 2;
+            applyTransform();
+        }
+
+        document.addEventListener('wheel', function(e) {
+            if (!e.target.closest('#raw-viewport')) return;
+            e.preventDefault();
+            zoomAt(e.deltaY < 0 ? 1.15 : 0.87, e.clientX, e.clientY);
+        }, { passive: false });
+
+        document.addEventListener('mousedown', function(e) {
+            if (!e.target.closest('#raw-viewport')) return;
+            isDragging = true; dragX0 = e.clientX; dragY0 = e.clientY; ox0 = ox; oy0 = oy;
+            viewport().style.cursor = 'grabbing';
+        });
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            ox = ox0 + (e.clientX - dragX0);
+            oy = oy0 + (e.clientY - dragY0);
+            applyTransform();
+        });
+        document.addEventListener('mouseup', function() {
+            isDragging = false;
+            var vp = viewport(); if (vp) vp.style.cursor = 'grab';
+        });
+
+        var zoomIn = document.getElementById('raw-zoom-in');
+        var zoomOut = document.getElementById('raw-zoom-out');
+        var zoomReset = document.getElementById('raw-zoom-reset');
+        var zoomFit = document.getElementById('raw-zoom-fit');
+        if (zoomIn) zoomIn.addEventListener('click', function() { zoomAt(1.25); });
+        if (zoomOut) zoomOut.addEventListener('click', function() { zoomAt(0.80); });
+        if (zoomReset) zoomReset.addEventListener('click', function() { scale=1; ox=0; oy=0; applyTransform(); });
+        if (zoomFit) zoomFit.addEventListener('click', fitToView);
+
+        ['raw-bp','raw-wp'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener('input', function() {
+                document.getElementById(id+'-val').textContent = this.value + '%';
+            });
+        });
+
+        var rawApply = document.getElementById('raw-apply');
+        if (rawApply) rawApply.addEventListener('click', function() {
+            var base = img().dataset.baseUrl; if (!base) return;
+            var url = base
+                + '&stretch=' + document.getElementById('raw-stretch').value
+                + '&bp='      + document.getElementById('raw-bp').value
+                + '&wp='      + document.getElementById('raw-wp').value;
+            var spinner = document.getElementById('raw-spinner');
+            if (spinner) spinner.classList.remove('d-none');
+            var el = img();
+            el.onload = function() { if (spinner) spinner.classList.add('d-none'); };
+            el.src = url;
+        });
+
+        function renderHistogram(data) {
+            var canvas = document.getElementById('raw-histogram-canvas'); if (!canvas) return;
+            if (histChart) histChart.destroy();
+            histChart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length:256}, function(_,i) { return i; }),
+                    datasets: [
+                        { data: data.r, backgroundColor:'rgba(220,60,60,0.5)',  borderWidth:0, barPercentage:1, categoryPercentage:1 },
+                        { data: data.g, backgroundColor:'rgba(60,180,60,0.5)',  borderWidth:0, barPercentage:1, categoryPercentage:1 },
+                        { data: data.b, backgroundColor:'rgba(60,100,220,0.5)', borderWidth:0, barPercentage:1, categoryPercentage:1 }
+                    ]
+                },
+                options: {
+                    animation: false, responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { display: false }, y: { display: false, type: 'logarithmic' } }
+                }
+            });
+        }
+
+        window.initRawViewer = function(renderBaseUrl, histogramUrl) {
+            scale = 1; ox = 0; oy = 0;
+            var el = img();
+            el.dataset.baseUrl = renderBaseUrl;
+            var spinner = document.getElementById('raw-spinner');
+            if (spinner) spinner.classList.remove('d-none');
+            el.onload = function() { if (spinner) spinner.classList.add('d-none'); fitToView(); };
+            el.src = renderBaseUrl;
+            fetch(histogramUrl).then(function(r) { return r.json(); }).then(renderHistogram).catch(function() {});
+        };
+    })();
+
+    // Exposure click (Lights + DOFs)
+    $('.exposures span').click(function () {
+        $('.session-content span').removeClass('active');
+        $(this).addClass('active');
+        $('#exposure-details').empty();
+        // Reveal preview row (was hidden via visibility:hidden to let JS9 measure width at init)
+        var $row = $('#lights-preview-row');
+        $row.css({visibility: 'visible', height: '', overflow: ''});
+        $.ajax({
+            url: '{{ path('exposure_detail', {'exposure': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+            method: 'GET',
+            dataType: 'html',
+            cache: true
+        }).done(function (html) {
+            $('#exposure-details').html(html);
+        });
+    });
+
+    // PHD2 click
+    $('.phd2logs span').click(function () {
+        $('.session-content span').removeClass('active');
+        $(this).addClass('active');
+        $('#phd2-preview-row').removeClass('d-none');
+
+        if ($(this).data('type') === 'calibration') {
+            $('#phd2-preview-title').text('PHD2');
+            $.ajax({
+                url: '{{ path('phd2calibration_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                method: 'GET', dataType: 'html', cache: true
+            }).done(function (html) { $('#phd2-calibration-details').html(html); });
+            $.ajax({
+                url: '{{ path('phd2calibrationgraph_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                method: 'GET', dataType: 'html', cache: true
+            }).done(function (html) { $('#phd2log-preview').html(html); });
+        }
+        if ($(this).data('type') === 'guiding') {
+            $('#phd2-preview-title').text('PHD2');
+            $.ajax({
+                url: '{{ path('phd2guiding_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                method: 'GET', dataType: 'html', cache: true
+            }).done(function (html) { $('#phd2-calibration-details').html(html); });
+            $.ajax({
+                url: '{{ path('phd2guidinggraph_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                method: 'GET', dataType: 'html', cache: true
+            }).done(function (html) { $('#phd2log-preview').html(html); });
+        }
+    });
+
+    // AutoFocus click
+    $('.autofocuslogs span').click(function () {
+        $('.session-content span').removeClass('active');
+        $(this).addClass('active');
+        $('#autofocus-preview-row').removeClass('d-none');
+        $.ajax({
+            url: '{{ path('autofocuslog_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+            method: 'GET', dataType: 'html', cache: false
+        }).done(function (html) { $('#autofocus-preview').html(html); });
+        $.ajax({
+            url: '{{ path('autofocuslog_sidebar', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+            method: 'GET', dataType: 'html', cache: true
+        }).done(function (html) { $('#autofocus-details').html(html); });
+    });
+});
+</script>
