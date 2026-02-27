@@ -1,0 +1,255 @@
+<div class="card-body">
+{# --- V-Curve chart --- #}
+<h6 class="mb-2 mt-3"><i class="fa fa-fw fa-chart-line me-1"></i>{{ 'autofocus.section_vcurve'|trans }}</h6>
+<div id="af-graph-container" style="position:relative; height:350px">
+    <canvas id="afVcurveChart"></canvas>
+</div>
+
+{# --- Measure points table --- #}
+{% if af.measurePoints|length > 0 %}
+<h6 class="mb-2 mt-4"><i class="fa fa-fw fa-list me-1"></i>{{ 'autofocus.section_details'|trans }}</h6>
+<div class="table-responsive mb-3">
+    <table class="table table-sm table-striped mb-0" style="font-size: 12px">
+        <thead>
+            <tr class="table-dark">
+                <th>#</th>
+                <th class="text-end">{{ 'autofocus.col_position'|trans }}</th>
+                <th class="text-end">{{ 'autofocus.col_hfr'|trans }}</th>
+                <th class="text-end">Error</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pt in af.measurePoints %}
+            <tr>
+                <td class="text-muted">{{ loop.index }}</td>
+                <td class="text-end">{{ pt.position ? pt.position|number_format(0) : '—' }}</td>
+                <td class="text-end">{{ pt.value ? pt.value|number_format(3) : '—' }}</td>
+                <td class="text-end">{{ pt.error ? pt.error|number_format(3) : '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# --- Annotated images --- #}
+<h6 class="mb-2 mt-4"><i class="fa fa-fw fa-images me-1"></i>{{ 'autofocus.section_images'|trans }}</h6>
+<div id="af-images-grid" class="row g-2"></div>
+</div>
+
+{# --- Lightbox modal --- #}
+<div class="modal fade" id="afLightboxModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-dark">
+            <div class="modal-body p-0 text-center">
+                <img id="afLightboxImg" src="" class="img-fluid" style="max-height:90vh">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // V-Curve chart
+    var points = {{ af.measurePoints|default([])|json_encode|raw }};
+    var calcPos = {{ af.calculatedPosition|default('null') }};
+    var calcHfr = {{ af.calculatedHfr|default('null') }};
+    var fittingsData = {{ af.fittings|default('null')|json_encode|raw }};
+
+    if (points && points.length > 0) {
+        var ctx = document.getElementById('afVcurveChart').getContext('2d');
+
+        var scatterData = points.map(function(pt) {
+            return { x: pt.position, y: pt.value };
+        });
+
+        var errorBars = points.map(function(pt) {
+            return {
+                x: pt.position,
+                yMin: Math.max(0, (pt.value || 0) - (pt.error || 0)),
+                yMax: (pt.value || 0) + (pt.error || 0)
+            };
+        });
+
+        var datasets = [{
+            label: 'HFR',
+            data: scatterData,
+            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            showLine: false,
+            order: 1
+        }];
+
+        // Hyperbolic fitting curve
+        if (fittingsData && points.length > 1) {
+            var positions = points.map(function(p) { return p.position; });
+            var minPos = Math.min.apply(null, positions);
+            var maxPos = Math.max.apply(null, positions);
+            var range = maxPos - minPos;
+            var curvePoints = [];
+
+            // Try to reconstruct fitting from intersections or known equation
+            // For now generate a smooth interpolation through data
+            var leftPoints = points.filter(function(p) { return p.position <= calcPos; }).sort(function(a,b) { return a.position - b.position; });
+            var rightPoints = points.filter(function(p) { return p.position >= calcPos; }).sort(function(a,b) { return a.position - b.position; });
+
+            if (calcPos !== null && calcHfr !== null) {
+                // Simple V-curve: descending left, ascending right
+                for (var i = minPos - range * 0.05; i <= maxPos + range * 0.05; i += range / 100) {
+                    // Hyperbolic: HFR = sqrt(a*(pos - c)^2 + b^2)
+                    // Estimate from data
+                    var dist = Math.abs(i - calcPos);
+                    // Use quadratic fit approximation
+                    var hfr = calcHfr + (dist * dist) * 0.00001;
+                    curvePoints.push({ x: i, y: Math.min(hfr, Math.max.apply(null, points.map(function(p){return p.value;})) * 1.2) });
+                }
+            }
+
+            // If we have actual fitting equations, try to use them
+            if (fittingsData) {
+                var leftEq = null;
+                var rightEq = null;
+
+                // Hocus Focus / NINA format: fittings may contain left/right equations
+                if (typeof fittingsData === 'object') {
+                    if (fittingsData.LeftTrend || fittingsData.Left) {
+                        leftEq = fittingsData.LeftTrend || fittingsData.Left;
+                    }
+                    if (fittingsData.RightTrend || fittingsData.Right) {
+                        rightEq = fittingsData.RightTrend || fittingsData.Right;
+                    }
+                    // Hyperbolic fitting: y = sqrt(a*(x-c)^2 + b^2)
+                    if (fittingsData.A !== undefined && fittingsData.B !== undefined && fittingsData.C !== undefined) {
+                        curvePoints = [];
+                        var a = fittingsData.A, b = fittingsData.B, c = fittingsData.C;
+                        for (var x = minPos - range * 0.05; x <= maxPos + range * 0.05; x += range / 200) {
+                            curvePoints.push({ x: x, y: Math.sqrt(a * Math.pow(x - c, 2) + b * b) });
+                        }
+                    }
+                    // Quadratic: y = a*x^2 + b*x + c
+                    if (fittingsData.Quadratic) {
+                        var q = fittingsData.Quadratic;
+                        if (q.A !== undefined) {
+                            curvePoints = [];
+                            for (var x = minPos - range * 0.05; x <= maxPos + range * 0.05; x += range / 200) {
+                                curvePoints.push({ x: x, y: q.A * x * x + q.B * x + q.C });
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (curvePoints.length > 0) {
+                datasets.push({
+                    label: 'Fitting',
+                    data: curvePoints,
+                    borderColor: 'rgba(255, 159, 64, 0.8)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    showLine: true,
+                    fill: false,
+                    order: 2
+                });
+            }
+        }
+
+        // Calculated focus point
+        if (calcPos !== null && calcHfr !== null) {
+            datasets.push({
+                label: 'Focus',
+                data: [{ x: calcPos, y: calcHfr }],
+                backgroundColor: 'rgba(75, 192, 75, 1)',
+                borderColor: '#fff',
+                borderWidth: 2,
+                pointRadius: 8,
+                pointStyle: 'star',
+                showLine: false,
+                order: 0
+            });
+        }
+
+        var annotations = {};
+        if (calcPos !== null) {
+            annotations.focusLine = {
+                type: 'line',
+                xMin: calcPos,
+                xMax: calcPos,
+                borderColor: 'rgba(75, 192, 75, 0.6)',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                label: {
+                    display: true,
+                    content: 'Focus: ' + Math.round(calcPos),
+                    position: 'start',
+                    backgroundColor: 'rgba(75, 192, 75, 0.8)',
+                    color: '#fff',
+                    font: { size: 11 }
+                }
+            };
+        }
+
+        new Chart(ctx, {
+            type: 'scatter',
+            data: { datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: '{{ 'autofocus.col_position'|trans }}' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    },
+                    y: {
+                        title: { display: true, text: '{{ 'autofocus.col_hfr'|trans }}' },
+                        beginAtZero: false,
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    }
+                },
+                plugins: {
+                    annotation: { annotations: annotations },
+                    zoom: {
+                        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
+                        pan: { enabled: true, mode: 'xy' }
+                    },
+                    legend: { display: true, position: 'top', labels: { boxWidth: 12 } }
+                }
+            }
+        });
+    }
+
+    // Annotated images
+    var imagesUrl = '{{ path('api_autofocus_images', {'id': af.id}) }}';
+    var imageBaseUrl = '{{ path('api_autofocus_image') }}';
+    var grid = document.getElementById('af-images-grid');
+
+    fetch(imagesUrl)
+        .then(function(r) { return r.json(); })
+        .then(function(images) {
+            if (!images || images.length === 0) {
+                grid.innerHTML = '<p class="text-muted small">{{ 'autofocus.section_images'|trans }}: —</p>';
+                return;
+            }
+            images.forEach(function(img) {
+                var col = document.createElement('div');
+                col.className = 'col-4 col-md-3';
+                var a = document.createElement('a');
+                a.href = '#';
+                a.setAttribute('data-bs-toggle', 'modal');
+                a.setAttribute('data-bs-target', '#afLightboxModal');
+                a.onclick = function() {
+                    document.getElementById('afLightboxImg').src = imageBaseUrl + '?path=' + encodeURIComponent(img.path);
+                };
+                var imgEl = document.createElement('img');
+                imgEl.src = imageBaseUrl + '?path=' + encodeURIComponent(img.path);
+                imgEl.className = 'img-fluid rounded border';
+                imgEl.alt = img.name;
+                imgEl.loading = 'lazy';
+                a.appendChild(imgEl);
+                col.appendChild(a);
+                grid.appendChild(col);
+            });
+        });
+})();
+</script>

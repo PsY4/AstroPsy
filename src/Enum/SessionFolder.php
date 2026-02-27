@@ -13,6 +13,7 @@ enum SessionFolder: string
     case LOG_NINA = 'LOG_NINA';
     case LOG_PHD2 = 'LOG_PHD2';
     case LOG_WBPP = 'LOG_WBPP';
+    case LOG_AF   = 'LOG_AF';
     case DOC      = 'DOC';
 
     public function defaultRelativePath(): string
@@ -27,6 +28,7 @@ enum SessionFolder: string
             self::LOG_NINA => '02 - Acquisition/logs/nina',
             self::LOG_PHD2 => '02 - Acquisition/logs/phd2',
             self::LOG_WBPP => '03 - Processing/logs',
+            self::LOG_AF   => '02 - Acquisition/logs/autofocus',
             self::DOC      => '99 - Docs',
         };
     }

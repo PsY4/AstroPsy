@@ -96,6 +96,29 @@
                     $('#phd2-calibration-details').html(html);
                 })
             }
+            if ($(this).data('type') === 'autofocus') {
+                $('#phd2-preview-title').text('AutoFocus');
+                $('#phd2-details-col').removeClass('d-none');
+
+                // V-curve + images (detail)
+                $.ajax({
+                    url: '{{ path('autofocuslog_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                    method: 'GET',
+                    dataType: 'html',
+                    cache: false
+                }).done(function (html) {
+                    $('#phd2log-preview').html(html);
+                })
+                // Sidebar (stats)
+                $.ajax({
+                    url: '{{ path('autofocuslog_sidebar', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                    method: 'GET',
+                    dataType: 'html',
+                    cache: true
+                }).done(function (html) {
+                    $('#phd2-calibration-details').html(html);
+                })
+            }
         });
     });
 </script>

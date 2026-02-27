@@ -41,6 +41,10 @@ class Session
     #[ORM\OrderBy(['startedAt' => 'ASC'])]
     private Collection $wbppLogs;
 
+    #[ORM\OneToMany(mappedBy: 'session', targetEntity: AutofocusLog::class, cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OrderBy(['timestamp' => 'ASC'])]
+    private Collection $autofocusLogs;
+
     #[ORM\Column(length: 512, nullable: true)] private ?string $path = null;
 
     /**
@@ -75,6 +79,7 @@ class Session
         $this->authors = new ArrayCollection();
         $this->docs = new ArrayCollection();
         $this->wbppLogs = new ArrayCollection();
+        $this->autofocusLogs = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
@@ -179,6 +184,17 @@ class Session
     public function getWbppLogs(): Collection
     {
         return $this->wbppLogs;
+    }
+
+    public function setAutofocusLogs(Collection $autofocusLogs): Session
+    {
+        $this->autofocusLogs = $autofocusLogs;
+        return $this;
+    }
+
+    public function getAutofocusLogs(): Collection
+    {
+        return $this->autofocusLogs;
     }
 
     /**

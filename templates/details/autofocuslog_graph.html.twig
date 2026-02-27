@@ -1,0 +1,84 @@
+<div class="card-body p-2">
+<div style="position:relative; height:300px">
+    <canvas id="afPreviewChart"></canvas>
+</div>
+</div>
+<script>
+(function() {
+    var points = {{ af.measurePoints|default([])|json_encode|raw }};
+    var calcPos = {{ af.calculatedPosition|default('null') }};
+    var calcHfr = {{ af.calculatedHfr|default('null') }};
+
+    if (!points || points.length === 0) return;
+
+    var ctx = document.getElementById('afPreviewChart').getContext('2d');
+
+    var scatterData = points.map(function(pt) {
+        return { x: pt.position, y: pt.value };
+    });
+
+    var datasets = [{
+        label: 'HFR',
+        data: scatterData,
+        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        pointRadius: 5,
+        showLine: false,
+        order: 1
+    }];
+
+    if (calcPos !== null && calcHfr !== null) {
+        datasets.push({
+            label: 'Focus',
+            data: [{ x: calcPos, y: calcHfr }],
+            backgroundColor: 'rgba(75, 192, 75, 1)',
+            borderColor: '#fff',
+            borderWidth: 2,
+            pointRadius: 8,
+            pointStyle: 'star',
+            showLine: false,
+            order: 0
+        });
+    }
+
+    var annotations = {};
+    if (calcPos !== null) {
+        annotations.focusLine = {
+            type: 'line',
+            xMin: calcPos, xMax: calcPos,
+            borderColor: 'rgba(75, 192, 75, 0.6)',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            label: {
+                display: true,
+                content: Math.round(calcPos),
+                position: 'start',
+                backgroundColor: 'rgba(75, 192, 75, 0.8)',
+                color: '#fff',
+                font: { size: 10 }
+            }
+        };
+    }
+
+    new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { color: 'rgba(255,255,255,0.1)' } },
+                y: { beginAtZero: false, grid: { color: 'rgba(255,255,255,0.1)' } }
+            },
+            plugins: {
+                annotation: { annotations: annotations },
+                legend: { display: false },
+                zoom: {
+                    zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
+                    pan: { enabled: true, mode: 'xy' }
+                }
+            }
+        }
+    });
+})();
+</script>

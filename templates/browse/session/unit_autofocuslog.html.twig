@@ -1,0 +1,18 @@
+<span class="session-file {{ e.hidden ? "bg-light-primary" : "" }}"
+      data-type="autofocus"
+      data-id="{{ e.id }}">
+    <small style="font-size: 10px">
+        {{ 'session.unit_autofocus'|trans }}
+    </small><br>
+    <strong><i class="fa fa-fw fa-crosshairs"></i></strong><br>
+    <small style="font-size: 12px">
+        {% if e.filter %}{{ e.filter }}{% endif %}
+        {% if e.calculatedHfr %}HFR {{ e.calculatedHfr|number_format(2) }}{% endif %}
+    </small><br>
+    <small style="font-size: 10px">
+        {% if not e.success %}<span class="text-danger">✗</span>{% else %}<span class="text-success">✓</span>{% endif %}
+        {% if e.timestamp %}
+            {{ e.timestamp|date("H:i") }}
+        {% endif %}
+    </small>
+</span>
