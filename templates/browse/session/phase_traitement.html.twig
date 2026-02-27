@@ -1,0 +1,190 @@
+{# ── Phase Traitement : WBPP / Masters / Exports ── #}
+
+{% set hasWbpp = session.wbppLogs|length > 0 %}
+{% set hasMasters = masters|length > 0 %}
+{% set hasExports = exports|length > 0 %}
+
+{# ── Sub-tab content (sub-tabs are in the hero) ── #}
+<div class="tab-content" id="proc-sub-content">
+
+    {# ── WBPP ── #}
+    {% if hasWbpp %}
+    <div class="tab-pane fade show active" id="proc-wbpp-pane" role="tabpanel">
+        <div class="card mb-3">
+            <div class="card-body session-content py-2">
+                <div class="wbpplogs" style="max-height: 300px; overflow-y: auto;">
+                    {% for e in session.wbppLogs %}
+                        {% include "browse/session/unit_wbpplog.html.twig" with {"e": e} %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {# Preview zone — hidden until a log is clicked #}
+        <div class="row d-none" id="wbpp-preview-row">
+            <div class="col-xxl-9" id="wbpp-preview-col">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center py-2">
+                        <h5 class="mb-0">WBPP</h5>
+                        <button class="btn btn-primary icon-btn ms-auto btn-toggle-details"
+                                data-details="#wbpp-details-col" title="Toggle details">
+                            <i class="ti ti-layout-sidebar-right-collapse"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-0" id="wbpp-preview"></div>
+                </div>
+            </div>
+            <div class="col-xxl-3" id="wbpp-details-col">
+                <div id="wbpp-details"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Masters ── #}
+    {% if hasMasters %}
+    <div class="tab-pane fade{{ not hasWbpp ? ' show active' : '' }}" id="proc-masters-pane" role="tabpanel">
+        <div class="card mb-3">
+            <div class="card-body session-content py-2">
+                <div class="masters" style="max-height: 300px; overflow-y: auto;">
+                    {% for m in masters %}
+                        {% include "browse/session/unit_master.html.twig" with {"e": e} %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {# Preview zone — hidden until a file is clicked #}
+        <div class="row d-none" id="masters-preview-row">
+            <div class="col-xxl-9" id="masters-preview-col">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center py-2">
+                        <h5 class="mb-0">{{ 'session.preview'|trans }}</h5>
+                        <button class="btn btn-primary icon-btn ms-auto btn-toggle-details"
+                                data-details="#masters-details-col" title="Toggle details">
+                            <i class="ti ti-layout-sidebar-right-collapse"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <img id="master-preview" src="" alt="" width="100%">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-3" id="masters-details-col">
+                <div id="master-details"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Exports ── #}
+    {% if hasExports %}
+    <div class="tab-pane fade{{ not hasWbpp and not hasMasters ? ' show active' : '' }}" id="proc-exports-pane" role="tabpanel">
+        <div class="card mb-3">
+            <div class="card-body session-content py-2">
+                <div class="exports" style="max-height: 300px; overflow-y: auto;">
+                    {% for e in exports %}
+                        {% include "browse/session/unit_export.html.twig" with {"e": e} %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {# Preview zone — hidden until a file is clicked #}
+        <div class="row d-none" id="exports-preview-row">
+            <div class="col-xxl-9" id="exports-preview-col">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center py-2">
+                        <h5 class="mb-0">{{ 'session.preview'|trans }}</h5>
+                        <button id="btn-set-as-preview" class="btn btn-sm btn-outline-primary ms-auto d-none me-2"
+                                data-url-template="{{ path('export_set_as_preview', {id: 'XXXXXX'}) }}">
+                            <i class="fa fa-fw fa-image"></i> {{ 'session.btn_set_as_preview'|trans }}
+                        </button>
+                        <button class="btn btn-primary icon-btn btn-toggle-details"
+                                data-details="#exports-details-col" title="Toggle details">
+                            <i class="ti ti-layout-sidebar-right-collapse"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <img id="export-preview" src="" alt="" width="100%">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-3" id="exports-details-col">
+                <div id="export-details"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{# ── JS: Processing click handlers ── #}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // WBPP click
+    $('.wbpplogs span').click(function () {
+        $('.session-content span').removeClass('active');
+        $(this).addClass('active');
+        $('#wbpp-preview-row').removeClass('d-none');
+        $.ajax({
+            url: '{{ path('wbpplog_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+            method: 'GET', dataType: 'html', cache: true
+        }).done(function (html) { $('#wbpp-preview').html(html); });
+        $.ajax({
+            url: '{{ path('wbpplog_sidebar', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+            method: 'GET', dataType: 'html', cache: true
+        }).done(function (html) { $('#wbpp-details').html(html); });
+    });
+
+    // Masters click
+    $('.masters span').click(function () {
+        $('.session-content span').removeClass('active');
+        $(this).addClass('active');
+        $('#masters-preview-row').removeClass('d-none');
+        $.ajax({
+            url: '{{ path('master_detail', {'master': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+            method: 'GET', dataType: 'html', cache: true
+        }).done(function (html) { $('#master-details').html(html); });
+        if ($(this).data('type') == "XISF")
+            $('#master-preview').attr("src", "{{ path('xisf-thumbnail', { 'master': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", $(this).data("id")));
+    });
+
+    // Exports click
+    $('.exports span').click(function () {
+        $('.session-content span').removeClass('active');
+        $(this).addClass('active');
+        $('#exports-preview-row').removeClass('d-none');
+
+        var exportId = $(this).data('id');
+        var exportType = $(this).data('type');
+
+        if (exportType === "TIF") {
+            $('#export-preview').attr("src", "{{ path('tif-thumbnail', { 'export': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", exportId));
+        } else {
+            $('#export-preview').attr("src", "{{ path('image-thumbnail', { 'export': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", exportId));
+        }
+
+        var $btn = $('#btn-set-as-preview');
+        if (exportType === 'JPG' || exportType === 'JPEG' || exportType === 'PNG') {
+            $btn.removeClass('d-none').data('export-id', exportId).off('click').on('click', function () {
+                var url = $(this).data('url-template').replace('XXXXXX', exportId);
+                $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+                fetch(url, { method: 'POST' })
+                    .then(function(r) { return r.json(); })
+                    .then(function() {
+                        $btn.removeClass('btn-outline-primary').addClass('btn-success')
+                            .html('<i class="fa fa-check"></i> {{ "session.btn_set_as_preview_done"|trans }}');
+                    })
+                    .catch(function() {
+                        $btn.prop('disabled', false)
+                            .html('<i class="fa fa-fw fa-image"></i> {{ "session.btn_set_as_preview"|trans }}');
+                    });
+            });
+        } else {
+            $btn.addClass('d-none');
+        }
+
+        $.ajax({
+            url: '{{ path('export_detail', {'export': "XXXXXX"}) }}'.replace('XXXXXX', exportId),
+            method: 'GET', dataType: 'html', cache: true
+        }).done(function (html) { $('#export-details').html(html); });
+    });
+});
+</script>

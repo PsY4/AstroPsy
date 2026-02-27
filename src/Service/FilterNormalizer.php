@@ -65,6 +65,19 @@ class FilterNormalizer
         return $this->colorMap;
     }
 
+    /**
+     * Color map expanded with aliases: every alias and canonical label maps to its color.
+     * Useful in templates where filter names may not be normalized.
+     */
+    public function getExpandedColorMap(): array
+    {
+        $map = $this->colorMap;
+        foreach ($this->aliasMap as $alias => $label) {
+            $map[$alias] = $this->colorMap[$label] ?? '#6c757d';
+        }
+        return $map;
+    }
+
     public function getColor(string $filter): string
     {
         return $this->colorMap[$filter] ?? '#6c757d';

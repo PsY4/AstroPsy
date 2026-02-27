@@ -72,7 +72,7 @@ final class SessionController extends AbstractController
             'masters'        => $masters,
             'exports'        => $exports,
             'editForm'       => $editForm->createView(),
-            'filterColorMap' => $this->normalizer->getColorMap(),
+            'filterColorMap' => $this->normalizer->getExpandedColorMap(),
             'consistency'    => $consistency,
         ]);
     }

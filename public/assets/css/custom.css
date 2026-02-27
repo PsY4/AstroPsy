@@ -431,3 +431,109 @@ nav.semi-nav:not(:hover) .sidebar-footer {
     text-transform: uppercase;
     letter-spacing: 0.03em;
 }
+
+/* ── Session Detail — Inline style migration ──────────────── */
+.session-content span { cursor: pointer }
+.session-content span.active {
+    background-color: rgba(var(--primary), 1);
+    color: #fff;
+}
+.session-content .tab-content > div {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* ── Session Detail — Hero Card ───────────────────────────── */
+#session-hero .hero-identity .f-s-16 { font-size: 1rem; }
+#session-hero .hero-identity .f-s-13 { font-size: 0.82rem; }
+
+/* Stats grid — 3 columns, compact */
+#session-hero .hero-stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px 16px !important;
+}
+#session-hero .hero-stat {
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 8px;
+    background: rgba(var(--primary), 0.04);
+}
+#session-hero .hero-stat-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: rgba(var(--primary), 1);
+    line-height: 1.2;
+}
+#session-hero .hero-stat-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(var(--secondary), 1);
+    margin-top: 2px;
+}
+/* Astrobin inline stats */
+#session-hero .hero-astrobin-inline {
+    font-size: 0.78rem;
+    color: rgba(var(--secondary), 0.8);
+}
+#session-hero .hero-astrobin-inline i {
+    color: #ffc107;
+    font-size: 0.72rem;
+}
+
+/* Donut chart */
+#session-hero #audienceChart {
+    width: 100%;
+    max-width: 320px;
+}
+
+/* Notes */
+#session-hero .hero-notes-body {
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+/* ── Session Detail — Phase Tabs (inside hero) ──────────── */
+#session-phase-tabs .phase-tab-btn {
+    border-radius: 20px !important;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 5px 0;
+    color: rgba(var(--primary), 0.7);
+    border-color: rgba(var(--primary), 0.25);
+    transition: all 0.2s;
+}
+#session-phase-tabs .phase-tab-btn:hover {
+    background: rgba(var(--primary), 0.08);
+    border-color: rgba(var(--primary), 0.5);
+}
+#session-phase-tabs .phase-tab-btn.active {
+    background: rgba(var(--primary), 1) !important;
+    color: #fff !important;
+    border-color: rgba(var(--primary), 1) !important;
+}
+
+/* Sub-tab buttons in hero */
+.phase-sub-btn {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 14px !important;
+    color: rgba(var(--primary), 0.7);
+    border-color: rgba(var(--primary), 0.25);
+}
+.phase-sub-btn:hover {
+    background: rgba(var(--primary), 0.08);
+    border-color: rgba(var(--primary), 0.5);
+}
+.phase-sub-btn.active {
+    background: rgba(var(--primary), 1) !important;
+    color: #fff !important;
+    border-color: rgba(var(--primary), 1) !important;
+}
+
+/* Phase content areas */
+.phase-content .tab-pane {
+    min-height: 200px;
+}

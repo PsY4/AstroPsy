@@ -15,11 +15,16 @@
     <div id="audienceChart"></div>
 <script>
     document.addEventListener("DOMContentLoaded", function(event) {
-        const chartOptions = {
+        var chartOptions = {
             series: [{{ filtersNumber|join(",") }}],
             chart: {
-                height: 200,
+                height: 220,
                 type: 'donut'
+            },
+            title: {
+                text: '{{ 'session.stat_filter_repartition'|trans }}',
+                align: 'center',
+                style: { fontSize: '11px', fontWeight: 600, color: '#999' }
             },
             plotOptions: {
                 pie: {
@@ -37,21 +42,27 @@
                 "{{ (f=="")?"N/A":f }} : {{ c }} ({{ filtersDuration[(f)]|format_duration }})" {{ ((loop.revindex0>0)?",") }}
                 {% endfor %}
             ],
-            colors: [{% for f in filtersNumber|keys %}'{{ filterColorMap[f]|default('#6c757d') }}'{% if not loop.last %},{% endif %}{% endfor %}],
-            legend: { show: true },
+            colors: [{% for f in filtersNumber|keys %}'{{ filterColorMap[f]|default(filterColorMap[f|lower]|default('#6c757d')) }}'{% if not loop.last %},{% endif %}{% endfor %}],
+            legend: {
+                show: true,
+                position: 'right',
+                fontSize: '11px',
+                labels: { colors: ['#ccc'] }
+            },
             dataLabels: { enabled: false },
+            stroke: { width: 1, colors: ['rgba(0,0,0,0.3)'] },
             responsive: [
                 {
                     breakpoint: 1400,
-                    options: { chart: { height: 200 }, }
+                    options: { chart: { height: 200 } }
                 },
                 {
                     breakpoint: 992,
-                    options: { chart: { height: 180 }, }
+                    options: { chart: { height: 180 } }
                 }
             ]
         }
-        const audienceChart = new ApexCharts(document.querySelector("#audienceChart"), chartOptions);
+        var audienceChart = new ApexCharts(document.querySelector("#audienceChart"), chartOptions);
         audienceChart.render();
     });
 </script>

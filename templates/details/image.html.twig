@@ -3,9 +3,9 @@
 {% set tiff = image.metadata.tiff_tags  %}
 {% set ts = image.metadata.tiff_summary ?? {} %}
 <div class="card profile-container">
-    <div class="card-header">
+    <div class="card-header py-2">
         <div class="fa-pull-left">
-            <h5>{{ 'image.title'|trans }}</h5>
+            <h5 class="mb-0">{{ 'image.title'|trans }}</h5>
         </div>
         <div class="fa-pull-right">
             <a href="openfolder:{{ image.path }}"

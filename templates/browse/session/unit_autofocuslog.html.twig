@@ -1,18 +1,19 @@
 <span class="session-file {{ e.hidden ? "bg-light-primary" : "" }}"
       data-type="autofocus"
-      data-id="{{ e.id }}">
-    <small style="font-size: 10px">
+      data-id="{{ e.id }}"
+      style="line-height: 15px; padding: 5px 0;">
+    <small style="font-size: 9px">
         {{ 'session.unit_autofocus'|trans }}
     </small><br>
-    <strong><i class="fa fa-fw fa-crosshairs"></i></strong><br>
-    <small style="font-size: 12px">
+    <strong><i class="fa fa-fw fa-crosshairs" style="font-size: 20px; line-height: 28px;"></i></strong><br>
+    <small style="font-size: 9px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding: 0 4px;">
         {% if e.filter %}{{ e.filter }}{% endif %}
+    </small>
+    <small style="font-size: 8px; line-height: 10px; display:block;">
         {% if e.calculatedHfr %}HFR {{ e.calculatedHfr|number_format(2) }}{% endif %}
-    </small><br>
-    <small style="font-size: 10px">
+    </small>
+    <small style="font-size: 8px; line-height: 10px; display:block;">
         {% if not e.success %}<span class="text-danger">✗</span>{% else %}<span class="text-success">✓</span>{% endif %}
-        {% if e.timestamp %}
-            {{ e.timestamp|date("H:i") }}
-        {% endif %}
+        {% if e.timestamp %}{{ e.timestamp|date("H:i") }}{% endif %}
     </small>
 </span>

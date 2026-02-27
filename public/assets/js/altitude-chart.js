@@ -31,7 +31,11 @@ function initAltitudeChart(cfg) {
         return 'rgba(0,0,0,0.64)';
     }
 
-    let chartInst = null;
+    // Destroy previous instance if re-called (e.g. date change)
+    if (window._altChartInst) {
+        window._altChartInst.destroy();
+        window._altChartInst = null;
+    }
 
     (function computeAndPlot() {
         const obs = new Astronomy.Observer(lat, lon, 0);
@@ -183,7 +187,6 @@ function initAltitudeChart(cfg) {
             }
         };
 
-        if (chartInst) chartInst.destroy();
-        chartInst = new Chart(canvasEl, { type: 'line', data, options });
+        window._altChartInst = new Chart(canvasEl, { type: 'line', data, options });
     })();
 }
