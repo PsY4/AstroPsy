@@ -1,0 +1,82 @@
+<div class="card profile-container">
+    <div class="card-header">
+        <div class="fa-pull-left">
+            <h5>{{ 'wbpp.title'|trans }}</h5>
+        </div>
+        <div class="fa-pull-right">
+            <a href="openfolder:{{ wbpp.sourcePath }}"
+               class="btn btn-primary icon-btn b-r-4 js-openfolder" title="{{ 'wbpp.btn_open_local'|trans }}">
+                <i class="fa primary fa-arrow-right-to-file"></i>
+            </a>
+            <a href="{{ path('wbpplog_hide', {'id': wbpp.id, 'hidden': true}) }}"
+               class="btn btn-light-secondary icon-btn b-r-4" title="{{ 'wbpp.btn_hide'|trans }}">
+                <i class="fa primary fa-delete-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="profile-container mt-0">
+            {# --- Summary stats --- #}
+            <div class="person-details mt-0">
+                <div class="details mt-0">
+                    <div>
+                        <h4 class="text-primary">{{ wbpp.frameCount }}</h4>
+                        <p class="text-secondary">{{ 'wbpp.col_frames'|trans }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-success">{{ wbpp.acceptedCount }}</h4>
+                        <p class="text-secondary">{{ 'wbpp.col_accepted'|trans }}</p>
+                    </div>
+                    {% if wbpp.rejectedCount > 0 %}
+                    <div>
+                        <h4 class="text-danger">{{ wbpp.rejectedCount }}</h4>
+                        <p class="text-secondary">{{ 'wbpp.col_rejected'|trans }}</p>
+                    </div>
+                    {% endif %}
+                    {% if wbpp.durationSeconds %}
+                    <div>
+                        <h4 class="text-primary">{{ (wbpp.durationSeconds / 60)|number_format(0) }}m</h4>
+                        <p class="text-secondary">{{ 'wbpp.col_duration'|trans }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# --- Versions & date --- #}
+            <div class="about-list mb-3">
+                {% if wbpp.piVersion %}
+                <div>
+                    <span class="fw-medium">PixInsight</span>
+                    <span class="float-end f-s-13 text-secondary">{{ wbpp.piVersion }}</span>
+                </div>
+                {% endif %}
+                {% if wbpp.wbppVersion %}
+                <div>
+                    <span class="fw-medium">WBPP</span>
+                    <span class="float-end f-s-13 text-secondary">{{ wbpp.wbppVersion }}</span>
+                </div>
+                {% endif %}
+                {% if wbpp.startedAt %}
+                <div>
+                    <span class="fw-medium">{{ 'wbpp.col_date'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ wbpp.startedAt|date("Y-m-d H:i") }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            {# --- Calibration summary --- #}
+            {% if wbpp.calibrationSummary|length > 0 %}
+            <h6 class="mt-1 mb-2"><i class="fa fa-fw fa-wrench me-1"></i>{{ 'wbpp.section_calibration'|trans }}</h6>
+            <div class="about-list">
+                {% for c in wbpp.calibrationSummary %}
+                <div>
+                    <span class="fw-medium">{{ c.type }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ c.count }} frames</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

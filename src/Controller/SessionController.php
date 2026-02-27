@@ -9,6 +9,7 @@ use App\Entity\Phd2Calibration;
 use App\Entity\Phd2Guiding;
 use App\Entity\Session;
 use App\Entity\Target;
+use App\Entity\WbppLog;
 use App\Enum\SessionFolder;
 use App\Form\SessionType;
 use App\Service\AstrobinAPIService;
@@ -17,6 +18,7 @@ use App\Service\FilterNormalizer;
 use App\Service\PHD2LogsReader;
 use App\Service\SessionRefreshService;
 use App\Service\StoragePathResolver;
+use App\Service\WBPPLogsReader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
@@ -102,6 +104,7 @@ final class SessionController extends AbstractController
             'masters'=> SessionFolder::MASTER,
             'exports'=> SessionFolder::EXPORT,
             'phd2'   => SessionFolder::LOG_PHD2,
+            'wbpp'   => SessionFolder::LOG_WBPP,
         ];
 
         foreach ($folders as $key => $folder) {
@@ -128,6 +131,7 @@ final class SessionController extends AbstractController
             $em->createQuery('DELETE App\Entity\Export e WHERE e.session = :s')->execute(['s' => $session]);
             $em->createQuery('DELETE App\Entity\Phd2Calibration c WHERE c.session = :s')->execute(['s' => $session]);
             $em->createQuery('DELETE App\Entity\Phd2Guiding g WHERE g.session = :s')->execute(['s' => $session]);
+            $em->createQuery('DELETE App\Entity\WbppLog w WHERE w.session = :s')->execute(['s' => $session]);
 
             return new JsonResponse(['ok' => true]);
         } catch (\Throwable $e) {
@@ -151,6 +155,17 @@ final class SessionController extends AbstractController
     {
         try {
             $processed = $phd2Reader->refreshPHD2Logs($session, $em);
+            return new JsonResponse(['processed' => $processed]);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/api/session/{id<\d+>}/refresh/wbpp', name: 'api_session_refresh_wbpp', methods: ['POST'])]
+    public function refreshWbpp(Session $session, EntityManagerInterface $em, WBPPLogsReader $wbppReader): JsonResponse
+    {
+        try {
+            $processed = $wbppReader->refreshWBPPLogs($session, $em);
             return new JsonResponse(['processed' => $processed]);
         } catch (\Throwable $e) {
             return new JsonResponse(['error' => $e->getMessage()], 500);
@@ -387,6 +402,33 @@ final class SessionController extends AbstractController
 
         return $this->render('details/phd2guidinggraph.html.twig', [
             'guiding' => $id
+        ]);
+    }
+
+    #[Route('/hide/wbpplog/{id}/{hidden}', name: 'wbpplog_hide')]
+    public function wbpplogHide(
+        WbppLog $id, EntityManagerInterface $em, $hidden = false
+    ): Response
+    {
+        $id->setHidden($hidden);
+        $em->persist($id);
+        $em->flush();
+        return $this->redirectToRoute('browse_session', ['id' => $id->getSession()->getId()]);
+    }
+
+    #[Route('/details/wbpplog/{id}', name: 'wbpplog_detail')]
+    public function wbpplogDetail(WbppLog $id): Response
+    {
+        return $this->render('details/wbpplog.html.twig', [
+            'wbpp' => $id
+        ]);
+    }
+
+    #[Route('/details/wbpplog/{id}/sidebar', name: 'wbpplog_sidebar')]
+    public function wbpplogSidebar(WbppLog $id): Response
+    {
+        return $this->render('details/wbpplog_sidebar.html.twig', [
+            'wbpp' => $id
         ]);
     }
 

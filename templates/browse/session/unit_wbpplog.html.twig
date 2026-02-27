@@ -1,0 +1,19 @@
+<span class="session-file {{ e.hidden ? "bg-light-primary" : "" }}"
+      data-type="wbpp"
+      data-id="{{ e.id }}">
+    <small style="font-size: 10px">
+        {{ 'session.unit_wbpp'|trans }}
+    </small><br>
+    <strong><i class="fa fa-fw fa-layer-group"></i></strong><br>
+    <small style="font-size: 12px">
+        {{ e.frameCount }} frames
+    </small><br>
+    <small style="font-size: 10px">
+        {% if e.filterGroups|length > 0 %}
+            {{ e.filterGroups|map(g => g.filter)|join('/') }}
+        {% endif %}
+        {% if e.startedAt %}
+            - {{ e.startedAt|date("H:i") }}
+        {% endif %}
+    </small>
+</span>

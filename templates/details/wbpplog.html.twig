@@ -1,0 +1,77 @@
+<div class="card-body">
+{# --- Filter groups --- #}
+{% if wbpp.filterGroups|length > 0 %}
+<h6 class="mb-2 mt-3"><i class="fa fa-fw fa-filter me-1"></i>{{ 'wbpp.section_filters'|trans }}</h6>
+<div class="table-responsive mb-3">
+    <table class="table table-sm table-bordered mb-0">
+        <thead>
+            <tr>
+                <th>{{ 'wbpp.col_filter'|trans }}</th>
+                <th class="text-end">{{ 'wbpp.col_total'|trans }}</th>
+                <th class="text-end">{{ 'wbpp.col_active'|trans }}</th>
+                <th class="text-end">{{ 'wbpp.col_rejected'|trans }}</th>
+                <th class="text-end">FWHM</th>
+                <th class="text-end">Ecc.</th>
+                <th class="text-end">SNR</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for g in wbpp.filterGroups %}
+            <tr>
+                <td><strong>{{ g.filter }}</strong></td>
+                <td class="text-end">{{ g.framesTotal }}</td>
+                <td class="text-end text-success">{{ g.framesActive }}</td>
+                <td class="text-end {% if g.framesRejected > 0 %}text-danger{% endif %}">{{ g.framesRejected }}</td>
+                <td class="text-end">{{ g.avgFwhm ? g.avgFwhm|number_format(2) : '—' }}</td>
+                <td class="text-end">{{ g.avgEccentricity ? g.avgEccentricity|number_format(3) : '—' }}</td>
+                <td class="text-end">{{ g.avgSnr ? g.avgSnr|number_format(2) : '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# --- Per-frame table --- #}
+{% if wbpp.frames|length > 0 %}
+<h6 class="mb-2"><i class="fa fa-fw fa-list me-1"></i>{{ 'wbpp.section_frames'|trans }}</h6>
+<div class="table-responsive" style="max-height: 600px; overflow-y: auto">
+    <table class="table table-sm table-striped mb-0" style="font-size: 12px">
+        <thead>
+            <tr class="table-dark">
+                <th>#</th>
+                <th>{{ 'wbpp.col_file'|trans }}</th>
+                <th>{{ 'wbpp.col_filter'|trans }}</th>
+                <th class="text-end">FWHM</th>
+                <th class="text-end">Ecc.</th>
+                <th class="text-end">{{ 'wbpp.col_stars'|trans }}</th>
+                <th class="text-end">SNR</th>
+                <th class="text-end">{{ 'wbpp.col_weight'|trans }}</th>
+                <th class="text-center">{{ 'wbpp.col_status'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in wbpp.frames %}
+            <tr class="{{ not f.accepted ? 'table-danger opacity-75' : '' }}">
+                <td class="text-muted">{{ loop.index }}</td>
+                <td class="text-truncate" style="max-width: 200px" title="{{ f.file }}">{{ f.file }}</td>
+                <td>{{ f.filter }}</td>
+                <td class="text-end">{{ f.fwhm ? f.fwhm|number_format(3) : '—' }}</td>
+                <td class="text-end">{{ f.eccentricity ? f.eccentricity|number_format(3) : '—' }}</td>
+                <td class="text-end">{{ f.stars ?? '—' }}</td>
+                <td class="text-end">{{ f.snr ? f.snr|number_format(3) : '—' }}</td>
+                <td class="text-end">{{ f.psfSignalWeight ? f.psfSignalWeight|number_format(4) : '—' }}</td>
+                <td class="text-center">
+                    {% if f.accepted %}
+                        <i class="fa fa-check-circle text-success" title="Accepted"></i>
+                    {% else %}
+                        <i class="fa fa-times-circle text-danger" title="Rejected"></i>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+</div>

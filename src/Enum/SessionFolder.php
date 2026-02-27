@@ -12,6 +12,7 @@ enum SessionFolder: string
     case EXPORT   = 'EXPORT';
     case LOG_NINA = 'LOG_NINA';
     case LOG_PHD2 = 'LOG_PHD2';
+    case LOG_WBPP = 'LOG_WBPP';
     case DOC      = 'DOC';
 
     public function defaultRelativePath(): string
@@ -25,6 +26,7 @@ enum SessionFolder: string
             self::EXPORT   => '03 - Processing/exports',
             self::LOG_NINA => '02 - Acquisition/logs/nina',
             self::LOG_PHD2 => '02 - Acquisition/logs/phd2',
+            self::LOG_WBPP => '03 - Processing/logs',
             self::DOC      => '99 - Docs',
         };
     }
@@ -41,6 +43,7 @@ enum SessionFolder: string
             self::MASTER   => '/\.(xisf|fits)$/i',
             self::EXPORT   => '/\.(jpg|jpeg|png|tif|tiff)$/i',
             self::LOG_PHD2 => '/\.(txt)$/i',
+            self::LOG_WBPP => '/\.(log)$/i',
             default        => null,
         };
     }
