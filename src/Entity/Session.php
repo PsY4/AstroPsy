@@ -37,6 +37,10 @@ class Session
     #[ORM\OrderBy(['startedAt' => 'ASC'])]
     private Collection $phd2Guidings;
 
+    #[ORM\OneToMany(mappedBy: 'session', targetEntity: WbppLog::class, cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OrderBy(['startedAt' => 'ASC'])]
+    private Collection $wbppLogs;
+
     #[ORM\Column(length: 512, nullable: true)] private ?string $path = null;
 
     /**
@@ -70,6 +74,7 @@ class Session
         $this->masters = new ArrayCollection();
         $this->authors = new ArrayCollection();
         $this->docs = new ArrayCollection();
+        $this->wbppLogs = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
@@ -163,6 +168,17 @@ class Session
     public function getPhd2Guidings(): Collection
     {
         return $this->phd2Guidings;
+    }
+
+    public function setWbppLogs(Collection $wbppLogs): Session
+    {
+        $this->wbppLogs = $wbppLogs;
+        return $this;
+    }
+
+    public function getWbppLogs(): Collection
+    {
+        return $this->wbppLogs;
     }
 
     /**

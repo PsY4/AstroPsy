@@ -227,7 +227,7 @@
                             </button>
                         </li>
                         {% endif %}
-                        {% if (session.phd2Calibrations|length>0)  or (session.phd2Guidings|length>0) %}
+                        {% if (session.phd2Calibrations|length>0) or (session.phd2Guidings|length>0) or (session.wbppLogs|length>0) %}
                         <li class="nav-item" role="presentation">
                             <button aria-controls="howowrk-tab-pane" aria-selected="false" class="nav-link" data-bs-target="#logs-tab-pane" data-bs-toggle="tab" id="logs-tab" role="tab" type="button" tabindex="-1">
                                 {{ 'session.tab_logs'|trans }}
@@ -266,13 +266,16 @@
                         </div>
                         {% endif %}
 
-                        {% if (session.phd2Calibrations|length) + (session.phd2Guidings|length) %}
+                        {% if (session.phd2Calibrations|length) + (session.phd2Guidings|length) + (session.wbppLogs|length) %}
                         <div aria-labelledby="logs-tab" class="tab-pane fade phd2logs" id="logs-tab-pane" role="tabpanel" tabindex="0">
                             {% for e in session.phd2Calibrations %}
                                 {% include "browse/session/unit_phd2log_calib.html.twig" with {"e": e} %}
                             {% endfor %}
                             {% for e in session.phd2Guidings %}
                                 {% include "browse/session/unit_phd2log_guide.html.twig" with {"e": e} %}
+                            {% endfor %}
+                            {% for e in session.wbppLogs %}
+                                {% include "browse/session/unit_wbpplog.html.twig" with {"e": e} %}
                             {% endfor %}
                         </div>
                         {% endif %}
@@ -480,6 +483,7 @@
             step_purge:   '{{ 'session.refresh.step.purge'|trans|e('js') }}',
             step_raws:    '{{ 'session.refresh.step.raws'|trans|e('js') }}',
             step_phd2:    '{{ 'session.refresh.step.phd2'|trans|e('js') }}',
+            step_wbpp:    '{{ 'session.refresh.step.wbpp'|trans|e('js') }}',
             step_masters: '{{ 'session.refresh.step.masters'|trans|e('js') }}',
             step_exports: '{{ 'session.refresh.step.exports'|trans|e('js') }}',
             processing:   '{{ 'session.refresh.processing'|trans|e('js') }}',

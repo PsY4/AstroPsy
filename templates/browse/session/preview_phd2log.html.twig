@@ -4,7 +4,7 @@
 <div class="col-xxl-9 order-xxl-2 phd2log-viewer d-none" id="phd2-preview-col">
     <div class="card">
         <div class="card-header d-flex align-items-center">
-            <h5 class="mb-0">PHD2</h5>
+            <h5 class="mb-0" id="phd2-preview-title">PHD2</h5>
             <button class="btn btn-primary icon-btn ms-auto btn-toggle-details"
                     data-details="#phd2-details-col" title="Toggle details">
                 <i class="ti ti-layout-sidebar-right-collapse"></i>
@@ -28,6 +28,8 @@
             $('.lights-viewer').addClass('d-none');
 
             if ($(this).data('type') === 'calibration') {
+                $('#phd2-preview-title').text('PHD2');
+                $('#phd2-details-col').removeClass('d-none');
 
                 // Details
                 $.ajax({
@@ -49,6 +51,8 @@
                 })
             }
             if ($(this).data('type') === 'guiding') {
+                $('#phd2-preview-title').text('PHD2');
+                $('#phd2-details-col').removeClass('d-none');
 
                 // Details
                 $.ajax({
@@ -67,6 +71,29 @@
                     cache: true
                 }).done(function (html) {
                     $('#phd2log-preview').html(html);
+                })
+            }
+            if ($(this).data('type') === 'wbpp') {
+                $('#phd2-preview-title').text('WBPP');
+                $('#phd2-details-col').removeClass('d-none');
+
+                // Tables (filter summary + per-frame)
+                $.ajax({
+                    url: '{{ path('wbpplog_detail', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                    method: 'GET',
+                    dataType: 'html',
+                    cache: true
+                }).done(function (html) {
+                    $('#phd2log-preview').html(html);
+                })
+                // Sidebar (stats, versions, calibration)
+                $.ajax({
+                    url: '{{ path('wbpplog_sidebar', {'id': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
+                    method: 'GET',
+                    dataType: 'html',
+                    cache: true
+                }).done(function (html) {
+                    $('#phd2-calibration-details').html(html);
                 })
             }
         });

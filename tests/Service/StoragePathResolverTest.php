@@ -37,7 +37,7 @@ class StoragePathResolverTest extends TestCase
                     ]],
                     ['name' => '03 - Processing', 'children' => [
                         ['name' => 'exports', 'role' => 'EXPORT', 'children' => []],
-                        ['name' => 'logs', 'allowExtra' => true, 'children' => []],
+                        ['name' => 'logs', 'role' => 'LOG_WBPP', 'allowExtra' => true, 'children' => []],
                         ['name' => 'master', 'role' => 'MASTER', 'children' => []],
                         ['name' => 'pixinsight', 'allowExtra' => true, 'children' => []],
                     ]],
