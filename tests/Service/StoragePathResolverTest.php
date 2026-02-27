@@ -23,6 +23,7 @@ class StoragePathResolverTest extends TestCase
                     ['name' => '01 - Planning', 'children' => []],
                     ['name' => '02 - Acquisition', 'children' => [
                         ['name' => 'logs', 'children' => [
+                            ['name' => 'autofocus', 'role' => 'LOG_AF', 'allowExtra' => true, 'children' => []],
                             ['name' => 'nina', 'role' => 'LOG_NINA', 'children' => []],
                             ['name' => 'phd2', 'role' => 'LOG_PHD2', 'children' => []],
                             ['name' => 'session', 'allowExtra' => true, 'children' => []],
@@ -88,8 +89,8 @@ class StoragePathResolverTest extends TestCase
         $resolver = $this->createResolver();
         $paths = $resolver->getAllRelativePaths();
 
-        // Root '' + 19 dirs (5 top-level + 14 nested)
-        $this->assertCount(20, $paths);
+        // Root '' + 20 dirs (5 top-level + 15 nested, includes autofocus)
+        $this->assertCount(21, $paths);
         $this->assertSame('', $paths[0]);
         $this->assertContains('00 - Metadata', $paths);
         $this->assertContains('02 - Acquisition/raw/light', $paths);

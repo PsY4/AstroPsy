@@ -9,11 +9,13 @@ use App\Entity\Phd2Calibration;
 use App\Entity\Phd2Guiding;
 use App\Entity\Session;
 use App\Entity\Target;
+use App\Entity\AutofocusLog;
 use App\Entity\WbppLog;
 use App\Enum\SessionFolder;
 use App\Form\SessionType;
 use App\Service\AstrobinAPIService;
 use App\Service\AstropyClient;
+use App\Service\AutofocusLogsReader;
 use App\Service\FilterNormalizer;
 use App\Service\PHD2LogsReader;
 use App\Service\SessionRefreshService;
@@ -93,7 +95,7 @@ final class SessionController extends AbstractController
     }
 
     #[Route('/api/session/{id<\d+>}/refresh/count', name: 'api_session_refresh_count', methods: ['GET'])]
-    public function refreshCount(Session $session): JsonResponse
+    public function refreshCount(Session $session, AutofocusLogsReader $afReader): JsonResponse
     {
         $counts = [];
         $folders = [
@@ -119,6 +121,9 @@ final class SessionController extends AbstractController
             $counts[$key] = iterator_count($finder);
         }
 
+        // Autofocus: count run directories (not files)
+        $counts['autofocus'] = $afReader->countRunDirs($session);
+
         return new JsonResponse($counts);
     }
 
@@ -132,6 +137,7 @@ final class SessionController extends AbstractController
             $em->createQuery('DELETE App\Entity\Phd2Calibration c WHERE c.session = :s')->execute(['s' => $session]);
             $em->createQuery('DELETE App\Entity\Phd2Guiding g WHERE g.session = :s')->execute(['s' => $session]);
             $em->createQuery('DELETE App\Entity\WbppLog w WHERE w.session = :s')->execute(['s' => $session]);
+            $em->createQuery('DELETE App\Entity\AutofocusLog a WHERE a.session = :s')->execute(['s' => $session]);
 
             return new JsonResponse(['ok' => true]);
         } catch (\Throwable $e) {
@@ -166,6 +172,17 @@ final class SessionController extends AbstractController
     {
         try {
             $processed = $wbppReader->refreshWBPPLogs($session, $em);
+            return new JsonResponse(['processed' => $processed]);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/api/session/{id<\d+>}/refresh/autofocus', name: 'api_session_refresh_autofocus', methods: ['POST'])]
+    public function refreshAutofocus(Session $session, EntityManagerInterface $em, AutofocusLogsReader $afReader): JsonResponse
+    {
+        try {
+            $processed = $afReader->refreshAutofocusLogs($session, $em);
             return new JsonResponse(['processed' => $processed]);
         } catch (\Throwable $e) {
             return new JsonResponse(['error' => $e->getMessage()], 500);
@@ -402,6 +419,90 @@ final class SessionController extends AbstractController
 
         return $this->render('details/phd2guidinggraph.html.twig', [
             'guiding' => $id
+        ]);
+    }
+
+    #[Route('/hide/autofocuslog/{id}/{hidden}', name: 'autofocuslog_hide')]
+    public function autofocuslogHide(
+        AutofocusLog $id, EntityManagerInterface $em, $hidden = true
+    ): Response
+    {
+        $id->setHidden($hidden);
+        $em->persist($id);
+        $em->flush();
+        return $this->redirectToRoute('browse_session', ['id' => $id->getSession()->getId()]);
+    }
+
+    #[Route('/details/autofocuslog/{id}', name: 'autofocuslog_detail')]
+    public function autofocuslogDetail(AutofocusLog $id): Response
+    {
+        return $this->render('details/autofocuslog.html.twig', [
+            'af' => $id
+        ]);
+    }
+
+    #[Route('/details/autofocuslog/{id}/sidebar', name: 'autofocuslog_sidebar')]
+    public function autofocuslogSidebar(AutofocusLog $id): Response
+    {
+        return $this->render('details/autofocuslog_sidebar.html.twig', [
+            'af' => $id
+        ]);
+    }
+
+    #[Route('/details/autofocuslog/{id}/graph', name: 'autofocuslog_graph')]
+    public function autofocuslogGraph(AutofocusLog $id): Response
+    {
+        return $this->render('details/autofocuslog_graph.html.twig', [
+            'af' => $id
+        ]);
+    }
+
+    #[Route('/api/autofocus/{id}/images', name: 'api_autofocus_images')]
+    public function autofocusImages(AutofocusLog $id): JsonResponse
+    {
+        $absPath = $this->resolver->toAbsolutePath($id->getSourcePath());
+        $images = [];
+
+        if (is_dir($absPath)) {
+            $items = @scandir($absPath);
+            if ($items !== false) {
+                foreach ($items as $item) {
+                    if (preg_match('/\.(png|jpg|jpeg)$/i', $item) && is_file($absPath . '/' . $item)) {
+                        $images[] = [
+                            'name' => $item,
+                            'path' => $id->getSourcePath() . '/' . $item,
+                        ];
+                    }
+                }
+                sort($images);
+            }
+        }
+
+        return new JsonResponse($images);
+    }
+
+    #[Route('/api/autofocus/image', name: 'api_autofocus_image')]
+    public function autofocusImage(Request $request): Response
+    {
+        $relPath = $request->query->get('path', '');
+        if ($relPath === '' || str_contains($relPath, '..')) {
+            return new Response('Forbidden', 403);
+        }
+
+        $absPath = $this->resolver->toAbsolutePath($relPath);
+        if (!is_file($absPath)) {
+            throw $this->createNotFoundException();
+        }
+
+        $mime = match (strtolower(pathinfo($absPath, PATHINFO_EXTENSION))) {
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpeg',
+            default => 'application/octet-stream',
+        };
+
+        return new Response(file_get_contents($absPath), 200, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'public, max-age=86400',
         ]);
     }
 

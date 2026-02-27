@@ -49,7 +49,8 @@
         html += '<table class="table table-sm mb-2">';
         var labels = {
             lights: 'Lights', darks: 'Darks', flats: 'Flats', bias: 'Bias',
-            masters: 'Masters', exports: 'Exports', phd2: 'PHD2 Logs', wbpp: 'WBPP Logs'
+            masters: 'Masters', exports: 'Exports', phd2: 'PHD2 Logs', wbpp: 'WBPP Logs',
+            autofocus: 'AutoFocus'
         };
         Object.keys(labels).forEach(function (k) {
             if (counts[k] > 0) {
@@ -95,6 +96,7 @@
             { key: 'raws',    type: 'files', label: t('step_raws') },
             { key: 'phd2',    type: 'batch', label: t('step_phd2') },
             { key: 'wbpp',    type: 'batch', label: t('step_wbpp') },
+            { key: 'autofocus', type: 'batch', label: t('step_autofocus') },
             { key: 'masters', type: 'files', label: t('step_masters') },
             { key: 'exports', type: 'files', label: t('step_exports') }
         ];

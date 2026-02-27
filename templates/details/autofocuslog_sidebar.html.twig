@@ -1,0 +1,138 @@
+<div class="card profile-container">
+    <div class="card-header">
+        <div class="fa-pull-left">
+            <h5>{{ 'autofocus.title'|trans }}</h5>
+        </div>
+        <div class="fa-pull-right">
+            <a href="openfolder:{{ af.sourcePath }}"
+               class="btn btn-primary icon-btn b-r-4 js-openfolder" title="{{ 'autofocus.btn_open_local'|trans }}">
+                <i class="fa primary fa-arrow-right-to-file"></i>
+            </a>
+            <a href="{{ path('autofocuslog_hide', {'id': af.id, 'hidden': true}) }}"
+               class="btn btn-light-secondary icon-btn b-r-4" title="{{ 'autofocus.btn_hide'|trans }}">
+                <i class="fa primary fa-delete-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="profile-container mt-0">
+            {# --- Summary stats --- #}
+            <div class="person-details mt-0">
+                <div class="details mt-0">
+                    {% if af.calculatedPosition %}
+                    <div>
+                        <h4 class="text-primary">{{ af.calculatedPosition|number_format(0) }}</h4>
+                        <p class="text-secondary">{{ 'autofocus.col_position'|trans }}</p>
+                    </div>
+                    {% endif %}
+                    {% if af.calculatedHfr %}
+                    <div>
+                        <h4 class="text-primary">{{ af.calculatedHfr|number_format(2) }}</h4>
+                        <p class="text-secondary">{{ 'autofocus.col_hfr'|trans }}</p>
+                    </div>
+                    {% endif %}
+                    {% if af.rSquared %}
+                    <div>
+                        <h4 class="text-primary">{{ af.rSquared|number_format(4) }}</h4>
+                        <p class="text-secondary">{{ 'autofocus.col_r_squared'|trans }}</p>
+                    </div>
+                    {% endif %}
+                    <div>
+                        {% if af.success %}
+                            <h4 class="text-success">{{ 'autofocus.label_success'|trans }}</h4>
+                        {% else %}
+                            <h4 class="text-danger">{{ 'autofocus.label_failed'|trans }}</h4>
+                        {% endif %}
+                        <p class="text-secondary">Status</p>
+                    </div>
+                </div>
+            </div>
+
+            {# --- Details --- #}
+            <div class="about-list mb-3">
+                {% if af.filter %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_filter'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ af.filter }}</span>
+                </div>
+                {% endif %}
+                {% if af.temperature is not null %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_temperature'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ af.temperature|number_format(1) }}°C</span>
+                </div>
+                {% endif %}
+                {% if af.durationSeconds %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_duration'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ (af.durationSeconds / 60)|number_format(1) }}min</span>
+                </div>
+                {% endif %}
+                {% if af.method %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_method'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ af.method }}</span>
+                </div>
+                {% endif %}
+                {% if af.fitting %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_fitting'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ af.fitting }}</span>
+                </div>
+                {% endif %}
+                {% if af.focuserName %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_focuser'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ af.focuserName }}</span>
+                </div>
+                {% endif %}
+                {% if af.starDetectorName %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_detector'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ af.starDetectorName }}</span>
+                </div>
+                {% endif %}
+                {% if af.timestamp %}
+                <div>
+                    <span class="fw-medium">Date</span>
+                    <span class="float-end f-s-13 text-secondary">{{ af.timestamp|date("Y-m-d H:i:s") }}</span>
+                </div>
+                {% endif %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.label_attempt'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">#{{ af.attemptNumber }}</span>
+                </div>
+            </div>
+
+            {# --- Focus positions --- #}
+            <h6 class="mt-1 mb-2"><i class="fa fa-fw fa-crosshairs me-1"></i>{{ 'autofocus.section_details'|trans }}</h6>
+            <div class="about-list mb-3">
+                {% if af.initialPosition %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_initial'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ af.initialPosition|number_format(0) }} (HFR {{ af.initialHfr ? af.initialHfr|number_format(2) : '—' }})</span>
+                </div>
+                {% endif %}
+                {% if af.calculatedPosition %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_calculated'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ af.calculatedPosition|number_format(0) }} (HFR {{ af.calculatedHfr ? af.calculatedHfr|number_format(2) : '—' }})</span>
+                </div>
+                {% endif %}
+                {% if af.finalHfr %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_final'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">HFR {{ af.finalHfr|number_format(2) }}</span>
+                </div>
+                {% endif %}
+                {% if af.backlashModel %}
+                <div>
+                    <span class="fw-medium">{{ 'autofocus.col_backlash'|trans }}</span>
+                    <span class="float-end f-s-13 text-secondary">{{ af.backlashModel }} (IN:{{ af.backlashIn ?? '—' }} OUT:{{ af.backlashOut ?? '—' }})</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

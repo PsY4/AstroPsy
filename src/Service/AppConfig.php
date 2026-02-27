@@ -35,6 +35,7 @@ class AppConfig
                 ['name' => '01 - Planning', 'children' => []],
                 ['name' => '02 - Acquisition', 'children' => [
                     ['name' => 'logs', 'children' => [
+                        ['name' => 'autofocus', 'role' => 'LOG_AF', 'allowExtra' => true, 'children' => []],
                         ['name' => 'nina', 'role' => 'LOG_NINA', 'children' => []],
                         ['name' => 'phd2', 'role' => 'LOG_PHD2', 'children' => []],
                         ['name' => 'session', 'allowExtra' => true, 'children' => []],
