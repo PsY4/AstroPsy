@@ -1,21 +1,23 @@
 
+{% set latestDocs = docsRepo.findLatest(3) %}
+{% set totalDocs = docsRepo.count %}
 <div class="card h-100">
     <span class="bg-primary h-50 w-50 d-flex-center rounded-circle m-auto eshop-icon-box">
         <i class="ph ph-folder-open f-s-24"></i>
     </span>
     <div class="card-body">
         <div class="data-list-box mt-3">
-            {% for doc in docsRepo.findall %}
+            {% for doc in latestDocs %}
                 <a href="{{ path('doc_view', {'doc': doc.id }) }}">
                     <div class="filebox">
                         <div class="d-flex align-items-center position-relative">
                             <div class="position-absolute start-0">
-                                <i class="{{ doc.icon }} fa-2x"></i>
+                                <i class="{{ doc.icon ?? 'fa fa-file' }} fa-2x"></i>
                             </div>
                             <div class="flex-grow-1 mg-s-40">
                                 <h6 class="mb-0">{{ doc.title }}</h6>
                                 <p class="text-secondary mb-0">
-                                    {% for tag in doc.tags %}
+                                    {% for tag in doc.tags ?? [] %}
                                         <span class="badge text-bg-primary">{{ tag }}</span>
                                     {% endfor %}
                                 </p>
@@ -23,11 +25,13 @@
                         </div>
                     </div>
                 </a>
+            {% else %}
+                <p class="text-center text-muted mb-0">{{ 'target.no_documents'|trans }}</p>
             {% endfor %}
         </div>
     </div>
     <div class="card-footer text-center py-2">
-        <a href="{{ path('doc_list') }}"><span class="badge text-bg-primary"><i class="fa fa-fw fa-list"></i> {{ 'dashboard.btn_view_all'|trans }}</span></a>
-        <a href="{{ path('doc_list') }}" class="ms-2"><span class="badge text-bg-primary"><i class="fa fa-fw fa-plus"></i> {{ 'dashboard.btn_create_new'|trans }}</span></a>
+        <a href="{{ path('doc_list') }}"><span class="badge text-bg-primary"><i class="fa fa-fw fa-list"></i> {{ 'dashboard.btn_view_all'|trans }} ({{ totalDocs }})</span></a>
+        <a href="{{ path('doc_new') }}" class="ms-2"><span class="badge text-bg-primary"><i class="fa fa-fw fa-plus"></i> {{ 'dashboard.btn_create_new'|trans }}</span></a>
     </div>
 </div>

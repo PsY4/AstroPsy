@@ -38,8 +38,8 @@
                             {% endfor %}
                         </a>
                     </td>
-                    <td><span class="badge text-light-secondary">{{ doc.creationDate|date }}</span></td>
-                    <td><span class="badge text-light-secondary">{{ doc.updateDate|date }}</span></td>
+                    <td>{% if doc.creationDate %}<span class="badge text-light-secondary">{{ doc.creationDate|format_datetime('medium', 'none', locale=app.request.locale) }}</span>{% endif %}</td>
+                    <td>{% if doc.updateDate %}<span class="badge text-light-secondary">{{ doc.updateDate|format_datetime('medium', 'none', locale=app.request.locale) }}</span>{% endif %}</td>
                     <td>{{ doc.target.id }}</td>
                     <td>{{ doc.session.id }}</td>
                     <td>

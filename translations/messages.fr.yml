@@ -264,9 +264,11 @@ form:
     upload:
       label: "Téléverser un fichier"
     type:
-      label: "Type"
+      label: "Tags"
       alert: "Alerte"
       todo: "À faire"
+    tags:
+      placeholder: "Ajouter un tag (Entrée pour valider)…"
   existing_images: "Images existantes :"
   delete_image: "Supprimer cette image"
 
@@ -324,6 +326,8 @@ session:
   phase_planification: "Planification"
   phase_acquisition: "Acquisition"
   phase_traitement: "Traitement"
+  phase_documents: "Documents"
+  no_documents: "Aucun document pour cette session"
   stat_lights: "LIGHTS"
   stat_filters: "FILTRES"
   stat_duration: "DURÉE"

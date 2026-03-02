@@ -34,7 +34,14 @@
                         <span class="input-group-addon"></span>
                     </div>
                 </div>
-                <div class="col-md-10">{{ form_row(form.tags) }}</div>
+                <div class="col-md-10">
+                    <label class="form-label">{{ 'form.doc.type.label'|trans }}</label>
+                    <div class="d-flex flex-wrap align-items-center gap-1 border rounded p-2" id="tags-container">
+                        <input type="text" class="form-control form-control-sm border-0 flex-grow-1" id="tag-input"
+                               placeholder="{{ 'form.doc.tags.placeholder'|trans }}" style="min-width:120px; box-shadow:none;">
+                    </div>
+                    {{ form_widget(form.tags) }}
+                </div>
                 <div class="col-md-12  mt-3">
                     {{ form_widget(form.doc) }}
                     {% if doc.getPath()|default("") == "" %}
@@ -83,5 +90,69 @@
     <style>
         .iconpicker .iconpicker-item { color: rgba(var(--primary), 1); }
         .iconpicker-popover { z-index:99999 }
+        #tags-container .tag-badge { cursor: pointer; }
+        #tags-container .tag-badge:hover { opacity: 0.7; }
+        #tag-input:focus { outline: none; }
     </style>
+    <script>
+    (function() {
+        var hiddenInput = document.getElementById('doc_tags');
+        var container = document.getElementById('tags-container');
+        var input = document.getElementById('tag-input');
+        var tags = [];
+
+        try { tags = JSON.parse(hiddenInput.value || '[]'); } catch(e) { tags = []; }
+
+        function render() {
+            container.querySelectorAll('.tag-badge').forEach(function(el) { el.remove(); });
+            tags.forEach(function(tag, i) {
+                var badge = document.createElement('span');
+                badge.className = 'badge text-bg-primary tag-badge me-1';
+                badge.textContent = tag + ' ×';
+                badge.title = 'Supprimer';
+                badge.addEventListener('click', function() {
+                    tags.splice(i, 1);
+                    sync();
+                });
+                container.insertBefore(badge, input);
+            });
+        }
+
+        function sync() {
+            hiddenInput.value = JSON.stringify(tags);
+            render();
+        }
+
+        function addTag(value) {
+            var v = value.trim();
+            if (v && tags.indexOf(v) === -1) {
+                tags.push(v);
+                sync();
+            }
+        }
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                addTag(input.value);
+                input.value = '';
+            }
+            if (e.key === 'Backspace' && input.value === '' && tags.length > 0) {
+                tags.pop();
+                sync();
+            }
+        });
+
+        input.addEventListener('blur', function() {
+            if (input.value.trim()) {
+                addTag(input.value);
+                input.value = '';
+            }
+        });
+
+        container.addEventListener('click', function() { input.focus(); });
+
+        render();
+    })();
+    </script>
 {% endblock %}

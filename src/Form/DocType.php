@@ -7,13 +7,16 @@ use App\Entity\Session;
 use App\Entity\Target;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\QueryBuilder;
 
 class DocType extends AbstractType
 {
@@ -56,25 +59,23 @@ class DocType extends AbstractType
                 ],
                 'class' => Session::class,
                 'required' => false,
-                'choice_label' => 'id',
+                'choice_label' => fn(Session $s) => ($s->getTarget() ? $s->getTarget()->getName() . ' — ' : '') . ($s->getStartedAt()?->format('Y-m-d') ?? '#' . $s->getId()),
+                'query_builder' => fn(EntityRepository $r): QueryBuilder => $r->createQueryBuilder('s')->leftJoin('s.target', 't')->orderBy('s.startedAt', 'DESC'),
             ])
             ->add('icon', TextType::class, [
                 'attr' => [
                     "data-placement"=>"bottomRight",
                     "class" => "form-control icp icp-auto form-control-sm"
                 ] ])
-            ->add('tags', ChoiceType::class, [
-                'choices' => [
-                    'form.doc.type.alert' => 'Alert',
-                    'form.doc.type.todo' => 'To-Do',
-                ],
-                'choice_translation_domain' => 'messages',
-                'multiple' => true,
-                'expanded' => true,
-                'attr' => [
-                    'class' => "form-control form-control-sm",
-                ]])
-            ->add('uploadedFile', FileType::class, [
+            ->add('tags', HiddenType::class)
+        ;
+
+        $builder->get('tags')->addModelTransformer(new CallbackTransformer(
+            fn(?array $tagsAsArray) => $tagsAsArray ? json_encode(array_values($tagsAsArray)) : '[]',
+            fn(?string $tagsAsString) => $tagsAsString ? json_decode($tagsAsString, true) ?? [] : [],
+        ));
+
+        $builder->add('uploadedFile', FileType::class, [
                 'label' => 'form.doc.upload.label',
                 'required' => false,
                 'mapped' => false, // Important: mapped manually,
@@ -82,7 +83,6 @@ class DocType extends AbstractType
                     'class' => "form-control",
                 ]
             ]);
-     ;
     }
 
     public function configureOptions(OptionsResolver $resolver): void

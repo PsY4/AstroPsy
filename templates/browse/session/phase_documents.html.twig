@@ -1,0 +1,41 @@
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fa fa-fw fa-file-alt me-1"></i>{{ 'session.phase_documents'|trans }}</h5>
+        <a href="{{ path('doc_new', {session: session.id}) }}" class="btn btn-sm btn-outline-primary">
+            <i class="fa fa-plus me-1"></i>{{ 'doc.btn_add'|trans }}
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="data-list-box">
+            {% for doc in docs %}
+                <a href="{{ path('doc_view', {'doc': doc.id}) }}">
+                    <div class="filebox">
+                        <div class="d-flex align-items-center position-relative">
+                            <div class="position-absolute start-0">
+                                <i class="{{ doc.icon ?? 'fa fa-file' }} fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 mg-s-40">
+                                <h6 class="mb-0">{{ doc.title }}</h6>
+                                <p class="text-secondary mb-0">
+                                    {% if doc.path %}
+                                        <span class="badge text-bg-secondary">{{ doc.path }}</span>
+                                    {% endif %}
+                                    {% for tag in doc.tags ?? [] %}
+                                        <span class="badge text-bg-primary">{{ tag }}</span>
+                                    {% endfor %}
+                                </p>
+                            </div>
+                            {% if doc.path %}
+                            <a href="{{ path('doc_download', {'doc': doc.id}) }}" class="btn btn-sm btn-outline-primary ms-2" title="Download">
+                                <i class="fa fa-download"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            {% else %}
+                <p class="text-center text-muted mb-0">{{ 'session.no_documents'|trans }}</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>

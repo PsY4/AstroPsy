@@ -266,6 +266,10 @@
                             <i class="fa fa-fw fa-gears me-1"></i>{{ 'session.phase_traitement'|trans }}
                         </button>
                         {% endif %}
+                        <button class="btn btn-sm btn-outline-primary phase-tab-btn" data-bs-target="#phase-documents" data-bs-toggle="tab" role="tab" type="button" id="phase-documents-tab">
+                            <i class="fa fa-fw fa-file-alt me-1"></i>{{ 'session.phase_documents'|trans }}
+                            {% if docs|length > 0 %}<span class="badge bg-secondary ms-1">{{ docs|length }}</span>{% endif %}
+                        </button>
                     </div>
 
                     {# ── Sub-tabs for Acquisition (visible when Acquisition phase is active) ── #}
@@ -351,6 +355,11 @@
             {% include 'browse/session/phase_traitement.html.twig' %}
         </div>
         {% endif %}
+
+        {# ── Documents ── #}
+        <div class="tab-pane fade" id="phase-documents" role="tabpanel">
+            {% include 'browse/session/phase_documents.html.twig' %}
+        </div>
     </div>
 
     {# ############## NOTES MODAL ############## #}

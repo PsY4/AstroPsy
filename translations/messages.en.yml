@@ -264,9 +264,11 @@ form:
     upload:
       label: "Upload File"
     type:
-      label: "Type"
+      label: "Tags"
       alert: "Alert"
       todo: "To-Do"
+    tags:
+      placeholder: "Add a tag (press Enter)…"
   existing_images: "Existing Images:"
   delete_image: "Delete this image"
 
@@ -324,6 +326,8 @@ session:
   phase_planification: "Planning"
   phase_acquisition: "Acquisition"
   phase_traitement: "Processing"
+  phase_documents: "Documents"
+  no_documents: "No documents for this session"
   stat_lights: "LIGHTS"
   stat_filters: "FILTERS"
   stat_duration: "DURATION"

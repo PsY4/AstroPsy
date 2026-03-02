@@ -41,12 +41,9 @@ class Doc
     private ?array $tags = null;
 
     #[ORM\Column(length: 1024, nullable: true)]
-    private ?string $path;
+    private ?string $path = null;
 
-    #[Assert\File(
-        maxSize: '10M',
-        mimeTypes: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-    )]
+    #[Assert\File(maxSize: '10M')]
     private ?File $uploadedFile = null;
 
     public function getId(): ?int
