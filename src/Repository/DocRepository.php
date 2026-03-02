@@ -16,4 +16,15 @@ class DocRepository extends ServiceEntityRepository
         parent::__construct($registry, Doc::class);
     }
 
+    /**
+     * @return Doc[]
+     */
+    public function findLatest(int $limit = 3): array
+    {
+        return $this->createQueryBuilder('d')
+            ->orderBy('d.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -453,6 +453,10 @@ nav.semi-nav:not(:hover) .sidebar-footer {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 8px 16px !important;
 }
+/* Phase tabs — always 4 columns on one line */
+#session-hero #session-phase-tabs {
+    grid-template-columns: repeat(4, 1fr) !important;
+}
 #session-hero .hero-stat {
     text-align: center;
     padding: 8px 4px;
