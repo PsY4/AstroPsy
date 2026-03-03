@@ -1,12 +1,18 @@
 {% set headers = master.header %}
 {% set isXisf = master.type == 'XISF' %}
+{% set isTif  = master.type in ['TIF', 'TIFF'] %}
 
-{# Normalize access: XISF nests under metadata.FITS + aliases, FITS is flat #}
+{# Normalize access: XISF nests under metadata.FITS + aliases, FITS is flat, TIF has its own structure #}
 {% if isXisf %}
     {% set fits = headers.metadata.FITS ?? {} %}
     {% set aliases = headers.metadata.aliases ?? {} %}
     {% set imgW = headers.shape[1] ?? null %}
     {% set imgH = headers.shape[0] ?? null %}
+{% elseif isTif %}
+    {% set fits = {} %}
+    {% set aliases = {} %}
+    {% set imgW = null %}
+    {% set imgH = null %}
 {% else %}
     {% set fits = headers %}
     {% set aliases = {} %}
@@ -29,7 +35,12 @@
     {# ── Summary banner ── #}
     <div class="card-header person-details mt-0">
         <div class="details mt-0">
-            {% if imgW and imgH %}
+            {% if isTif and headers['size'] is defined %}
+            <div>
+                <h4 class="text-primary"><small>{{ headers['size'] }}</small></h4>
+                <p class="text-secondary">SIZE</p>
+            </div>
+            {% elseif imgW and imgH %}
             <div>
                 <h4 class="text-primary"><small>{{ imgW }}x{{ imgH }}</small></h4>
                 <p class="text-secondary">SIZE</p>
@@ -141,6 +152,58 @@
                 <div class="collapse" id="master-fits-tags">
                     {% for key, value in fits %}
                         <div><span class="fw-medium f-s-13">{{ key }}</span> <span class="float-end f-s-13 text-secondary text-truncate" style="max-width: 200px" title="{{ value }}">{{ value }}</span></div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+            {% elseif isTif %}
+                {# ═══════════════ TIF sections ═══════════════ #}
+
+                {# IMAGE #}
+                <h6>IMAGE</h6>
+                {% if headers['size'] is defined %}<div><span class="fw-medium"><i class="ti ti-dimensions"></i> {{ 'master.detail.resolution'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['size'] }}</span></div>{% endif %}
+                {% if headers['format'] is defined %}<div><span class="fw-medium"><i class="ti ti-file"></i> Format</span> <span class="float-end f-s-13 text-secondary">{{ headers['format'] }}</span></div>{% endif %}
+                {% if headers['mode'] is defined %}<div><span class="fw-medium"><i class="ti ti-palette"></i> Mode</span> <span class="float-end f-s-13 text-secondary">{{ headers['mode'] }}</span></div>{% endif %}
+                {% if headers['frames'] is defined and headers['frames'] > 1 %}<div><span class="fw-medium"><i class="ti ti-layers-subtract"></i> Frames</span> <span class="float-end f-s-13 text-secondary">{{ headers['frames'] }}</span></div>{% endif %}
+
+                {# TIFF SUMMARY #}
+                {% if headers['tiff_summary'] is defined %}
+                <hr>
+                <h6>TIFF</h6>
+                {% for key, value in headers['tiff_summary'] %}
+                    {% set display = value is iterable ? value|json_encode : value %}
+                    <div><span class="fw-medium f-s-13">{{ key }}</span> <span class="float-end f-s-13 text-secondary">{{ display }}</span></div>
+                {% endfor %}
+                {% endif %}
+
+                {# EXIF #}
+                {% if headers['exif'] is defined and headers['exif'] is not empty %}
+                <hr>
+                <h6>
+                    <a data-bs-toggle="collapse" href="#master-exif-tif-tags" role="button" aria-expanded="false" class="text-decoration-none">
+                        EXIF <i class="ti ti-chevron-down f-s-13"></i>
+                    </a>
+                </h6>
+                <div class="collapse" id="master-exif-tif-tags">
+                    {% for key, value in headers['exif'] %}
+                        {% set display = value is iterable ? value|json_encode : value %}
+                        <div><span class="fw-medium f-s-13">{{ key }}</span> <span class="float-end f-s-13 text-secondary text-truncate" style="max-width: 200px" title="{{ display }}">{{ display }}</span></div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {# TIFF TAGS #}
+                {% if headers['tiff_tags'] is defined and headers['tiff_tags'] is not empty %}
+                <hr>
+                <h6>
+                    <a data-bs-toggle="collapse" href="#master-tiff-raw-tags" role="button" aria-expanded="false" class="text-decoration-none">
+                        TIFF Tags <i class="ti ti-chevron-down f-s-13"></i>
+                    </a>
+                </h6>
+                <div class="collapse" id="master-tiff-raw-tags">
+                    {% for key, value in headers['tiff_tags'] %}
+                        {% set display = value is iterable ? value|json_encode : value %}
+                        <div><span class="fw-medium f-s-13">{{ key }}</span> <span class="float-end f-s-13 text-secondary text-truncate" style="max-width: 200px" title="{{ display }}">{{ display }}</span></div>
                     {% endfor %}
                 </div>
                 {% endif %}

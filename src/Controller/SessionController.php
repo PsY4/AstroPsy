@@ -319,9 +319,11 @@ final class SessionController extends AbstractController
     if ($master->getHeader() == [])
     {
         $absPath = $this->resolver->toAbsolutePath($master->getPath());
-        $headers = $master->getType() === 'XISF'
-            ? $astropy->xisfHeader($absPath)
-            : $astropy->fitsHeader($absPath);
+        $headers = match ($master->getType()) {
+            'XISF' => $astropy->xisfHeader($absPath),
+            'TIF', 'TIFF' => $astropy->imageHeader($absPath),
+            default => $astropy->fitsHeader($absPath),
+        };
         $master->setHeader($headers);
         $entityManager->persist($master);
         $entityManager->flush();
