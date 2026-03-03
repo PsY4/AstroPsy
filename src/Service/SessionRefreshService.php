@@ -74,7 +74,11 @@ class SessionRefreshService
                     ? (float) $headers['EXPOSURE']
                     : null;
 
-                $format = in_array($ext, self::FITS_EXTENSIONS, true) ? 'FITS' : strtoupper($ext);
+                $format = match (true) {
+                    in_array($ext, self::FITS_EXTENSIONS, true) => 'FITS',
+                    in_array($ext, self::TIFF_EXTENSIONS, true) => 'TIF',
+                    default => strtoupper($ext),
+                };
 
                 $exposure = new Exposure();
                 $exposure->setSession($session)
@@ -262,7 +266,11 @@ class SessionRefreshService
         $exposureS = isset($headers['EXPOSURE']) && is_numeric($headers['EXPOSURE'])
             ? (float) $headers['EXPOSURE']
             : null;
-        $format = in_array($ext, self::FITS_EXTENSIONS, true) ? 'FITS' : strtoupper($ext);
+        $format = match (true) {
+            in_array($ext, self::FITS_EXTENSIONS, true) => 'FITS',
+            in_array($ext, self::TIFF_EXTENSIONS, true) => 'TIF',
+            default => strtoupper($ext),
+        };
 
         $exposure = new Exposure();
         $exposure->setSession($session)
@@ -379,6 +387,9 @@ class SessionRefreshService
     /** Camera RAW extensions (parsed by rawpy/exifread). */
     private const RAW_EXTENSIONS = ['nef', 'cr2', 'cr3', 'arw', 'orf', 'rw2', 'raf', 'dng', 'pef', 'srw', 'nrw'];
 
+    /** TIFF extensions (parsed by Pillow/tifffile via /image/header). */
+    private const TIFF_EXTENSIONS = ['tif', 'tiff'];
+
     /**
      * Extract headers from a raw file (FITS or camera RAW) via the Python microservice.
      */
@@ -390,6 +401,35 @@ class SessionRefreshService
 
         if (in_array($ext, self::RAW_EXTENSIONS, true)) {
             return $this->astropyClient->rawHeader($absPath);
+        }
+
+        if (in_array($ext, self::TIFF_EXTENSIONS, true)) {
+            $h = $this->astropyClient->imageHeader($absPath);
+            $exif = $h['exif'] ?? [];
+
+            // Normalize to the same keys used by FITS/RAW so refreshRaws() works uniformly
+            $dateObs = $exif['DateTimeOriginal'] ?? $exif['DateTime'] ?? null;
+            if ($dateObs && preg_match('/^\d{4}:\d{2}:\d{2}/', $dateObs)) {
+                $dateObs = (new \DateTimeImmutable(str_replace(':', '-', substr($dateObs, 0, 10)) . substr($dateObs, 10)))
+                    ->format(\DateTimeInterface::ATOM);
+            }
+
+            $exposure = null;
+            if (isset($exif['ExposureTime'])) {
+                $parts = explode('/', (string) $exif['ExposureTime']);
+                $exposure = count($parts) === 2 ? (float) $parts[0] / (float) $parts[1] : (float) $parts[0];
+            }
+
+            $h['DATE-OBS'] = $dateObs;
+            $h['EXPOSURE'] = $exposure;
+            $h['FILTER'] = null;
+            $h['CCD-TEMP'] = null;
+            $h['IMAGETYP'] = null;
+            $h['ISO'] = $exif['ISOSpeedRatings'] ?? null;
+            $h['CAMERA'] = $exif['Model'] ?? null;
+            $h['FORMAT'] = 'TIF';
+
+            return $h;
         }
 
         throw new \InvalidArgumentException(sprintf('Unsupported raw format: .%s', $ext));

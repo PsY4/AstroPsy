@@ -294,9 +294,11 @@ final class SessionController extends AbstractController
     if ($exposure->getRawHeader() == null)
     {
         $absPath = $this->resolver->toAbsolutePath($exposure->getPath());
-        $headers = $exposure->getFormat() === 'FITS'
-            ? $astropy->fitsHeader($absPath)
-            : $astropy->rawHeader($absPath);
+        $headers = match ($exposure->getFormat()) {
+            'FITS' => $astropy->fitsHeader($absPath),
+            'TIF'  => $astropy->imageHeader($absPath),
+            default => $astropy->rawHeader($absPath),
+        };
         $exposure->setRawHeader($headers);
         $entityManager->flush();
     }
