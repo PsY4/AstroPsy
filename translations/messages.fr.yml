@@ -183,6 +183,7 @@ flash:
   targets_refreshed: "Cibles rafraîchies depuis le stockage."
   sessions_root_not_found: "Dossier racine des sessions introuvable : %path%"
   author_created: 'Auteur "%name%" créé avec succès.'
+  target_name_required: "Le nom de la cible est requis."
   target_exists: 'La cible "%name%" existe déjà.'
   target_created: 'Cible "%name%" créée avec succès.'
 

@@ -98,7 +98,13 @@ final class TargetController extends AbstractController
     #[Route('/target/new', name: 'new_target')]
     public function newTarget(Request $request, EntityManagerInterface $em, TranslatorInterface $translator): Response
     {
-        $targetName = trim($request->request->get('targetName'));
+        $targetName = trim($request->query->get('targetName', '') ?: $request->request->get('targetName', ''));
+
+        if ($targetName === '') {
+            $this->addFlash('warning', $translator->trans('flash.target_name_required'));
+            return $this->redirectToRoute('browse_targets');
+        }
+
         $targetPath = Path::normalize($this->resolver->getSessionsRoot() . '/' . $targetName);
 
         // Check if folder already exists (use absolute path for FS)
