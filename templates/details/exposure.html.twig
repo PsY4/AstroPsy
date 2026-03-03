@@ -1,10 +1,32 @@
 {% set headers = exposure.rawHeader %}
 {% set isFits = exposure.format == "FITS" %}
+{% set isTif  = exposure.format == "TIF" %}
 {% if isFits %}
     <script>
         $('.lights-viewer-fits').removeClass('d-none');
         $('.lights-viewer-raw').addClass('d-none');
         JS9.Load("{{ path('fits_stream_js9safe', { id: exposure.id }) }}", {scale:"log"});
+    </script>
+{% elseif isTif %}
+    <script>
+        $('.lights-viewer-fits').addClass('d-none');
+        $('.lights-viewer-raw').removeClass('d-none');
+        var el = document.getElementById('lights-viewer-preview');
+        var vp = document.getElementById('raw-viewport');
+        var spinner = document.getElementById('raw-spinner');
+        if (spinner) spinner.classList.remove('d-none');
+        if (el) {
+            el.onload = function() {
+                if (spinner) spinner.classList.add('d-none');
+                if (!el.naturalWidth || !vp) return;
+                var sf = Math.min(vp.clientWidth / el.naturalWidth, vp.clientHeight / el.naturalHeight);
+                var oX = (vp.clientWidth  - el.naturalWidth  * sf) / 2;
+                var oY = (vp.clientHeight - el.naturalHeight * sf) / 2;
+                el.style.transform = 'translate(' + oX + 'px,' + oY + 'px) scale(' + sf + ')';
+                el.style.transformOrigin = '0 0';
+            };
+            el.src = "{{ path('tif-exposure-thumbnail', { 'exposure': exposure.id, 'w': 1920 }) }}";
+        }
     </script>
 {% else %}
     <script>
@@ -48,6 +70,25 @@
                     <h4 class="text-primary">{{ headers['FILTER'] }}</h4>
                     <p class="text-secondary">FILTER</p>
                 </div>
+            {% elseif isTif %}
+                <div>
+                    <h4 class="text-primary">{{ headers['size'] ?? '-' }}</h4>
+                    <p class="text-secondary">SIZE</p>
+                </div>
+                <div>
+                    <h4 class="text-primary">{{ headers['format'] ?? 'TIF' }}</h4>
+                    <p class="text-secondary">FORMAT</p>
+                </div>
+                <div>
+                    <h4 class="text-primary">{{ headers['mode'] ?? '-' }}</h4>
+                    <p class="text-secondary">MODE</p>
+                </div>
+                {% if headers['tiff_summary'] is defined and headers['tiff_summary']['bits_per_sample'] is defined %}
+                <div>
+                    <h4 class="text-primary">{{ headers['tiff_summary']['bits_per_sample'] }}</h4>
+                    <p class="text-secondary">BPS</p>
+                </div>
+                {% endif %}
             {% else %}
                 <div>
                     <h4 class="text-primary">{{ headers['FORMAT'] }}</h4>
@@ -185,6 +226,58 @@
             {% if headers['WINDDIR'] is not null and headers['WINDDIR'] != '' %}<div><span class="fw-medium"><i class="ti ti-compass"></i> WINDDIR</span> <span class="float-end f-s-13 text-secondary">{{ headers['WINDDIR'] }}</span></div>{% endif %}
             {% if headers['WINDGUST'] is not null and headers['WINDGUST'] != '' %}<div><span class="fw-medium"><i class="ti ti-wind"></i> WINDGUST</span> <span class="float-end f-s-13 text-secondary">{{ headers['WINDGUST'] }}</span></div>{% endif %}
             {% if headers['WINDSPD'] is not null and headers['WINDSPD'] != '' %}<div><span class="fw-medium"><i class="ti ti-wind"></i> WINDSPD</span> <span class="float-end f-s-13 text-secondary">{{ headers['WINDSPD'] }}</span></div>{% endif %}
+            {% endif %}
+
+        {% elseif isTif %}
+            {# ═══════════════ TIF sections ═══════════════ #}
+
+            {# IMAGE #}
+            <h6>IMAGE</h6>
+            {% if headers['size'] is defined %}<div><span class="fw-medium"><i class="ti ti-dimensions"></i> {{ 'exposure.detail.resolution'|trans }}</span> <span class="float-end f-s-13 text-secondary">{{ headers['size'] }}</span></div>{% endif %}
+            {% if headers['format'] is defined %}<div><span class="fw-medium"><i class="ti ti-file"></i> Format</span> <span class="float-end f-s-13 text-secondary">{{ headers['format'] }}</span></div>{% endif %}
+            {% if headers['mode'] is defined %}<div><span class="fw-medium"><i class="ti ti-palette"></i> Mode</span> <span class="float-end f-s-13 text-secondary">{{ headers['mode'] }}</span></div>{% endif %}
+            {% if headers['frames'] is defined and headers['frames'] > 1 %}<div><span class="fw-medium"><i class="ti ti-layers-subtract"></i> Frames</span> <span class="float-end f-s-13 text-secondary">{{ headers['frames'] }}</span></div>{% endif %}
+
+            {# TIFF SUMMARY #}
+            {% if headers['tiff_summary'] is defined %}
+            <hr>
+            <h6>TIFF</h6>
+            {% for key, value in headers['tiff_summary'] %}
+                {% set display = value is iterable ? value|json_encode : value %}
+                <div><span class="fw-medium f-s-13">{{ key }}</span> <span class="float-end f-s-13 text-secondary">{{ display }}</span></div>
+            {% endfor %}
+            {% endif %}
+
+            {# EXIF #}
+            {% if headers['exif'] is defined and headers['exif'] is not empty %}
+            <hr>
+            <h6>
+                <a data-bs-toggle="collapse" href="#exif-tif-tags" role="button" aria-expanded="false" class="text-decoration-none">
+                    EXIF <i class="ti ti-chevron-down f-s-13"></i>
+                </a>
+            </h6>
+            <div class="collapse" id="exif-tif-tags">
+                {% for key, value in headers['exif'] %}
+                    {% set display = value is iterable ? value|json_encode : value %}
+                    <div><span class="fw-medium f-s-13">{{ key }}</span> <span class="float-end f-s-13 text-secondary text-truncate" style="max-width: 200px" title="{{ display }}">{{ display }}</span></div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# TIFF TAGS #}
+            {% if headers['tiff_tags'] is defined and headers['tiff_tags'] is not empty %}
+            <hr>
+            <h6>
+                <a data-bs-toggle="collapse" href="#tiff-raw-tags" role="button" aria-expanded="false" class="text-decoration-none">
+                    TIFF Tags <i class="ti ti-chevron-down f-s-13"></i>
+                </a>
+            </h6>
+            <div class="collapse" id="tiff-raw-tags">
+                {% for key, value in headers['tiff_tags'] %}
+                    {% set display = value is iterable ? value|json_encode : value %}
+                    <div><span class="fw-medium f-s-13">{{ key }}</span> <span class="float-end f-s-13 text-secondary text-truncate" style="max-width: 200px" title="{{ display }}">{{ display }}</span></div>
+                {% endfor %}
+            </div>
             {% endif %}
 
         {% else %}

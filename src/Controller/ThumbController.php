@@ -86,6 +86,16 @@ final class ThumbController extends AbstractController
         );
     }
 
+    #[Route('/tif-exposure-thumbnail/{exposure}/{w}', name: 'tif-exposure-thumbnail', methods: ['GET'])]
+    public function tifExposureThumbnail(Request $request, Exposure $exposure, int $w = 512): Response
+    {
+        $absPath = $this->resolver->toAbsolutePath($exposure->getPath());
+        return $this->thumbnailService->getCachedThumbnail(
+            $request, $absPath, $w, 'tif',
+            fn () => $this->astropy->tifThumbnail($absPath, $w),
+        );
+    }
+
     #[Route('/raw-histogram/{exposure}', name: 'raw_histogram', methods: ['GET'])]
     public function rawHistogram(Exposure $exposure): JsonResponse
     {

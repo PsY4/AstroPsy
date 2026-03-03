@@ -84,10 +84,12 @@ class SessionRefreshServiceTest extends TestCase
     {
         $this->touchFile(SessionFolder::LIGHT, 'light.fits');
         $this->touchFile(SessionFolder::LIGHT, 'light.nef');
+        $this->touchFile(SessionFolder::LIGHT, 'light.tif');
 
         $astropy = $this->mockAstropyClient();
         $astropy->method('fitsHeader')->willReturn($this->fakeFitsHeaders());
         $astropy->method('rawHeader')->willReturn($this->fakeNefHeaders());
+        $astropy->method('imageHeader')->willReturn($this->fakeTifHeaders());
 
         $persisted = [];
         $em = $this->mockEm(Exposure::class);
@@ -100,7 +102,7 @@ class SessionRefreshServiceTest extends TestCase
 
         $formats = array_map(fn(Exposure $e) => $e->getFormat(), $persisted);
         sort($formats);
-        self::assertSame(['FITS', 'NEF'], $formats);
+        self::assertSame(['FITS', 'NEF', 'TIF'], $formats);
     }
 
     public function testRefreshRawsUsesImageTypFromHeaders(): void
@@ -226,6 +228,49 @@ class SessionRefreshServiceTest extends TestCase
             'dng'  => ['dng', 'DNG'],
             'pef'  => ['pef', 'PEF'],
         ];
+    }
+
+    public function testRefreshRawsDetectsTifFiles(): void
+    {
+        $this->touchFile(SessionFolder::LIGHT, 'stacked.tif');
+
+        $astropy = $this->mockAstropyClient();
+        $astropy->expects($this->once())
+            ->method('imageHeader')
+            ->willReturn($this->fakeTifHeaders());
+        $astropy->expects($this->never())->method('fitsHeader');
+        $astropy->expects($this->never())->method('rawHeader');
+
+        $persisted = [];
+        $em = $this->mockEm(Exposure::class);
+        $em->method('persist')->willReturnCallback(function ($entity) use (&$persisted) {
+            $persisted[] = $entity;
+        });
+
+        $service = $this->createService($astropy, $em);
+        $count = $service->refreshRaws($this->mockSession());
+
+        self::assertSame(1, $count);
+        self::assertSame('TIF', $persisted[0]->getFormat());
+    }
+
+    public function testRefreshRawsNormalizesTiffToTif(): void
+    {
+        $this->touchFile(SessionFolder::LIGHT, 'stacked.tiff');
+
+        $astropy = $this->mockAstropyClient();
+        $astropy->method('imageHeader')->willReturn($this->fakeTifHeaders());
+
+        $persisted = [];
+        $em = $this->mockEm(Exposure::class);
+        $em->method('persist')->willReturnCallback(function ($entity) use (&$persisted) {
+            $persisted[] = $entity;
+        });
+
+        $service = $this->createService($astropy, $em);
+        $service->refreshRaws($this->mockSession());
+
+        self::assertSame('TIF', $persisted[0]->getFormat());
     }
 
     public function testRefreshRawsScansAllFourFolders(): void
@@ -579,6 +624,9 @@ class SessionRefreshServiceTest extends TestCase
             'raf fuji'       => [SessionFolder::LIGHT, 'DSCF0001.raf', true],
             'dng universal'  => [SessionFolder::LIGHT, 'photo.dng', true],
             'pef pentax'     => [SessionFolder::DARK, 'IMGP0001.pef', true],
+            'tif light'      => [SessionFolder::LIGHT, 'stacked.tif', true],
+            'tiff light'     => [SessionFolder::LIGHT, 'stacked.tiff', true],
+            'TIFF uppercase' => [SessionFolder::DARK, 'DARK.TIFF', true],
             'txt not raw'    => [SessionFolder::LIGHT, 'notes.txt', false],
             'jpg not raw'    => [SessionFolder::LIGHT, 'preview.jpg', false],
 
@@ -692,6 +740,33 @@ class SessionRefreshServiceTest extends TestCase
             'CCD-TEMP' => null,
             'ISO' => 1600,
             'CAMERA' => 'NIKON D810A',
+        ];
+    }
+
+    private function fakeTifHeaders(): array
+    {
+        // Simulates the normalized output from extractRawHeaders() for TIF files:
+        // imageHeader() response + normalized FITS-like keys
+        return [
+            'format' => 'TIFF',
+            'width' => 4656,
+            'height' => 3520,
+            'size' => '4656x3520',
+            'mode' => 'F',
+            'frames' => 1,
+            'tiff_summary' => [
+                'bits_per_sample' => '32',
+                'sample_format' => 'float',
+                'photometric' => 'MinIsBlack',
+            ],
+            'DATE-OBS' => '2026-01-15T22:30:00+00:00',
+            'EXPOSURE' => null,
+            'FILTER' => null,
+            'CCD-TEMP' => null,
+            'IMAGETYP' => null,
+            'ISO' => null,
+            'CAMERA' => null,
+            'FORMAT' => 'TIF',
         ];
     }
 
