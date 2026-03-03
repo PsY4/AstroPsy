@@ -183,6 +183,7 @@ flash:
   targets_refreshed: "Targets refreshed from storage."
   sessions_root_not_found: "Sessions root not found: %path%"
   author_created: 'Author "%name%" created successfully.'
+  target_name_required: "Target name is required."
   target_exists: 'Target "%name%" already exists.'
   target_created: 'Target "%name%" created successfully.'
 
