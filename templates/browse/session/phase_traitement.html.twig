@@ -142,8 +142,12 @@ document.addEventListener("DOMContentLoaded", function() {
             url: '{{ path('master_detail', {'master': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
             method: 'GET', dataType: 'html', cache: true
         }).done(function (html) { $('#master-details').html(html); });
-        if ($(this).data('type') == "XISF")
-            $('#master-preview').attr("src", "{{ path('xisf-thumbnail', { 'master': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", $(this).data("id")));
+        var masterType = $(this).data('type');
+        var masterId = $(this).data('id');
+        if (masterType === "XISF")
+            $('#master-preview').attr("src", "{{ path('xisf-thumbnail', { 'master': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", masterId));
+        else if (masterType === "TIF" || masterType === "TIFF")
+            $('#master-preview').attr("src", "{{ path('tif-master-thumbnail', { 'master': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", masterId));
     });
 
     // Exports click

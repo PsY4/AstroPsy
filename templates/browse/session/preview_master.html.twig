@@ -29,8 +29,6 @@
             $('.exports-viewer').addClass('d-none');
             $('.lights-viewer').addClass('d-none');
             $('.phd2log-viewer').addClass('d-none');
-            console.log("MASTER " + $(this).data("id"))
-
             currentRequest = $.ajax({
                 url: '{{ path('master_detail', {'master': "XXXXXX"}) }}'.replace('XXXXXX', $(this).data('id')),
                 method: 'GET',
@@ -43,8 +41,12 @@
                     $('#master-details').html(html);
                 })
 
-            if ($(this).data('type')=="XISF")
-                $('#master-preview').attr("src", "{{ path('xisf-thumbnail', { 'master': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", $(this).data("id")));
+            var type = $(this).data('type');
+            var id = $(this).data('id');
+            if (type === "XISF")
+                $('#master-preview').attr("src", "{{ path('xisf-thumbnail', { 'master': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", id));
+            else if (type === "TIF" || type === "TIFF")
+                $('#master-preview').attr("src", "{{ path('tif-master-thumbnail', { 'master': "XXXXXX", 'w': 1920 }) }}".replace("XXXXXX", id));
 
         });
     });

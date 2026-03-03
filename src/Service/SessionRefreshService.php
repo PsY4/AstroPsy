@@ -448,6 +448,10 @@ class SessionRefreshService
             return $this->astropyClient->fitsHeader($absPath);
         }
 
+        if (in_array($ext, self::TIFF_EXTENSIONS, true)) {
+            return $this->astropyClient->imageHeader($absPath);
+        }
+
         throw new \InvalidArgumentException(sprintf('Unsupported master format: .%s', $ext));
     }
 

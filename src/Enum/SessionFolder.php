@@ -42,7 +42,7 @@ enum SessionFolder: string
         return match ($this) {
             self::LIGHT, self::DARK, self::BIAS, self::FLAT
                        => '/\.(fit|fits|nef|cr2|cr3|arw|orf|rw2|raf|dng|pef|srw|nrw|tif|tiff)$/i',
-            self::MASTER   => '/\.(xisf|fits)$/i',
+            self::MASTER   => '/\.(xisf|fits|tif|tiff)$/i',
             self::EXPORT   => '/\.(jpg|jpeg|png|tif|tiff)$/i',
             self::LOG_PHD2 => '/\.(txt)$/i',
             self::LOG_WBPP => '/\.(log)$/i',
